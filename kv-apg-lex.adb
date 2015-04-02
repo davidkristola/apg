@@ -46,31 +46,41 @@ package body kv.apg.lex is
    procedure Ingest_Character
       (Self : in out Lexer_Class;
        Next : in     Wide_Wide_Character) is
+
       Tentative_State : Lex_State_Type := Character_State(Next);
+
+      procedure Start_New_Toke_If is
+      begin
+         if Self.State /= Between then
+            Self.Begin_Token(Next);
+         end if;
+      end Start_New_Toke_If;
+
+      procedure Accumulate(This : in Wide_Wide_Character) is
+      begin
+         Self.Accum := Self.Accum & This; -- keep accumulating
+      end Accumulate;
+
    begin
       case Self.State is
          when Between =>
             Self.State := Tentative_State;
-            if Self.State /= Between then
-               Self.Begin_Token(Next);
-            end if;
+            Start_New_Toke_If;
          when In_Word =>
             if Is_Alphanumeric(Next) then
-               Self.Accum := Self.Accum & Next; -- keep accumulating
+               Accumulate(Next);
             else
                Self.Complete_Token;
                Self.State := Tentative_State;
             end if;
          when In_Symbol =>
             if Tentative_State = In_Symbol then -- Multi-character symbol
-               Self.Accum := Self.Accum & Next; -- keep accumulating
+               Accumulate(Next);
             else
                Self.Complete_Token;
                Self.State := Tentative_State;
             end if;
-            if Self.State /= Between then
-               Self.Begin_Token(Next);
-            end if;
+            Start_New_Toke_If;
          when In_Char =>
             if Next = Apostrophe then
                Self.State := Between;
@@ -83,7 +93,7 @@ package body kv.apg.lex is
                Self.State := Between;
                Self.Complete_Token;
             else
-               Self.Accum := Self.Accum & Next; -- keep accumulating
+               Accumulate(Next);
             end if;
          when In_Block =>
             Self.State := Between;

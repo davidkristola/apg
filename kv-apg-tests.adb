@@ -11,6 +11,8 @@ package body kv.apg.tests is
    Pi : constant Wide_Wide_Character := Wide_Wide_Character'VAL(16#03C0#);
    Three : constant Wide_Wide_Character := '3';
    Space : constant Wide_Wide_Character := ' ';
+   Open_Block : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Left_Angle_Quotation);
+   Close_Block : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Right_Angle_Quotation);
 
    type Lexer_Test_Class is abstract new kv.core.ut.Test_Class with
       record
@@ -118,6 +120,17 @@ package body kv.apg.tests is
    end Run;
 
    ----------------------------------------------------------------------------
+   type Ingest_Block_Test is new Lexer_Test_Class with null record;
+   procedure Run(T : in out Ingest_Block_Test) is
+   begin
+      T.Lexer.Ingest_Character(Open_Block);
+      Ingest_All(T, " word => ""embedded string"" + 'c'" & Ada.Characters.Latin_1.CR);
+      T.Lexer.Ingest_Character(Close_Block);
+      T.Assert(T.Lexer.Inbetween_Tokens = True, "Should be after everything");
+      Check_Tokens_Available(T, 1, "block");
+   end Run;
+
+   ----------------------------------------------------------------------------
    procedure register(suite : in kv.core.ut.Suite_Pointer_Type) is
    begin
       suite.register(new Initial_State_Test, "Initial_State_Test");
@@ -129,6 +142,7 @@ package body kv.apg.tests is
       suite.register(new Ingest_Symbol_Test, "Ingest_Symbol_Test");
       suite.register(new Ingest_String_Test, "Ingest_String_Test");
       suite.register(new Ingest_A_Bunch_Of_Stuff_1_Test, "Ingest_A_Bunch_Of_Stuff_1_Test");
+      suite.register(new Ingest_Block_Test, "Ingest_Block_Test");
    end register;
 
 end kv.apg.tests;
