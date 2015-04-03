@@ -23,6 +23,9 @@ package kv.apg.lex is
    function Tokens_Available
       (Self : in     Lexer_Class) return Natural;
 
+   function Get_Next_Token
+      (Self : in out Lexer_Class) return kv.apg.tokens.Token_Class;
+
 private
 
    type Lex_State_Type is (Between, In_Word, In_Symbol, In_Char, In_String, In_Block, In_Comment);

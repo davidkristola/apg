@@ -1,12 +1,17 @@
 with Ada.Wide_Wide_Characters.Handling;
 with Ada.Characters.Latin_1;
 with Ada.Characters.Conversions;
+with Ada.Strings.Wide_Wide_Unbounded;
 
 with kv.apg.lex;
+with kv.apg.tokens;
 
 package body kv.apg.tests is
 
    use Ada.Characters.Conversions;
+   use kv.apg.lex;
+   use kv.apg.tokens;
+   use Ada.Strings.Wide_Wide_Unbounded;
 
    Pi : constant Wide_Wide_Character := Wide_Wide_Character'VAL(16#03C0#);
    Three : constant Wide_Wide_Character := '3';
@@ -14,6 +19,7 @@ package body kv.apg.tests is
    Open_Block : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Left_Angle_Quotation);
    Close_Block : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Right_Angle_Quotation);
 
+   ----------------------------------------------------------------------------
    type Lexer_Test_Class is abstract new kv.core.ut.Test_Class with
       record
          Lexer : kv.apg.lex.Lexer_Class;
@@ -131,6 +137,34 @@ package body kv.apg.tests is
    end Run;
 
    ----------------------------------------------------------------------------
+   type Simple_Token_Test is new kv.core.ut.Test_Class with null record;
+   procedure Run(T : in out Simple_Token_Test) is
+      Token : kv.apg.tokens.Token_Class;
+      Word : constant String := "hello";
+   begin
+      Token.Initialize(A_Word, 1, +Word);
+      T.Assert(Token.Get_Line = 1, "Line should be 1, is " & Positive'IMAGE(Token.Get_Line));
+      T.Assert(Token.Get_Kind = A_Word, "Kind should be A_Word, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
+      T.Assert(Token.Get_Data = +Word, "Data is wrong");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Lex_Tokens_Test is new Lexer_Test_Class with null record;
+   procedure Run(T : in out Lex_Tokens_Test) is
+      Token : kv.apg.tokens.Token_Class;
+      Word : constant String := "hello";
+   begin
+      Ingest_All(T, "hello => ""embedded string"" + 'c' #done" & Ada.Characters.Latin_1.CR);
+      T.Assert(T.Lexer.Inbetween_Tokens = True, "Should be after everything");
+      Check_Tokens_Available(T, 6, "word+symbol+string+symbol+char+comment");
+      Token := T.Lexer.Get_Next_Token;
+      Check_Tokens_Available(T, 5, "symbol+string+symbol+char+comment");
+      T.Assert(Token.Get_Line = 1, "Line should be 1, is " & Positive'IMAGE(Token.Get_Line));
+      T.Assert(Token.Get_Kind = A_Word, "Kind should be A_Word, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
+      T.Assert(Token.Get_Data = +Word, "Data is wrong");
+   end Run;
+
+   ----------------------------------------------------------------------------
    procedure register(suite : in kv.core.ut.Suite_Pointer_Type) is
    begin
       suite.register(new Initial_State_Test, "Initial_State_Test");
@@ -143,6 +177,8 @@ package body kv.apg.tests is
       suite.register(new Ingest_String_Test, "Ingest_String_Test");
       suite.register(new Ingest_A_Bunch_Of_Stuff_1_Test, "Ingest_A_Bunch_Of_Stuff_1_Test");
       suite.register(new Ingest_Block_Test, "Ingest_Block_Test");
+      suite.register(new Simple_Token_Test, "Simple_Token_Test");
+      suite.register(new Lex_Tokens_Test, "Lex_Tokens_Test");
    end register;
 
 end kv.apg.tests;

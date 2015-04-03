@@ -36,6 +36,8 @@ package body kv.apg.lex is
          return In_Comment;
       elsif Next = Apostrophe then
          return In_Char;
+      elsif Next = Open_Block then
+         return In_Block;
       elsif Is_Line_Terminator(Next) or Is_Space(Next) then
          return Between;
       end if;
@@ -96,7 +98,12 @@ package body kv.apg.lex is
                Accumulate(Next);
             end if;
          when In_Block =>
-            Self.State := Between;
+            if Next = Close_Block then
+               Self.State := Between;
+               Self.Complete_Token;
+            else
+               Accumulate(Next);
+            end if;
          when In_Comment =>
             if Is_Line_Terminator(Next) then
                Self.State := Between;
@@ -119,6 +126,15 @@ package body kv.apg.lex is
    begin
       return Self.Count; --TODO
    end Tokens_Available;
+
+   ----------------------------------------------------------------------------
+   function Get_Next_Token
+      (Self : in out Lexer_Class) return kv.apg.tokens.Token_Class is
+      Token : kv.apg.tokens.Token_Class;
+   begin
+      Self.Count := Self.Count - 1; --TODO
+      return Token;
+   end Get_Next_Token;
 
    ----------------------------------------------------------------------------
    procedure Begin_Token
