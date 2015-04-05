@@ -38,7 +38,8 @@ private
    type Lexer_Class is tagged
       record
          State : Lex_State_Type := Between;
-         Count : Natural := 0;
+         Where : Positive;
+         Line  : Positive := 1;
          Accum : String_Type;
          List  : Token_List.List;
       end record;

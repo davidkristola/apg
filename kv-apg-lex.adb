@@ -15,6 +15,8 @@ package body kv.apg.lex is
    Apostrophe : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Apostrophe);
    Open_Block : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Left_Angle_Quotation);
    Close_Block : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Right_Angle_Quotation);
+   Underscore : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Low_Line);
+   Line_Feed : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.LF);
 
    function "+"(S : String) return String_Type is
       WS : constant Wide_Wide_String := To_Wide_Wide_String(S);
@@ -28,7 +30,7 @@ package body kv.apg.lex is
    ----------------------------------------------------------------------------
    function Character_State(Next : Wide_Wide_Character) return Lex_State_Type is
    begin
-      if Is_Alphanumeric(Next) then
+      if Is_Alphanumeric(Next) or Next = Underscore then
          return In_Word;
       elsif Next = Quotation then
          return In_String;
@@ -64,7 +66,7 @@ package body kv.apg.lex is
             Self.State := Tentative_State;
             Start_New_Token_If;
          when In_Word =>
-            if Is_Alphanumeric(Next) then
+            if Tentative_State = In_Word then
                Self.Accumulate_Character(Next);
             else
                Self.Complete_Token(kv.apg.tokens.A_Word);
@@ -109,6 +111,9 @@ package body kv.apg.lex is
             end if;
       end case;
       --Put_Line("State = " & Lex_State_Type'IMAGE(Self.State));
+      if Next = Line_Feed then
+         Self.Line := Self.Line + 1;
+      end if;
    end Ingest_Character;
 
    ----------------------------------------------------------------------------
@@ -122,7 +127,7 @@ package body kv.apg.lex is
    function Tokens_Available
       (Self : in     Lexer_Class) return Natural is
    begin
-      return Self.Count; --TODO
+      return Natural(Self.List.Length);
    end Tokens_Available;
 
    ----------------------------------------------------------------------------
@@ -130,7 +135,6 @@ package body kv.apg.lex is
       (Self : in out Lexer_Class) return kv.apg.tokens.Token_Class is
       Token : kv.apg.tokens.Token_Class;
    begin
-      Self.Count := Self.Count - 1; --TODO
       Token := Self.List.First_Element;
       Self.List.Delete_First;
       return Token;
@@ -147,7 +151,7 @@ package body kv.apg.lex is
       if Keep_First_Character(Self.State) then
          Self.Accumulate_Character(Next);
       end if;
-      --TODO
+      Self.Where := Self.Line;
    end Begin_Token;
 
    ----------------------------------------------------------------------------
@@ -156,9 +160,7 @@ package body kv.apg.lex is
        Kind : in     kv.apg.tokens.Token_Type) is
       Token : kv.apg.tokens.Token_Class;
    begin
-      Self.Count := Self.Count + 1;
-      --TODO
-      Token.Initialize(Kind, 1, Self.Accum);
+      Token.Initialize(Kind, Self.Where, Self.Accum);
       Self.List.Append(Token);
    end Complete_Token;
 

@@ -72,9 +72,9 @@ package body kv.apg.tests is
    type Ingest_Two_Words_Test is new Lexer_Test_Class with null record;
    procedure Run(T : in out Ingest_Two_Words_Test) is
    begin
-      Ingest_All(T, "One two" & Ada.Characters.Latin_1.CR);
+      Ingest_All(T, "One two_2" & Ada.Characters.Latin_1.LF);
       T.Assert(T.Lexer.Inbetween_Tokens = True, "Should be between tokens");
-      T.Assert(T.Lexer.Tokens_Available = 2, "Two words should be available");
+      Check_Tokens_Available(T, 2, "One two_2");
    end Run;
 
    ----------------------------------------------------------------------------
@@ -83,7 +83,7 @@ package body kv.apg.tests is
    begin
       Ingest_All(T, "Alpha # comment");
       T.Assert(T.Lexer.Inbetween_Tokens = False, "Should be in a comment");
-      Ingest_All(T, "...'' " & Ada.Characters.Latin_1.CR);
+      Ingest_All(T, "...'' " & Ada.Characters.Latin_1.LF);
       Check_Tokens_Available(T, 2, "word+comment");
    end Run;
 
@@ -120,7 +120,7 @@ package body kv.apg.tests is
    type Ingest_A_Bunch_Of_Stuff_1_Test is new Lexer_Test_Class with null record;
    procedure Run(T : in out Ingest_A_Bunch_Of_Stuff_1_Test) is
    begin
-      Ingest_All(T, " word => ""embedded string"" + 'c'" & Ada.Characters.Latin_1.CR);
+      Ingest_All(T, " word => ""embedded string"" + 'c'" & Ada.Characters.Latin_1.LF);
       T.Assert(T.Lexer.Inbetween_Tokens = True, "Should be after everything");
       Check_Tokens_Available(T, 5, "bunch of stuff 1");
    end Run;
@@ -130,7 +130,7 @@ package body kv.apg.tests is
    procedure Run(T : in out Ingest_Block_Test) is
    begin
       T.Lexer.Ingest_Character(Open_Block);
-      Ingest_All(T, " word => ""embedded string"" + 'c'" & Ada.Characters.Latin_1.CR);
+      Ingest_All(T, " word => ""embedded string"" + 'c'" & Ada.Characters.Latin_1.LF);
       T.Lexer.Ingest_Character(Close_Block);
       T.Assert(T.Lexer.Inbetween_Tokens = True, "Should be after everything");
       Check_Tokens_Available(T, 1, "block");
@@ -154,9 +154,13 @@ package body kv.apg.tests is
       Token : kv.apg.tokens.Token_Class;
       Word : constant String := "hello";
       Symbol_1 : constant String := "=>";
+      String_1 : constant String := "embedded string";
+      Symbol_2 : constant String := "+";
+      Char_1 : constant String := "c";
+      Comment_1 : constant String := "done";
    begin
       --T.Log("Lex_Tokens_Test");
-      Ingest_All(T, "hello => ""embedded string"" + 'c' #done" & Ada.Characters.Latin_1.CR);
+      Ingest_All(T, "hello => ""embedded string"" + 'c' #done" & Ada.Characters.Latin_1.LF);
       T.Assert(T.Lexer.Inbetween_Tokens = True, "Should be after everything");
       Check_Tokens_Available(T, 6, "word+symbol+string+symbol+char+comment");
       Token := T.Lexer.Get_Next_Token;
@@ -171,7 +175,54 @@ package body kv.apg.tests is
       T.Assert(Token.Get_Kind = A_Symbol, "Kind should be A_Symbol, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
       T.Assert(Token.Get_Data = +Symbol_1, "Symbol_1 is wrong, expected '"&Symbol_1&"', got '"&To_String(+Token.Get_Data)&"'.");
 
+      Token := T.Lexer.Get_Next_Token;
+      Check_Tokens_Available(T, 3, "symbol+char+comment");
+      T.Assert(Token.Get_Line = 1, "Line should be 1, is " & Positive'IMAGE(Token.Get_Line));
+      T.Assert(Token.Get_Kind = A_String, "Kind should be A_String, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
+      T.Assert(Token.Get_Data = +String_1, "String_1 is wrong, expected '"&String_1&"', got '"&To_String(+Token.Get_Data)&"'.");
+
+      Token := T.Lexer.Get_Next_Token;
+      Check_Tokens_Available(T, 2, "char+comment");
+      T.Assert(Token.Get_Line = 1, "Line should be 1, is " & Positive'IMAGE(Token.Get_Line));
+      T.Assert(Token.Get_Kind = A_Symbol, "Kind should be A_Symbol, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
+      T.Assert(Token.Get_Data = +Symbol_2, "Symbol_2 is wrong, expected '"&Symbol_2&"', got '"&To_String(+Token.Get_Data)&"'.");
+
+      Token := T.Lexer.Get_Next_Token;
+      Check_Tokens_Available(T, 1, "comment");
+      T.Assert(Token.Get_Line = 1, "Line should be 1, is " & Positive'IMAGE(Token.Get_Line));
+      T.Assert(Token.Get_Kind = A_Char, "Kind should be A_Char, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
+      T.Assert(Token.Get_Data = +Char_1, "Char_1 is wrong, expected '"&Char_1&"', got '"&To_String(+Token.Get_Data)&"'.");
+
+      Token := T.Lexer.Get_Next_Token;
+      Check_Tokens_Available(T, 0, "empty");
+      T.Assert(Token.Get_Line = 1, "Line should be 1, is " & Positive'IMAGE(Token.Get_Line));
+      T.Assert(Token.Get_Kind = A_Comment, "Kind should be A_Comment, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
+      T.Assert(Token.Get_Data = +Comment_1, "Comment_1 is wrong, expected '"&Comment_1&"', got '"&To_String(+Token.Get_Data)&"'.");
    end Run;
+
+   ----------------------------------------------------------------------------
+   type Multi_Line_Test is new Lexer_Test_Class with null record;
+   procedure Run(T : in out Multi_Line_Test) is
+      Token : kv.apg.tokens.Token_Class;
+   begin
+      T.Lexer.Ingest_Character(Open_Block);
+      Ingest_All(T, " word => ""embedded string"" + 'c'" & Ada.Characters.Latin_1.LF);
+      T.Lexer.Ingest_Character(Close_Block);
+      Ingest_All(T, "line_two #done" & Ada.Characters.Latin_1.LF);
+      Ingest_All(T, "line_three!" & Ada.Characters.Latin_1.LF);
+      T.Assert(T.Lexer.Inbetween_Tokens = True, "Should be after everything");
+      Check_Tokens_Available(T, 5, "block+word+comment+word+symbol");
+
+      Token := T.Lexer.Get_Next_Token;
+      T.Assert(Token.Get_Line = 1, "Line should be 1, is " & Positive'IMAGE(Token.Get_Line));
+      Token := T.Lexer.Get_Next_Token;
+      T.Assert(Token.Get_Line = 2, "Line should be 2, is " & Positive'IMAGE(Token.Get_Line));
+      Token := T.Lexer.Get_Next_Token;
+      T.Assert(Token.Get_Line = 2, "Line should be 2, is " & Positive'IMAGE(Token.Get_Line));
+      Token := T.Lexer.Get_Next_Token;
+      T.Assert(Token.Get_Line = 3, "Line should be 3, is " & Positive'IMAGE(Token.Get_Line));
+   end Run;
+
 
    ----------------------------------------------------------------------------
    procedure register(suite : in kv.core.ut.Suite_Pointer_Type) is
@@ -188,6 +239,7 @@ package body kv.apg.tests is
       suite.register(new Ingest_Block_Test, "Ingest_Block_Test");
       suite.register(new Simple_Token_Test, "Simple_Token_Test");
       suite.register(new Lex_Tokens_Test, "Lex_Tokens_Test");
+      suite.register(new Multi_Line_Test, "Multi_Line_Test");
    end register;
 
 end kv.apg.tests;

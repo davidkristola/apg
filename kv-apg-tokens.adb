@@ -19,7 +19,7 @@ package body kv.apg.tokens is
        Line : in     Positive;
        Data : in     Ada.Strings.Wide_Wide_Unbounded.Unbounded_Wide_Wide_String) is
    begin
-      Put_Line("Token " & Token_Type'IMAGE(Kind) & " @ " & Positive'IMAGE(Line) & ", value = '"&To_String(Ada.Strings.Wide_Wide_Unbounded.To_Wide_Wide_String(Data))&"'.");
+      --Put_Line("Token " & Token_Type'IMAGE(Kind) & " @ " & Positive'IMAGE(Line) & ", value = '"&To_String(Ada.Strings.Wide_Wide_Unbounded.To_Wide_Wide_String(Data))&"'.");
       Self.Kind := Kind;
       Self.Line := Line;
       Self.Data := Data;
