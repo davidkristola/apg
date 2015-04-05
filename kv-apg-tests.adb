@@ -153,7 +153,9 @@ package body kv.apg.tests is
    procedure Run(T : in out Lex_Tokens_Test) is
       Token : kv.apg.tokens.Token_Class;
       Word : constant String := "hello";
+      Symbol_1 : constant String := "=>";
    begin
+      --T.Log("Lex_Tokens_Test");
       Ingest_All(T, "hello => ""embedded string"" + 'c' #done" & Ada.Characters.Latin_1.CR);
       T.Assert(T.Lexer.Inbetween_Tokens = True, "Should be after everything");
       Check_Tokens_Available(T, 6, "word+symbol+string+symbol+char+comment");
@@ -161,7 +163,14 @@ package body kv.apg.tests is
       Check_Tokens_Available(T, 5, "symbol+string+symbol+char+comment");
       T.Assert(Token.Get_Line = 1, "Line should be 1, is " & Positive'IMAGE(Token.Get_Line));
       T.Assert(Token.Get_Kind = A_Word, "Kind should be A_Word, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
-      T.Assert(Token.Get_Data = +Word, "Data is wrong");
+      T.Assert(Token.Get_Data = +Word, "Word is wrong");
+
+      Token := T.Lexer.Get_Next_Token;
+      Check_Tokens_Available(T, 4, "string+symbol+char+comment");
+      T.Assert(Token.Get_Line = 1, "Line should be 1, is " & Positive'IMAGE(Token.Get_Line));
+      T.Assert(Token.Get_Kind = A_Symbol, "Kind should be A_Symbol, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
+      T.Assert(Token.Get_Data = +Symbol_1, "Symbol_1 is wrong, expected '"&Symbol_1&"', got '"&To_String(+Token.Get_Data)&"'.");
+
    end Run;
 
    ----------------------------------------------------------------------------

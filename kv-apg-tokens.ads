@@ -18,6 +18,8 @@ package kv.apg.tokens is
    function Get_Line(Self : Token_Class) return Positive;
    function Get_Data(Self : Token_Class) return Ada.Strings.Wide_Wide_Unbounded.Unbounded_Wide_Wide_String;
 
+   function "="(L, R : Token_Class) return Boolean;
+
 private
 
    type Token_Class is tagged

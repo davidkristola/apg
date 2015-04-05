@@ -1,5 +1,7 @@
 with Ada.Text_IO;
 use Ada.Text_IO;
+with Ada.Strings.Wide_Wide_Unbounded;
+with Ada.Characters.Conversions;
 
 package body kv.apg.tokens is
    procedure yo is
@@ -7,6 +9,7 @@ package body kv.apg.tokens is
       Put_Line("yo");
    end yo;
 
+   use Ada.Characters.Conversions;
 
 
    ----------------------------------------------------------------------------
@@ -16,6 +19,7 @@ package body kv.apg.tokens is
        Line : in     Positive;
        Data : in     Ada.Strings.Wide_Wide_Unbounded.Unbounded_Wide_Wide_String) is
    begin
+      Put_Line("Token " & Token_Type'IMAGE(Kind) & " @ " & Positive'IMAGE(Line) & ", value = '"&To_String(Ada.Strings.Wide_Wide_Unbounded.To_Wide_Wide_String(Data))&"'.");
       Self.Kind := Kind;
       Self.Line := Line;
       Self.Data := Data;
@@ -38,5 +42,12 @@ package body kv.apg.tokens is
    begin
       return Self.Data;
    end Get_Data;
+
+   ----------------------------------------------------------------------------
+   function "="(L, R : Token_Class) return Boolean is
+      use Ada.Strings.Wide_Wide_Unbounded; -- "="
+   begin
+      return (L.Kind = R.Kind) and then (L.Line = R.Line) and then (L.data = R.Data);
+   end "=";
 
 end kv.apg.tokens;
