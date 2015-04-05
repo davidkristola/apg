@@ -5,6 +5,7 @@ with Ada.Strings.Wide_Wide_Unbounded;
 
 with kv.apg.lex;
 with kv.apg.tokens;
+with kv.apg.parse;
 
 package body kv.apg.tests is
 
@@ -223,6 +224,24 @@ package body kv.apg.tests is
       T.Assert(Token.Get_Line = 3, "Line should be 3, is " & Positive'IMAGE(Token.Get_Line));
    end Run;
 
+   ----------------------------------------------------------------------------
+   type Parser_Test_Class is abstract new Lexer_Test_Class with
+      record
+         Parser : kv.apg.parse.Parser_Class;
+      end record;
+
+
+   ----------------------------------------------------------------------------
+   type Parse_Set_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Set_Test) is
+      Token : kv.apg.tokens.Token_Class;
+   begin
+      Ingest_All(T, "set lex_spec = ""test.ads"";" & Ada.Characters.Latin_1.LF);
+      for Count in 1..5 loop
+         Token := T.Lexer.Get_Next_Token;
+         T.Parser.Ingest_Token(Token);
+      end loop;
+   end Run;
 
    ----------------------------------------------------------------------------
    procedure register(suite : in kv.core.ut.Suite_Pointer_Type) is
@@ -240,6 +259,7 @@ package body kv.apg.tests is
       suite.register(new Simple_Token_Test, "Simple_Token_Test");
       suite.register(new Lex_Tokens_Test, "Lex_Tokens_Test");
       suite.register(new Multi_Line_Test, "Multi_Line_Test");
+      suite.register(new Parse_Set_Test, "Parse_Set_Test");
    end register;
 
 end kv.apg.tests;
