@@ -1,11 +1,10 @@
-with Ada.Text_IO;
+with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Wide_Wide_Characters.Handling;
 with Ada.Characters.Latin_1;
 with Ada.Characters.Conversions;
 
 package body kv.apg.lex is
 
-   use Ada.Text_IO;
    use Ada.Wide_Wide_Characters.Handling;
    use Ada.Strings.Wide_Wide_Unbounded;
    use Ada.Characters.Conversions;

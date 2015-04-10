@@ -236,11 +236,15 @@ package body kv.apg.tests is
    procedure Run(T : in out Parse_Set_Test) is
       Token : kv.apg.tokens.Token_Class;
    begin
+      T.Parser.Initialise;
       Ingest_All(T, "set lex_spec = ""test.ads"";" & Ada.Characters.Latin_1.LF);
       for Count in 1..5 loop
          Token := T.Lexer.Get_Next_Token;
          T.Parser.Ingest_Token(Token);
       end loop;
+      T.Assert(T.Parser.Inbetween_Directives, "Should be between directives");
+      T.Assert(T.Parser.Error_Count = 0, "No errors");
+      T.Assert(T.Parser.Directive_Count = 1, "1 directive");
    end Run;
 
    ----------------------------------------------------------------------------
