@@ -1,3 +1,5 @@
+with Ada.Containers.Doubly_Linked_Lists;
+
 with kv.apg.tokens;
 with kv.apg.directives;
 
@@ -26,6 +28,10 @@ package kv.apg.parse is
 
 private
 
+   use kv.apg.directives; -- "="
+
+   package Directive_List is new Ada.Containers.Doubly_Linked_Lists(kv.apg.directives.Directive_Pointer_Type);
+
    type Expectation_Type is (Initialize, Directive,
       Set_Name, Set_Equal, Set_Value, Set_Eos, -- Set directive expectations
       -- Other directive expectations here
@@ -33,7 +39,8 @@ private
 
    type Parser_Class is tagged
       record
-         Expect : Expectation_Type := Initialize;
+         Expect     : Expectation_Type := Initialize;
+         Directives : Directive_List.List;
       end record;
 
 end kv.apg.parse;

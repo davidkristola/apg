@@ -2,10 +2,12 @@ with Ada.Wide_Wide_Characters.Handling;
 with Ada.Characters.Latin_1;
 with Ada.Characters.Conversions;
 with Ada.Strings.Wide_Wide_Unbounded;
+with Ada.Tags; use Ada.Tags;
 
 with kv.apg.lex;
 with kv.apg.tokens;
 with kv.apg.parse;
+with kv.apg.directives;
 
 package body kv.apg.tests is
 
@@ -235,6 +237,7 @@ package body kv.apg.tests is
    type Parse_Set_Test is new Parser_Test_Class with null record;
    procedure Run(T : in out Parse_Set_Test) is
       Token : kv.apg.tokens.Token_Class;
+      Directive : kv.apg.directives.Directive_Pointer_Type;
    begin
       T.Parser.Initialise;
       Ingest_All(T, "set lex_spec = ""test.ads"";" & Ada.Characters.Latin_1.LF);
@@ -245,6 +248,9 @@ package body kv.apg.tests is
       T.Assert(T.Parser.Inbetween_Directives, "Should be between directives");
       T.Assert(T.Parser.Error_Count = 0, "No errors");
       T.Assert(T.Parser.Directive_Count = 1, "1 directive");
+      Directive := T.Parser.Next_Directive;
+      T.Assert(Directive.all'TAG = kv.apg.directives.Set_Class'TAG, "wrong class");
+      --TODO: delete directive
    end Run;
 
    ----------------------------------------------------------------------------

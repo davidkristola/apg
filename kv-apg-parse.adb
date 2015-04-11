@@ -45,6 +45,7 @@ package body kv.apg.parse is
          when Set_Value =>
             Self.Expect := Set_Eos;
          when Set_Eos =>
+            Self.Directives.Append(new kv.apg.directives.Set_Class);
             Self.Expect := Directive;
          when others =>
             null;
@@ -69,14 +70,17 @@ package body kv.apg.parse is
    function Directive_Count
       (Self : in     Parser_Class) return Natural is
    begin
-      return 0;
+      return Natural(Self.Directives.Length);
    end Directive_Count;
 
    ----------------------------------------------------------------------------
    function Next_Directive
       (Self : in out Parser_Class) return kv.apg.directives.Directive_Pointer_Type is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
    begin
-      return null;
+      Directive := Self.Directives.First_Element;
+      Self.Directives.Delete_First;
+      return Directive;
    end Next_Directive;
 
 end kv.apg.parse;
