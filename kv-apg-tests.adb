@@ -8,6 +8,7 @@ with kv.apg.lex;
 with kv.apg.tokens;
 with kv.apg.parse;
 with kv.apg.directives;
+with kv.core.wwstr;
 
 package body kv.apg.tests is
 
@@ -15,6 +16,7 @@ package body kv.apg.tests is
    use kv.apg.lex;
    use kv.apg.tokens;
    use Ada.Strings.Wide_Wide_Unbounded;
+   use kv.core.wwstr;
 
    Pi : constant Wide_Wide_Character := Wide_Wide_Character'VAL(16#03C0#);
    Three : constant Wide_Wide_Character := '3';
@@ -145,10 +147,10 @@ package body kv.apg.tests is
       Token : kv.apg.tokens.Token_Class;
       Word : constant String := "hello";
    begin
-      Token.Initialize(A_Word, 1, +Word);
+      Token.Initialize(A_Word, 1, To_String_Type(Word));
       T.Assert(Token.Get_Line = 1, "Line should be 1, is " & Positive'IMAGE(Token.Get_Line));
       T.Assert(Token.Get_Kind = A_Word, "Kind should be A_Word, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
-      T.Assert(Token.Get_Data = +Word, "Data is wrong");
+      T.Assert(Token.Get_Data = To_String_Type(Word), "Data is wrong");
    end Run;
 
    ----------------------------------------------------------------------------
@@ -170,37 +172,37 @@ package body kv.apg.tests is
       Check_Tokens_Available(T, 5, "symbol+string+symbol+char+comment");
       T.Assert(Token.Get_Line = 1, "Line should be 1, is " & Positive'IMAGE(Token.Get_Line));
       T.Assert(Token.Get_Kind = A_Word, "Kind should be A_Word, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
-      T.Assert(Token.Get_Data = +Word, "Word is wrong");
+      T.Assert(Token.Get_Data = To_String_Type(Word), "Word is wrong");
 
       Token := T.Lexer.Get_Next_Token;
       Check_Tokens_Available(T, 4, "string+symbol+char+comment");
       T.Assert(Token.Get_Line = 1, "Line should be 1, is " & Positive'IMAGE(Token.Get_Line));
       T.Assert(Token.Get_Kind = A_Symbol, "Kind should be A_Symbol, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
-      T.Assert(Token.Get_Data = +Symbol_1, "Symbol_1 is wrong, expected '"&Symbol_1&"', got '"&To_String(+Token.Get_Data)&"'.");
+      T.Assert(Token.Get_Data = To_String_Type(Symbol_1), "Symbol_1 is wrong, expected '"&Symbol_1&"', got '"&To_String(+Token.Get_Data)&"'.");
 
       Token := T.Lexer.Get_Next_Token;
       Check_Tokens_Available(T, 3, "symbol+char+comment");
       T.Assert(Token.Get_Line = 1, "Line should be 1, is " & Positive'IMAGE(Token.Get_Line));
       T.Assert(Token.Get_Kind = A_String, "Kind should be A_String, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
-      T.Assert(Token.Get_Data = +String_1, "String_1 is wrong, expected '"&String_1&"', got '"&To_String(+Token.Get_Data)&"'.");
+      T.Assert(Token.Get_Data = To_String_Type(String_1), "String_1 is wrong, expected '"&String_1&"', got '"&To_String(+Token.Get_Data)&"'.");
 
       Token := T.Lexer.Get_Next_Token;
       Check_Tokens_Available(T, 2, "char+comment");
       T.Assert(Token.Get_Line = 1, "Line should be 1, is " & Positive'IMAGE(Token.Get_Line));
       T.Assert(Token.Get_Kind = A_Symbol, "Kind should be A_Symbol, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
-      T.Assert(Token.Get_Data = +Symbol_2, "Symbol_2 is wrong, expected '"&Symbol_2&"', got '"&To_String(+Token.Get_Data)&"'.");
+      T.Assert(Token.Get_Data = To_String_Type(Symbol_2), "Symbol_2 is wrong, expected '"&Symbol_2&"', got '"&To_String(+Token.Get_Data)&"'.");
 
       Token := T.Lexer.Get_Next_Token;
       Check_Tokens_Available(T, 1, "comment");
       T.Assert(Token.Get_Line = 1, "Line should be 1, is " & Positive'IMAGE(Token.Get_Line));
       T.Assert(Token.Get_Kind = A_Char, "Kind should be A_Char, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
-      T.Assert(Token.Get_Data = +Char_1, "Char_1 is wrong, expected '"&Char_1&"', got '"&To_String(+Token.Get_Data)&"'.");
+      T.Assert(Token.Get_Data = To_String_Type(Char_1), "Char_1 is wrong, expected '"&Char_1&"', got '"&To_String(+Token.Get_Data)&"'.");
 
       Token := T.Lexer.Get_Next_Token;
       Check_Tokens_Available(T, 0, "empty");
       T.Assert(Token.Get_Line = 1, "Line should be 1, is " & Positive'IMAGE(Token.Get_Line));
       T.Assert(Token.Get_Kind = A_Comment, "Kind should be A_Comment, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
-      T.Assert(Token.Get_Data = +Comment_1, "Comment_1 is wrong, expected '"&Comment_1&"', got '"&To_String(+Token.Get_Data)&"'.");
+      T.Assert(Token.Get_Data = To_String_Type(Comment_1), "Comment_1 is wrong, expected '"&Comment_1&"', got '"&To_String(+Token.Get_Data)&"'.");
    end Run;
 
    ----------------------------------------------------------------------------
@@ -238,6 +240,7 @@ package body kv.apg.tests is
    procedure Run(T : in out Parse_Set_Test) is
       Token : kv.apg.tokens.Token_Class;
       Directive : kv.apg.directives.Directive_Pointer_Type;
+      use kv.apg.directives;
    begin
       T.Parser.Initialise;
       Ingest_All(T, "set lex_spec = ""test.ads"";" & Ada.Characters.Latin_1.LF);
@@ -250,7 +253,8 @@ package body kv.apg.tests is
       T.Assert(T.Parser.Directive_Count = 1, "1 directive");
       Directive := T.Parser.Next_Directive;
       T.Assert(Directive.all'TAG = kv.apg.directives.Set_Class'TAG, "wrong class");
-      --TODO: delete directive
+      T.Assert(Directive.Get_Name = +"lex_spec", "wrong name");
+      kv.apg.directives.Free(Directive);
    end Run;
 
    ----------------------------------------------------------------------------

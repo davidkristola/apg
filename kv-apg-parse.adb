@@ -6,6 +6,7 @@ with Ada.Strings.Wide_Wide_Unbounded;
 
 with kv.apg.tokens;
 with kv.apg.lex;
+with kv.core.wwstr;
 
 package body kv.apg.parse is
 
@@ -15,6 +16,7 @@ package body kv.apg.parse is
    use Ada.Characters.Conversions;
    use kv.apg.tokens;
    use kv.apg.lex;
+   use kv.core.wwstr;
 
    ----------------------------------------------------------------------------
    procedure Initialise
@@ -39,13 +41,20 @@ package body kv.apg.parse is
                Self.Expect := Error_Eos;
             end if;
          when Set_Name =>
+            Self.Name_Token := Token;
             Self.Expect := Set_Equal;
          when Set_Equal =>
             Self.Expect := Set_Value;
          when Set_Value =>
             Self.Expect := Set_Eos;
          when Set_Eos =>
-            Self.Directives.Append(new kv.apg.directives.Set_Class);
+            declare
+               Set_Directive : access kv.apg.directives.Set_Class;
+            begin
+               Set_Directive := new kv.apg.directives.Set_Class;
+               Set_Directive.Initialize(Name => Self.Name_Token.Get_Data);
+               Self.Directives.Append(Set_Directive);
+            end;
             Self.Expect := Directive;
          when others =>
             null;

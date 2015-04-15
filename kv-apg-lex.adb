@@ -18,17 +18,17 @@ package body kv.apg.lex is
    Line_Feed : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.LF);
 
    ----------------------------------------------------------------------------
-   function "+"(S : String) return String_Type is
-      WS : constant Wide_Wide_String := To_Wide_Wide_String(S);
-   begin
-      return +WS;
-   end "+";
+--   function "+"(S : String) return String_Type is
+--      WS : constant Wide_Wide_String := To_Wide_Wide_String(S);
+--   begin
+--      return +WS;
+--   end "+";
 
    ----------------------------------------------------------------------------
-   function "+"(S : Wide_Wide_String) return String_Type renames Ada.Strings.Wide_Wide_Unbounded.To_Unbounded_Wide_Wide_String;
+--   function "+"(S : Wide_Wide_String) return String_Type renames Ada.Strings.Wide_Wide_Unbounded.To_Unbounded_Wide_Wide_String;
 
    ----------------------------------------------------------------------------
-   function "+"(U : String_Type) return Wide_Wide_String renames Ada.Strings.Wide_Wide_Unbounded.To_Wide_Wide_String;
+--   function "+"(U : String_Type) return Wide_Wide_String renames Ada.Strings.Wide_Wide_Unbounded.To_Wide_Wide_String;
 
    ----------------------------------------------------------------------------
    function Character_State(Next : Wide_Wide_Character) return Lex_State_Type is

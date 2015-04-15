@@ -41,6 +41,7 @@ private
       record
          Expect     : Expectation_Type := Initialize;
          Directives : Directive_List.List;
+         Name_Token : kv.apg.tokens.Token_Class;
       end record;
 
 end kv.apg.parse;
