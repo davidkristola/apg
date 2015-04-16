@@ -17,11 +17,13 @@ package body kv.apg.directives is
 
    ----------------------------------------------------------------------------
    procedure Initialize
-      (Self : in out Set_Class;
-       Name : in     String_Type) is
+      (Self  : in out Set_Class;
+       Name  : in     String_Type;
+       Value : in     String_Type) is
    begin
-      Put_Line("Set_Class.Initialize Name = '" & To_String(+Name) & "'");
+      Put_Line("Set_Class.Initialize Name = '" & To_String(+Name) & "', value = '" & To_String(+Value) & "'");
       Self.Name := Name;
+      Self.Value := Value;
    end Initialize;
 
    ----------------------------------------------------------------------------

@@ -17,6 +17,7 @@ package kv.apg.tokens is
    function Get_Kind(Self : Token_Class) return Token_Type;
    function Get_Line(Self : Token_Class) return Positive;
    function Get_Data(Self : Token_Class) return Ada.Strings.Wide_Wide_Unbounded.Unbounded_Wide_Wide_String;
+   function Is_Eos(Self : Token_Class) return Boolean;
 
    function "="(L, R : Token_Class) return Boolean;
 

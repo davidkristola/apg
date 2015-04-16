@@ -3,6 +3,8 @@ use Ada.Text_IO;
 with Ada.Strings.Wide_Wide_Unbounded;
 with Ada.Characters.Conversions;
 
+with kv.core.wwstr;
+
 package body kv.apg.tokens is
    procedure yo is
    begin
@@ -10,6 +12,10 @@ package body kv.apg.tokens is
    end yo;
 
    use Ada.Characters.Conversions;
+   use Ada.Strings.Wide_Wide_Unbounded;
+   use kv.core.wwstr;
+
+   Eos : constant String_Type := +";";
 
 
    ----------------------------------------------------------------------------
@@ -42,6 +48,12 @@ package body kv.apg.tokens is
    begin
       return Self.Data;
    end Get_Data;
+
+   ----------------------------------------------------------------------------
+   function Is_Eos(Self : Token_Class) return Boolean is
+   begin
+      return (Self.Kind = A_Symbol) and then (Self.data = +Eos);
+   end Is_Eos;
 
    ----------------------------------------------------------------------------
    function "="(L, R : Token_Class) return Boolean is

@@ -3,6 +3,7 @@ with Ada.Wide_Wide_Characters.Handling;
 with Ada.Characters.Latin_1;
 with Ada.Characters.Conversions;
 with Ada.Strings.Wide_Wide_Unbounded;
+with Ada.Unchecked_Deallocation;
 
 with kv.apg.tokens;
 with kv.apg.lex;
@@ -18,46 +19,84 @@ package body kv.apg.parse is
    use kv.apg.lex;
    use kv.core.wwstr;
 
+   procedure Free is new Ada.Unchecked_Deallocation(Substates.State_Class'CLASS, Substates.State_Pointer_Type);
+
+
+   ----------------------------------------------------------------------------
+   package body Substates is
+
+      -------------------------------------------------------------------------
+      function Status(Self : State_Class) return Status_Type is
+      begin
+         return Self.Status;
+      end Status;
+
+      -------------------------------------------------------------------------
+      procedure Ingest_Token
+         (Self  : in out Set_State_Class;
+          Token : in     kv.apg.tokens.Token_Class) is
+      begin
+         case Self.Expect is
+            when Set_Name =>
+               Self.Name_Token := Token;
+               Self.Expect := Set_Equal;
+            when Set_Equal =>
+               Self.Expect := Set_Value;
+            when Set_Value =>
+               Self.Value_Token := Token;
+               Self.Expect := Set_Eos;
+            when Set_Eos =>
+               Self.Status := Done_Good;
+         end case;
+      end Ingest_Token;
+
+      -------------------------------------------------------------------------
+      function Get_Directive(Self : Set_State_Class) return kv.apg.directives.Directive_Pointer_Type is
+         Set_Directive : access kv.apg.directives.Set_Class;
+      begin
+         Set_Directive := new kv.apg.directives.Set_Class;
+         Set_Directive.Initialize(Name => Self.Name_Token.Get_Data, Value => Self.Value_Token.Get_Data);
+         return kv.apg.directives.Directive_Pointer_Type(Set_Directive);
+      end Get_Directive;
+   end Substates;
+
    ----------------------------------------------------------------------------
    procedure Initialise
       (Self : in out Parser_Class) is
    begin
-      Self.Expect := Directive;
+      Self.Action := Scan;
    end Initialise;
 
    ----------------------------------------------------------------------------
    procedure Ingest_Token
       (Self  : in out Parser_Class;
        Token : in     kv.apg.tokens.Token_Class) is
+      use Substates;
    begin
-      Put_Line("Ingest_Token " & Token_Type'IMAGE(Token.Get_Kind) & " '" & To_String(+Token.Get_Data) & "'");
-      case Self.Expect is
-         when Initialize =>
-            raise Constraint_Error;
-         when Directive =>
+      --Put_Line("Ingest_Token " & Token_Type'IMAGE(Token.Get_Kind) & " '" & To_String(+Token.Get_Data) & "'");
+      case Self.Action is
+         when Scan =>
             if To_String(+Token.Get_Data) = "set" then
-               Self.Expect := Set_Name;
+               Self.Action := Process;
+               Self.Substate := new Substates.Set_State_Class;
             else
-               Self.Expect := Error_Eos;
+               Self.Action := Recover;
             end if;
-         when Set_Name =>
-            Self.Name_Token := Token;
-            Self.Expect := Set_Equal;
-         when Set_Equal =>
-            Self.Expect := Set_Value;
-         when Set_Value =>
-            Self.Expect := Set_Eos;
-         when Set_Eos =>
-            declare
-               Set_Directive : access kv.apg.directives.Set_Class;
-            begin
-               Set_Directive := new kv.apg.directives.Set_Class;
-               Set_Directive.Initialize(Name => Self.Name_Token.Get_Data);
-               Self.Directives.Append(Set_Directive);
-            end;
-            Self.Expect := Directive;
-         when others =>
-            null;
+         when Process =>
+            Self.Substate.Ingest_Token(Token);
+            if Self.Substate.Status in Substates.Done_Status_Type then
+               if Self.Substate.Status = Substates.Done_Good then
+                  Self.Directives.Append(Self.Substate.Get_Directive);
+                  Self.Action := Scan;
+               else
+                  Self.Action := Recover;
+               end if;
+               Free(Self.Substate);
+            end if;
+         when Recover =>
+            if Token.Is_Eos then
+               Self.Action := Scan;
+            end if;
       end case;
    end Ingest_Token;
 
@@ -65,7 +104,7 @@ package body kv.apg.parse is
    function Inbetween_Directives
       (Self : in     Parser_Class) return Boolean is
    begin
-      return Self.Expect = Directive;
+      return Self.Action = Scan;
    end Inbetween_Directives;
 
    ----------------------------------------------------------------------------

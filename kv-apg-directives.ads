@@ -11,8 +11,9 @@ package kv.apg.directives is
 
    type Set_Class is new Directive_Class with private;
    not overriding procedure Initialize
-      (Self : in out Set_Class;
-       Name : in     String_Type);
+      (Self  : in out Set_Class;
+       Name  : in     String_Type;
+       Value : in     String_Type);
    overriding procedure Process(Self : in out Set_Class);
    overriding function Get_Name(Self : in     Set_Class) return String_Type;
 
@@ -20,7 +21,8 @@ private
 
    type Set_Class is new Directive_Class with
       record
-         Name : String_Type;
+         Name  : String_Type;
+         Value : String_Type;
       end record;
 
 
