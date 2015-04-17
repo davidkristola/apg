@@ -3,6 +3,7 @@ with Ada.Characters.Latin_1;
 with Ada.Characters.Conversions;
 with Ada.Strings.Wide_Wide_Unbounded;
 with Ada.Tags; use Ada.Tags;
+with Ada.Strings.UTF_Encoding.Strings;
 
 with kv.apg.lex;
 with kv.apg.tokens;
@@ -142,6 +143,17 @@ package body kv.apg.tests is
    end Run;
 
    ----------------------------------------------------------------------------
+   type Ingest_Block_2_Test is new Lexer_Test_Class with null record;
+   procedure Run(T : in out Ingest_Block_2_Test) is
+      use Ada.Strings.UTF_Encoding;
+      use Ada.Strings.UTF_Encoding.Strings;
+   begin
+      Ingest_All(T, Decode("«test.ads»", UTF_8));
+      T.Assert(T.Lexer.Inbetween_Tokens = True, "Should be after everything");
+      Check_Tokens_Available(T, 1, "block");
+   end Run;
+
+   ----------------------------------------------------------------------------
    type Simple_Token_Test is new kv.core.ut.Test_Class with null record;
    procedure Run(T : in out Simple_Token_Test) is
       Token : kv.apg.tokens.Token_Class;
@@ -234,26 +246,116 @@ package body kv.apg.tests is
          Parser : kv.apg.parse.Parser_Class;
       end record;
 
+   ----------------------------------------------------------------------------
+   procedure Parse_This(T : in out Parser_Test_Class'CLASS; S : in String) is
+      Token : kv.apg.tokens.Token_Class;
+   begin
+      Ingest_All(T, S);
+      while T.Lexer.Tokens_Available > 0 loop
+         Token := T.Lexer.Get_Next_Token;
+         T.Parser.Ingest_Token(Token);
+      end loop;
+   end Parse_This;
+
+   ----------------------------------------------------------------------------
+   procedure Check_States(T : in out Parser_Test_Class'CLASS; Errors : in Natural; Directives : in Natural) is
+   begin
+      T.Assert(T.Parser.Inbetween_Directives, "Should be between directives");
+      T.Assert(T.Parser.Error_Count = Errors, "Error_Count: Should have " & Natural'IMAGE(Errors) & ", got " & Natural'IMAGE(T.Parser.Error_Count));
+      T.Assert(T.Parser.Directive_Count = Directives, "Directive_Count: Should have " & Natural'IMAGE(Directives) & ", got " & Natural'IMAGE(T.Parser.Directive_Count));
+   end Check_States;
+
 
    ----------------------------------------------------------------------------
    type Parse_Set_Test is new Parser_Test_Class with null record;
    procedure Run(T : in out Parse_Set_Test) is
-      Token : kv.apg.tokens.Token_Class;
       Directive : kv.apg.directives.Directive_Pointer_Type;
       use kv.apg.directives;
    begin
-      T.Parser.Initialise;
-      Ingest_All(T, "set lex_spec = ""test.ads"";" & Ada.Characters.Latin_1.LF);
-      for Count in 1..5 loop
-         Token := T.Lexer.Get_Next_Token;
-         T.Parser.Ingest_Token(Token);
-      end loop;
-      T.Assert(T.Parser.Inbetween_Directives, "Should be between directives");
-      T.Assert(T.Parser.Error_Count = 0, "No errors");
-      T.Assert(T.Parser.Directive_Count = 1, "1 directive");
+      T.Parser.Initialise; --TODO: make this OBE
+      Parse_This(T, "set lex_spec = ""test.ads"";" & Ada.Characters.Latin_1.LF);
+      Check_States(T, Errors => 0, Directives => 1);
       Directive := T.Parser.Next_Directive;
       T.Assert(Directive.all'TAG = kv.apg.directives.Set_Class'TAG, "wrong class");
       T.Assert(Directive.Get_Name = +"lex_spec", "wrong name");
+      kv.apg.directives.Free(Directive);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parse_Multi_Line_Set_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Multi_Line_Set_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      use kv.apg.directives;
+      use Ada.Characters.Latin_1;
+   begin
+      Parse_This(T, "set #lex_spec = ""test.ads"";" & LF & "lex_spec #= ""test.ads"";" & LF & "= #""test.ads"";" & LF & """test.ads"";" & LF);
+      Check_States(T, Errors => 0, Directives => 1);
+      Directive := T.Parser.Next_Directive;
+      T.Assert(Directive.all'TAG = kv.apg.directives.Set_Class'TAG, "wrong class");
+      T.Assert(Directive.Get_Name = +"lex_spec", "wrong name");
+      kv.apg.directives.Free(Directive);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parse_Set_Error_1_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Set_Error_1_Test) is
+   begin
+      Parse_This(T, "set lex_spec **** ""test.ads"";" & Ada.Characters.Latin_1.LF);
+      Check_States(T, Errors => 1, Directives => 0);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parse_Set_Error_2_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Set_Error_2_Test) is
+   begin
+      Parse_This(T, "set ""lex_spec"" = ""test.ads"";" & Ada.Characters.Latin_1.LF);
+      Check_States(T, Errors => 1, Directives => 0);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parse_Set_Error_3_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Set_Error_3_Test) is
+   begin
+      Parse_This(T, "set lex_spec = test;" & Ada.Characters.Latin_1.LF);
+      Check_States(T, Errors => 1, Directives => 0);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parse_Block_Set_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Block_Set_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      use kv.apg.directives;
+      use Ada.Strings.UTF_Encoding;
+      use Ada.Strings.UTF_Encoding.Strings;
+   begin
+      T.Parser.Initialise; --TODO: make this OBE
+      Parse_This(T, Decode("set lex_spec = «test.ads»;" & Ada.Characters.Latin_1.LF, UTF_8));
+      Check_States(T, Errors => 0, Directives => 1);
+      Directive := T.Parser.Next_Directive;
+      T.Assert(Directive.all'TAG = kv.apg.directives.Set_Class'TAG, "wrong class");
+      T.Assert(Directive.Get_Name = +"lex_spec", "wrong name");
+      kv.apg.directives.Free(Directive);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parse_Set_Error_4_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Set_Error_4_Test) is
+   begin
+      Parse_This(T, "set lex_spec = ""test"" foo ;" & Ada.Characters.Latin_1.LF);
+      Check_States(T, Errors => 1, Directives => 0);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parse_Basic_Token_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Basic_Token_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      use kv.apg.directives;
+   begin
+      Parse_This(T, "token foo = ""foo"";" & Ada.Characters.Latin_1.LF);
+      Check_States(T, Errors => 0, Directives => 1);
+      Directive := T.Parser.Next_Directive;
+      T.Assert(Directive.all'TAG = kv.apg.directives.Token_Class'TAG, "wrong class");
+      T.Assert(Directive.Get_Name = +"foo", "wrong name");
       kv.apg.directives.Free(Directive);
    end Run;
 
@@ -270,10 +372,22 @@ package body kv.apg.tests is
       suite.register(new Ingest_String_Test, "Ingest_String_Test");
       suite.register(new Ingest_A_Bunch_Of_Stuff_1_Test, "Ingest_A_Bunch_Of_Stuff_1_Test");
       suite.register(new Ingest_Block_Test, "Ingest_Block_Test");
+      suite.register(new Ingest_Block_2_Test, "Ingest_Block_2_Test");
       suite.register(new Simple_Token_Test, "Simple_Token_Test");
       suite.register(new Lex_Tokens_Test, "Lex_Tokens_Test");
       suite.register(new Multi_Line_Test, "Multi_Line_Test");
       suite.register(new Parse_Set_Test, "Parse_Set_Test");
+      suite.register(new Parse_Multi_Line_Set_Test, "Parse_Multi_Line_Set_Test");
+      suite.register(new Parse_Set_Error_1_Test, "Parse_Set_Error_1_Test");
+      suite.register(new Parse_Set_Error_2_Test, "Parse_Set_Error_2_Test");
+      suite.register(new Parse_Set_Error_3_Test, "Parse_Set_Error_3_Test");
+      suite.register(new Parse_Block_Set_Test, "Parse_Block_Set_Test");
+      suite.register(new Parse_Set_Error_4_Test, "Parse_Set_Error_4_Test");
+      suite.register(new Parse_Basic_Token_Test, "Parse_Basic_Token_Test");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
    end register;
 
 end kv.apg.tests;

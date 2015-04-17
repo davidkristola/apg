@@ -70,8 +70,8 @@ private
       record
          Action     : Action_Type := Scan;
          Directives : Directive_List.List;
-         Name_Token : kv.apg.tokens.Token_Class;
          Substate   : Substates.State_Pointer_Type;
+         Errors     : Natural := 0;
       end record;
 
 end kv.apg.parse;

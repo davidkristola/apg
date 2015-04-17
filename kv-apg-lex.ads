@@ -7,12 +7,6 @@ with kv.core.wwstr; use kv.core.wwstr;
 
 package kv.apg.lex is
 
---   subtype String_Type is Ada.Strings.Wide_Wide_Unbounded.Unbounded_Wide_Wide_String;
---
---   function "+"(S : String) return String_Type;
---   function "+"(S : Wide_Wide_String) return String_Type;
---   function "+"(U : String_Type) return Wide_Wide_String;
-
    type Lexer_Class is tagged private;
 
    procedure Ingest_Character

@@ -17,6 +17,13 @@ package kv.apg.directives is
    overriding procedure Process(Self : in out Set_Class);
    overriding function Get_Name(Self : in     Set_Class) return String_Type;
 
+   type Token_Class is new Directive_Class with private;
+   not overriding procedure Initialize
+      (Self  : in out Token_Class;
+       Name  : in     String_Type);
+   overriding procedure Process(Self : in out Token_Class);
+   overriding function Get_Name(Self : in     Token_Class) return String_Type;
+
 private
 
    type Set_Class is new Directive_Class with
@@ -25,5 +32,9 @@ private
          Value : String_Type;
       end record;
 
+   type Token_Class is new Directive_Class with
+      record
+         Name : String_Type;
+      end record;
 
 end kv.apg.directives;

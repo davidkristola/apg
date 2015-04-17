@@ -35,18 +35,35 @@ package body kv.apg.parse is
       procedure Ingest_Token
          (Self  : in out Set_State_Class;
           Token : in     kv.apg.tokens.Token_Class) is
+         use kv.apg.tokens;
       begin
          case Self.Expect is
             when Set_Name =>
-               Self.Name_Token := Token;
-               Self.Expect := Set_Equal;
+               if Token.Get_Kind = A_Word then
+                  Self.Name_Token := Token;
+                  Self.Expect := Set_Equal;
+               else
+                  Self.Status := Done_Error;
+               end if;
             when Set_Equal =>
-               Self.Expect := Set_Value;
+               if Token.Get_Kind = A_Symbol and then To_String(+Token.Get_Data) = "=" then
+                  Self.Expect := Set_Value;
+               else
+                  Self.Status := Done_Error;
+               end if;
             when Set_Value =>
-               Self.Value_Token := Token;
-               Self.Expect := Set_Eos;
+               if Token.Get_Kind = A_String or else Token.Get_Kind = A_Block then
+                  Self.Value_Token := Token;
+                  Self.Expect := Set_Eos;
+               else
+                  Self.Status := Done_Error;
+               end if;
             when Set_Eos =>
-               Self.Status := Done_Good;
+               if Token.Is_Eos then
+                  Self.Status := Done_Good;
+               else
+                  Self.Status := Done_Error;
+               end if;
          end case;
       end Ingest_Token;
 
@@ -72,7 +89,11 @@ package body kv.apg.parse is
       (Self  : in out Parser_Class;
        Token : in     kv.apg.tokens.Token_Class) is
       use Substates;
+      use kv.apg.tokens;
    begin
+      if Token.Get_Kind = A_Comment then
+         return; -- Skip comments
+      end if;
       --Put_Line("Ingest_Token " & Token_Type'IMAGE(Token.Get_Kind) & " '" & To_String(+Token.Get_Data) & "'");
       case Self.Action is
          when Scan =>
@@ -89,6 +110,7 @@ package body kv.apg.parse is
                   Self.Directives.Append(Self.Substate.Get_Directive);
                   Self.Action := Scan;
                else
+                  Self.Errors := Self.Errors + 1;
                   Self.Action := Recover;
                end if;
                Free(Self.Substate);
@@ -104,14 +126,14 @@ package body kv.apg.parse is
    function Inbetween_Directives
       (Self : in     Parser_Class) return Boolean is
    begin
-      return Self.Action = Scan;
+      return Self.Action /= Process;
    end Inbetween_Directives;
 
    ----------------------------------------------------------------------------
    function Error_Count
       (Self : in     Parser_Class) return Natural is
    begin
-      return 0;
+      return Self.Errors;
    end Error_Count;
 
    ----------------------------------------------------------------------------
