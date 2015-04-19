@@ -50,6 +50,12 @@ package body kv.apg.tokens is
    end Get_Data;
 
    ----------------------------------------------------------------------------
+   function Get_Data_As_String(Self : Token_Class) return String is
+   begin
+      return To_String(+Self.Data); -- This could lose information
+   end Get_Data_As_String;
+
+   ----------------------------------------------------------------------------
    function Is_Eos(Self : Token_Class) return Boolean is
    begin
       return (Self.Kind = A_Symbol) and then (Self.data = +Eos);

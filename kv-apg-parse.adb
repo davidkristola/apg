@@ -9,6 +9,9 @@ with kv.apg.tokens;
 with kv.apg.lex;
 with kv.core.wwstr;
 
+with kv.apg.parse.set;
+with kv.apg.parse.token;
+
 package body kv.apg.parse is
 
    use Ada.Text_IO;
@@ -19,63 +22,14 @@ package body kv.apg.parse is
    use kv.apg.lex;
    use kv.core.wwstr;
 
-   procedure Free is new Ada.Unchecked_Deallocation(Substates.State_Class'CLASS, Substates.State_Pointer_Type);
+   procedure Free is new Ada.Unchecked_Deallocation(State_Class'CLASS, State_Pointer_Type);
 
 
-   ----------------------------------------------------------------------------
-   package body Substates is
-
-      -------------------------------------------------------------------------
-      function Status(Self : State_Class) return Status_Type is
-      begin
-         return Self.Status;
-      end Status;
-
-      -------------------------------------------------------------------------
-      procedure Ingest_Token
-         (Self  : in out Set_State_Class;
-          Token : in     kv.apg.tokens.Token_Class) is
-         use kv.apg.tokens;
-      begin
-         case Self.Expect is
-            when Set_Name =>
-               if Token.Get_Kind = A_Word then
-                  Self.Name_Token := Token;
-                  Self.Expect := Set_Equal;
-               else
-                  Self.Status := Done_Error;
-               end if;
-            when Set_Equal =>
-               if Token.Get_Kind = A_Symbol and then To_String(+Token.Get_Data) = "=" then
-                  Self.Expect := Set_Value;
-               else
-                  Self.Status := Done_Error;
-               end if;
-            when Set_Value =>
-               if Token.Get_Kind = A_String or else Token.Get_Kind = A_Block then
-                  Self.Value_Token := Token;
-                  Self.Expect := Set_Eos;
-               else
-                  Self.Status := Done_Error;
-               end if;
-            when Set_Eos =>
-               if Token.Is_Eos then
-                  Self.Status := Done_Good;
-               else
-                  Self.Status := Done_Error;
-               end if;
-         end case;
-      end Ingest_Token;
-
-      -------------------------------------------------------------------------
-      function Get_Directive(Self : Set_State_Class) return kv.apg.directives.Directive_Pointer_Type is
-         Set_Directive : access kv.apg.directives.Set_Class;
-      begin
-         Set_Directive := new kv.apg.directives.Set_Class;
-         Set_Directive.Initialize(Name => Self.Name_Token.Get_Data, Value => Self.Value_Token.Get_Data);
-         return kv.apg.directives.Directive_Pointer_Type(Set_Directive);
-      end Get_Directive;
-   end Substates;
+   -------------------------------------------------------------------------
+   function Status(Self : State_Class) return Status_Type is
+   begin
+      return Self.Status;
+   end Status;
 
    ----------------------------------------------------------------------------
    procedure Initialise
@@ -88,7 +42,6 @@ package body kv.apg.parse is
    procedure Ingest_Token
       (Self  : in out Parser_Class;
        Token : in     kv.apg.tokens.Token_Class) is
-      use Substates;
       use kv.apg.tokens;
    begin
       if Token.Get_Kind = A_Comment then
@@ -97,16 +50,19 @@ package body kv.apg.parse is
       --Put_Line("Ingest_Token " & Token_Type'IMAGE(Token.Get_Kind) & " '" & To_String(+Token.Get_Data) & "'");
       case Self.Action is
          when Scan =>
-            if To_String(+Token.Get_Data) = "set" then
+            if Token.Get_Data_As_String = "set" then
                Self.Action := Process;
-               Self.Substate := new Substates.Set_State_Class;
+               Self.Substate := new kv.apg.parse.set.Set_State_Class;
+            elsif Token.Get_Data_As_String = "token" then
+               Self.Action := Process;
+               Self.Substate := new kv.apg.parse.token.Token_State_Class;
             else
                Self.Action := Recover;
             end if;
          when Process =>
             Self.Substate.Ingest_Token(Token);
-            if Self.Substate.Status in Substates.Done_Status_Type then
-               if Self.Substate.Status = Substates.Done_Good then
+            if Self.Substate.Status in Done_Status_Type then
+               if Self.Substate.Status = Done_Good then
                   Self.Directives.Append(Self.Substate.Get_Directive);
                   Self.Action := Scan;
                else

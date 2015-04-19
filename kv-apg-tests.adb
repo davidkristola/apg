@@ -9,6 +9,7 @@ with kv.apg.lex;
 with kv.apg.tokens;
 with kv.apg.parse;
 with kv.apg.directives;
+with kv.apg.regex;
 with kv.core.wwstr;
 
 package body kv.apg.tests is
@@ -163,6 +164,7 @@ package body kv.apg.tests is
       T.Assert(Token.Get_Line = 1, "Line should be 1, is " & Positive'IMAGE(Token.Get_Line));
       T.Assert(Token.Get_Kind = A_Word, "Kind should be A_Word, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
       T.Assert(Token.Get_Data = To_String_Type(Word), "Data is wrong");
+      T.Assert(Token.Get_Data_As_String = Word, "Data as string is wrong");
    end Run;
 
    ----------------------------------------------------------------------------
@@ -334,6 +336,7 @@ package body kv.apg.tests is
       Directive := T.Parser.Next_Directive;
       T.Assert(Directive.all'TAG = kv.apg.directives.Set_Class'TAG, "wrong class");
       T.Assert(Directive.Get_Name = +"lex_spec", "wrong name");
+      T.Assert(Set_Class'CLASS(Directive.all).Get_Value = +"test.ads", "wrong value");
       kv.apg.directives.Free(Directive);
    end Run;
 
@@ -349,13 +352,34 @@ package body kv.apg.tests is
    type Parse_Basic_Token_Test is new Parser_Test_Class with null record;
    procedure Run(T : in out Parse_Basic_Token_Test) is
       Directive : kv.apg.directives.Directive_Pointer_Type;
+      Tree_Image : String_Type;
       use kv.apg.directives;
+      use kv.apg.regex; -- =
    begin
-      Parse_This(T, "token foo = ""foo"";" & Ada.Characters.Latin_1.LF);
+      Parse_This(T, "token match = ""foo"";" & Ada.Characters.Latin_1.LF);
       Check_States(T, Errors => 0, Directives => 1);
       Directive := T.Parser.Next_Directive;
       T.Assert(Directive.all'TAG = kv.apg.directives.Token_Class'TAG, "wrong class");
-      T.Assert(Directive.Get_Name = +"foo", "wrong name");
+      T.Assert(Directive.Get_Name = +"match", "wrong name");
+      T.Assert(kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree /= null, "tree shouldn't be null");
+      Tree_Image := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Image_Tree;
+      T.Assert(Tree_Image = +('"' & "foo" & '"'), "wrong regex, got " & To_String(+Tree_Image));
+      kv.apg.directives.Free(Directive);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parse_Wild_Token_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Wild_Token_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      Tree_Image : String_Type;
+      use kv.apg.directives;
+      use kv.apg.regex; -- =
+   begin
+      Parse_This(T, "token any = . ;" & Ada.Characters.Latin_1.LF);
+      Check_States(T, Errors => 0, Directives => 1);
+      Directive := T.Parser.Next_Directive;
+      Tree_Image := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Image_Tree;
+      T.Assert(Tree_Image = +("."), "wrong regex, got " & To_String(+Tree_Image));
       kv.apg.directives.Free(Directive);
    end Run;
 
@@ -384,7 +408,7 @@ package body kv.apg.tests is
       suite.register(new Parse_Block_Set_Test, "Parse_Block_Set_Test");
       suite.register(new Parse_Set_Error_4_Test, "Parse_Set_Error_4_Test");
       suite.register(new Parse_Basic_Token_Test, "Parse_Basic_Token_Test");
---      suite.register(new XXX, "XXX");
+      suite.register(new Parse_Wild_Token_Test, "Parse_Wild_Token_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");

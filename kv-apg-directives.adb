@@ -16,6 +16,12 @@ package body kv.apg.directives is
    end Free;
 
    ----------------------------------------------------------------------------
+   function Get_Name(Self : in     Directive_Class) return String_Type is
+   begin
+      return Self.Name;
+   end Get_Name;
+
+   ----------------------------------------------------------------------------
    procedure Initialize
       (Self  : in out Set_Class;
        Name  : in     String_Type;
@@ -33,19 +39,21 @@ package body kv.apg.directives is
    end Process;
 
    ----------------------------------------------------------------------------
-   function Get_Name(Self : in     Set_Class) return String_Type is
+   function Get_Value(Self : in     Set_Class) return String_Type is
    begin
-      return Self.Name;
-   end Get_Name;
+      return Self.Value;
+   end Get_Value;
 
 
    ----------------------------------------------------------------------------
    procedure Initialize
-      (Self  : in out Token_Class;
-       Name  : in     String_Type) is
+      (Self : in out Token_Class;
+       Name : in     String_Type;
+       Tree : in     kv.apg.regex.Node_Pointer_Type) is
    begin
       Put_Line("Token_Class.Initialize Name = '" & To_String(+Name) & "'");
       Self.Name := Name;
+      Self.Tree := Tree;
    end Initialize;
 
    ----------------------------------------------------------------------------
@@ -55,9 +63,9 @@ package body kv.apg.directives is
    end Process;
 
    ----------------------------------------------------------------------------
-   function Get_Name(Self : in     Token_Class) return String_Type is
+   function Get_Tree(Self : in     Token_Class) return kv.apg.regex.Node_Pointer_Type is
    begin
-      return Self.Name;
-   end Get_Name;
+      return Self.Tree;
+   end Get_Tree;
 
 end kv.apg.directives;
