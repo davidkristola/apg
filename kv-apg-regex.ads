@@ -34,4 +34,10 @@ package kv.apg.regex is
    overriding function Image_This(Self : in out Match_Any_Node_Class) return String_Type;
 
 
+   type Or_Node_Class is new Node_Class with null record;
+   not overriding procedure Initialize(Self : in out Or_Node_Class);
+   overriding procedure Process_This(Self : in out Or_Node_Class);
+   overriding function Image_This(Self : in out Or_Node_Class) return String_Type;
+
+
 end kv.apg.regex;

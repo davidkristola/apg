@@ -384,6 +384,23 @@ package body kv.apg.tests is
    end Run;
 
    ----------------------------------------------------------------------------
+   type Parse_Or_Token_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Or_Token_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      Tree_Image : String_Type;
+      use kv.apg.directives;
+      use kv.apg.regex; -- =
+   begin
+      Parse_This(T, "token Op_Mod = ""%""|""mod"" ;" & Ada.Characters.Latin_1.LF);
+      Check_States(T, Errors => 0, Directives => 1);
+      Directive := T.Parser.Next_Directive;
+      Tree_Image := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Image_Tree;
+      T.Assert(Tree_Image = +("""%"" | ""mod"""), "wrong regex, got <" & To_String(+Tree_Image) & ">");
+      kv.apg.directives.Free(Directive);
+   end Run;
+
+
+   ----------------------------------------------------------------------------
    procedure register(suite : in kv.core.ut.Suite_Pointer_Type) is
    begin
       suite.register(new Initial_State_Test, "Initial_State_Test");
@@ -409,6 +426,12 @@ package body kv.apg.tests is
       suite.register(new Parse_Set_Error_4_Test, "Parse_Set_Error_4_Test");
       suite.register(new Parse_Basic_Token_Test, "Parse_Basic_Token_Test");
       suite.register(new Parse_Wild_Token_Test, "Parse_Wild_Token_Test");
+      suite.register(new Parse_Or_Token_Test, "Parse_Or_Token_Test");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");

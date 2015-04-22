@@ -26,6 +26,7 @@ package body kv.apg.parse.token is
       use kv.apg.tokens;
       Match_Node : access kv.apg.regex.Match_Node_Class;
       Wild_Node : access kv.apg.regex.Match_Any_Node_Class;
+      Or_Node : access kv.apg.regex.Or_Node_Class;
    begin
       case Self.Expect is
          when Name =>
@@ -57,6 +58,12 @@ package body kv.apg.parse.token is
                   Wild_Node.Initialize;
                   Wild_Node.Set_Left(Self.Tree);
                   Self.Tree := kv.apg.regex.Node_Pointer_Type(Wild_Node);
+                  Self.Expect := Value_Or_Eos;
+               elsif Token.Get_Data_As_String = "|" then
+                  Or_Node := new kv.apg.regex.Or_Node_Class;
+                  Or_Node.Initialize;
+                  Or_Node.Set_Left(Self.Tree);
+                  Self.Tree := kv.apg.regex.Node_Pointer_Type(Or_Node);
                   Self.Expect := Value_Or_Eos;
                else
                   Self.Status := Done_Error; --TODO

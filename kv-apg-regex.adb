@@ -92,4 +92,23 @@ package body kv.apg.regex is
       return To_String_Type(".");
    end Image_This;
 
+
+   -------------------------------------------------------------------------
+   not overriding procedure Initialize(Self : in out Or_Node_Class) is
+   begin
+      null;
+   end Initialize;
+
+   -------------------------------------------------------------------------
+   procedure Process_This(Self : in out Or_Node_Class) is
+   begin
+      Put_Line("Or_Node_Class.Process_This");
+   end Process_This;
+
+   -------------------------------------------------------------------------
+   overriding function Image_This(Self : in out Or_Node_Class) return String_Type is
+   begin
+      return To_String_Type("|");
+   end Image_This;
+
 end kv.apg.regex;
