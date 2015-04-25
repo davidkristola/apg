@@ -395,7 +395,7 @@ package body kv.apg.tests is
       Check_States(T, Errors => 0, Directives => 1);
       Directive := T.Parser.Next_Directive;
       Tree_Image := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Image_Tree;
-      T.Assert(Tree_Image = +("""%"" | ""mod"""), "wrong regex, got <" & To_String(+Tree_Image) & ">");
+      T.Assert(Tree_Image = +("""%""|""mod"""), "wrong regex, got <" & To_String(+Tree_Image) & ">");
       kv.apg.directives.Free(Directive);
    end Run;
 

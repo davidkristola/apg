@@ -17,39 +17,28 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    procedure Process_Tree(Self : in out Node_Class) is
    begin
-      if Self.Left /= null then
-         Self.Left.Process_Tree;
+      if Self.Previous /= null then
+         Self.Previous.Process_Tree;
       end if;
       Node_Class'CLASS(Self).Process_This;
-      if Self.Right /= null then
-         Self.Right.Process_Tree;
-      end if;
    end Process_Tree;
 
    -------------------------------------------------------------------------
-   procedure Set_Left(Self : in out Node_Class; Node : in Node_Pointer_Type) is
+   procedure Set_Previous(Self : in out Node_Class; Node : in Node_Pointer_Type) is
    begin
-      Self.Left := Node;
-   end Set_Left;
+      Self.Previous := Node;
+   end Set_Previous;
 
-   -------------------------------------------------------------------------
-   procedure Set_Right(Self : in out Node_Class; Node : in Node_Pointer_Type) is
-   begin
-      Self.Right := Node;
-   end Set_Right;
 
 
    -------------------------------------------------------------------------
    function Image_Tree(Self : in out Node_Class) return String_Type is
       Answer : String_Type := To_String_Type("");
    begin
-      if Self.Left /= null then
-         Answer := Self.Left.Image_Tree & To_String_Type(" ");
+      if Self.Previous /= null then
+         Answer := Self.Previous.Image_Tree & To_String_Type(" ");
       end if;
       Answer := Answer & Node_Class'CLASS(Self).Image_This;
-      if Self.Right /= null then
-         Answer := Answer & To_String_Type(" ") & Self.Right.Image_Tree;
-      end if;
       return Answer;
    end Image_Tree;
 
@@ -71,6 +60,18 @@ package body kv.apg.regex is
    begin
       return Quotation & Self.Value & Quotation;
    end Image_This;
+
+
+   -------------------------------------------------------------------------
+   procedure Detach
+      (Tree : in out Node_Pointer_Type;
+       Last :    out Node_Pointer_Type) is
+   begin
+      Last := Tree;
+      Tree := Tree.Previous;
+      Last.Previous := null;
+   end Detach;
+
 
 
 
@@ -100,6 +101,18 @@ package body kv.apg.regex is
    end Initialize;
 
    -------------------------------------------------------------------------
+   not overriding procedure Set_A(Self : in out Or_Node_Class; A : in     Node_Pointer_Type) is
+   begin
+      Self.A := A;
+   end Set_A;
+
+   -------------------------------------------------------------------------
+   not overriding procedure Set_B(Self : in out Or_Node_Class; B : in     Node_Pointer_Type) is
+   begin
+      Self.B := B;
+   end Set_B;
+
+   -------------------------------------------------------------------------
    procedure Process_This(Self : in out Or_Node_Class) is
    begin
       Put_Line("Or_Node_Class.Process_This");
@@ -108,7 +121,8 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    overriding function Image_This(Self : in out Or_Node_Class) return String_Type is
    begin
-      return To_String_Type("|");
+--      return To_String_Type("|");
+      return Self.A.Image_This & To_String_Type("|") & Self.B.Image_This;
    end Image_This;
 
 end kv.apg.regex;
