@@ -26,9 +26,9 @@ package kv.apg.directives is
    not overriding procedure Initialize
       (Self : in out Token_Class;
        Name : in     String_Type;
-       Tree : in     kv.apg.regex.Node_Pointer_Type);
+       Tree : in     kv.apg.regex.Regular_Expression_Tree_Type);
    overriding procedure Process(Self : in out Token_Class);
-   not overriding function Get_Tree(Self : in     Token_Class) return kv.apg.regex.Node_Pointer_Type;
+   not overriding function Get_Tree(Self : in     Token_Class) return kv.apg.regex.Regular_Expression_Tree_Type;
 
 private
 
@@ -39,7 +39,7 @@ private
 
    type Token_Class is new Directive_Class with
       record
-         Tree : kv.apg.regex.Node_Pointer_Type;
+         Tree : kv.apg.regex.Regular_Expression_Tree_Type;
       end record;
 
 end kv.apg.directives;

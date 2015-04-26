@@ -29,6 +29,11 @@ package body kv.apg.regex is
       Self.Previous := Node;
    end Set_Previous;
 
+   -------------------------------------------------------------------------
+   function Get_Incomplete(Self : in out Node_Class) return Node_Pointer_Type is
+   begin
+      return null; -- Default behavior
+   end Get_Incomplete;
 
 
    -------------------------------------------------------------------------
@@ -56,6 +61,20 @@ package body kv.apg.regex is
    end Process_This;
 
    -------------------------------------------------------------------------
+   overriding function Is_Complete(Self : Match_Node_Class) return Boolean is
+   begin
+      return True; -- Match nodes are always complete
+   end Is_Complete;
+
+
+   -------------------------------------------------------------------------
+   procedure Complete_With(Self : in out Node_Class; Node : in Node_Pointer_Type) is
+   begin
+      -- Default behavior
+      raise Inappropriate_Action_Error;
+   end Complete_With;
+
+   -------------------------------------------------------------------------
    overriding function Image_This(Self : in out Match_Node_Class) return String_Type is
    begin
       return Quotation & Self.Value & Quotation;
@@ -73,7 +92,67 @@ package body kv.apg.regex is
    end Detach;
 
 
+   -------------------------------------------------------------------------
+   procedure Detach
+      (Tree : in out Regular_Expression_Tree_Type;
+       Last :    out Node_Pointer_Type) is
+   begin
+      Last := Tree.Root;
+      Tree.Root := Last.Previous;
+      Last.Previous := null;
+   end Detach;
 
+   -------------------------------------------------------------------------
+   procedure Append
+      (Tree : in out Regular_Expression_Tree_Type;
+       Last : in     Node_Pointer_Type) is
+   begin
+      Last.Previous := Tree.Root;
+      Tree.Root := Last;
+   end Append;
+
+   -------------------------------------------------------------------------
+   function Get_Root
+      (Tree : in     Regular_Expression_Tree_Type) return Node_Pointer_Type is
+   begin
+      return Tree.Root;
+   end Get_Root;
+
+   -------------------------------------------------------------------------
+   function Is_Empty
+      (Tree : in     Regular_Expression_Tree_Type) return Boolean is
+   begin
+      return Tree.Root = null;
+   end Is_Empty;
+
+   -------------------------------------------------------------------------
+   function Is_Complete
+      (Tree : Regular_Expression_Tree_Type) return Boolean is
+   begin
+      return Tree.Root.Is_Complete;
+   end Is_Complete;
+
+
+   -------------------------------------------------------------------------
+   function Get_Incomplete
+      (Tree : in     Regular_Expression_Tree_Type) return Node_Pointer_Type is
+      Current : Node_Pointer_Type := Tree.Root;
+      Next : Node_Pointer_Type;
+   begin
+      while Current /= null loop
+         Next := Current.Get_Incomplete;
+         if (Next = null) or else Next.Is_Complete then
+            return Current;
+         end if;
+      end loop;
+      return null;
+   end Get_Incomplete;
+
+   -------------------------------------------------------------------------
+   function Image_Tree(Tree : in     Regular_Expression_Tree_Type) return String_Type is
+   begin
+      return Tree.Root.Image_Tree;
+   end Image_Tree;
 
    -------------------------------------------------------------------------
    not overriding procedure Initialize(Self : in out Match_Any_Node_Class) is
@@ -86,6 +165,12 @@ package body kv.apg.regex is
    begin
       Put_Line("Match_Any_Node_Class.Process_This");
    end Process_This;
+
+   -------------------------------------------------------------------------
+   overriding function Is_Complete(Self : Match_Any_Node_Class) return Boolean is
+   begin
+      return True; -- Match Any nodes are always complete
+   end Is_Complete;
 
    -------------------------------------------------------------------------
    overriding function Image_This(Self : in out Match_Any_Node_Class) return String_Type is
@@ -117,6 +202,29 @@ package body kv.apg.regex is
    begin
       Put_Line("Or_Node_Class.Process_This");
    end Process_This;
+
+   -------------------------------------------------------------------------
+   overriding function Is_Complete(Self : Or_Node_Class) return Boolean is
+   begin
+      return (Self.A /= null) and (Self.B /= null); -- Both A and B must be set
+   end Is_Complete;
+
+   -------------------------------------------------------------------------
+   overriding function Get_Incomplete(Self : in out Or_Node_Class) return Node_Pointer_Type is
+   begin
+      if Self.B = null then
+         return Self'UNCHECKED_ACCESS; --TODO fix this
+      elsif (not Self.B.Is_Complete) then
+         return Self.B;
+      end if;
+      return null;
+   end Get_Incomplete;
+
+   -------------------------------------------------------------------------
+   overriding procedure Complete_With(Self : in out Or_Node_Class; Node : in Node_Pointer_Type) is
+   begin
+      Self.B := Node;
+   end Complete_With;
 
    -------------------------------------------------------------------------
    overriding function Image_This(Self : in out Or_Node_Class) return String_Type is

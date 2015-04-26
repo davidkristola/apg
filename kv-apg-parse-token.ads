@@ -10,7 +10,7 @@ private package kv.apg.parse.token is
       record
          Expect     : Expectation_Type := Name;
          Name_Token : kv.apg.tokens.Token_Class;
-         Tree       : kv.apg.regex.Node_Pointer_Type;
+         Tree       : kv.apg.regex.Regular_Expression_Tree_Type;
       end record;
    overriding procedure Ingest_Token
       (Self  : in out Token_State_Class;

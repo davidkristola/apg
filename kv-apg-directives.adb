@@ -49,7 +49,7 @@ package body kv.apg.directives is
    procedure Initialize
       (Self : in out Token_Class;
        Name : in     String_Type;
-       Tree : in     kv.apg.regex.Node_Pointer_Type) is
+       Tree : in     kv.apg.regex.Regular_Expression_Tree_Type) is
    begin
       Put_Line("Token_Class.Initialize Name = '" & To_String(+Name) & "'");
       Self.Name := Name;
@@ -63,7 +63,7 @@ package body kv.apg.directives is
    end Process;
 
    ----------------------------------------------------------------------------
-   function Get_Tree(Self : in     Token_Class) return kv.apg.regex.Node_Pointer_Type is
+   function Get_Tree(Self : in     Token_Class) return kv.apg.regex.Regular_Expression_Tree_Type is
    begin
       return Self.Tree;
    end Get_Tree;

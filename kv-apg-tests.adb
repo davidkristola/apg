@@ -361,7 +361,7 @@ package body kv.apg.tests is
       Directive := T.Parser.Next_Directive;
       T.Assert(Directive.all'TAG = kv.apg.directives.Token_Class'TAG, "wrong class");
       T.Assert(Directive.Get_Name = +"match", "wrong name");
-      T.Assert(kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree /= null, "tree shouldn't be null");
+      T.Assert(not kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Is_Empty, "tree shouldn't be null");
       Tree_Image := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Image_Tree;
       T.Assert(Tree_Image = +('"' & "foo" & '"'), "wrong regex, got " & To_String(+Tree_Image));
       kv.apg.directives.Free(Directive);
