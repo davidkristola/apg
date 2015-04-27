@@ -16,6 +16,7 @@ package body kv.apg.parse.token is
    use Ada.Strings.Wide_Wide_Unbounded;
    use Ada.Characters.Conversions;
    use kv.apg.tokens;
+   use kv.apg.regex;
    use kv.apg.lex;
    use kv.core.wwstr;
 
@@ -59,27 +60,6 @@ package body kv.apg.parse.token is
    end Set_Expect;
 
    -------------------------------------------------------------------------
-   function Allocate_Node
-      (Token : in     kv.apg.tokens.Token_Class) return kv.apg.regex.Node_Pointer_Type is
-      Match_Node : kv.apg.regex.Match_Node_Pointer_Type;
-      Wild_Node : kv.apg.regex.Match_Any_Node_Pointer_Type;
-   begin
-      --!@#$ horrible assumption!
-      if Token.Get_Kind = A_String or else Token.Get_Kind = A_Block then
-         Match_Node := new kv.apg.regex.Match_Node_Class;
-         Match_Node.Initialize(Token.Get_Data);
-         return kv.apg.regex.Node_Pointer_Type(Match_Node);
-      elsif Token.Get_Kind = A_Symbol then
-         if Token.Get_Data_As_String = "." then
-            Wild_Node := new kv.apg.regex.Match_Any_Node_Class;
-            Wild_Node.Initialize;
-            return kv.apg.regex.Node_Pointer_Type(Wild_Node);
-         end if;
-      end if;
-      return null;
-   end Allocate_Node;
-
-   -------------------------------------------------------------------------
    procedure Ingest_Constant
       (Self  : in out Token_State_Class;
        Token : in     kv.apg.tokens.Token_Class) is
@@ -108,25 +88,66 @@ package body kv.apg.parse.token is
       Or_Node : kv.apg.regex.Or_Node_Pointer_Type;
       A : kv.apg.regex.Node_Pointer_Type;
    begin
+--      Put_Line("Starting or token processing");
       Or_Node := new kv.apg.regex.Or_Node_Class;
       Or_Node.Initialize;
-      Self.Tree.Detach(A);
+      Self.Tree.Detach(A); --!@#$ this isn't right. need to detach node from the working site, not the top level list
+--      Put_Line("A is " & (if (A = null) then "null" else "good"));
       Or_Node.Set_A(A);
       Self.Tree.Append(kv.apg.regex.Node_Pointer_Type(Or_Node));
 
       Set_Expect(Self);
+--      Put_Line("Next expect state is " & Expectation_Type'IMAGE(Self.Expect));
    end Ingest_Or;
+
+   -------------------------------------------------------------------------
+   procedure Ingest_Star
+      (Self  : in out Token_State_Class;
+       Token : in     kv.apg.tokens.Token_Class) is
+      Star_Node : kv.apg.regex.Star_Node_Pointer_Type;
+      A : kv.apg.regex.Node_Pointer_Type;
+   begin
+--      Put_Line("Starting star token processing");
+      Star_Node := new kv.apg.regex.Star_Node_Class;
+      Star_Node.Initialize;
+      Self.Tree.Detach(A); --!@#$ this isn't right. need to detach node from the working site, not the top level list
+--      Put_Line("A is " & (if (A = null) then "null" else "good"));
+      Star_Node.Set_A(A);
+      Self.Tree.Append(kv.apg.regex.Node_Pointer_Type(Star_Node));
+
+      Set_Expect(Self);
+--      Put_Line("Next expect state is " & Expectation_Type'IMAGE(Self.Expect));
+   end Ingest_Star;
+
+   -------------------------------------------------------------------------
+   procedure Ingest_Subsequence
+      (Self  : in out Token_State_Class;
+       Token : in     kv.apg.tokens.Token_Class) is
+      Sub_Node : Subsequence_Node_Pointer_Type;
+   begin
+--      Put_Line("Starting Subsequence token processing");
+      Sub_Node := new kv.apg.regex.Subsequence_Node_Class;
+      Sub_Node.Initialize;
+      Self.Tree.Append(kv.apg.regex.Node_Pointer_Type(Sub_Node));
+
+      Set_Expect(Self);
+--      Put_Line("Next expect state is " & Expectation_Type'IMAGE(Self.Expect));
+   end Ingest_Subsequence;
 
    -------------------------------------------------------------------------
    procedure Ingest_Symbol
       (Self  : in out Token_State_Class;
        Token : in     kv.apg.tokens.Token_Class) with Pre => (Token.Get_Kind = A_Symbol) is
    begin
-      Put_Line("Got symbol " & Token.Get_Data_As_String);
+--      Put_Line("Got symbol " & Token.Get_Data_As_String);
       if Token.Get_Data_As_String = "." then
          Ingest_Dot(Self, Token);
       elsif Token.Get_Data_As_String = "|" then
          Ingest_Or(Self, Token);
+      elsif Token.Get_Data_As_String = "*" then
+         Ingest_Star(Self, Token);
+      elsif Token.Get_Data_As_String = "(" then
+         Ingest_Subsequence(Self, Token);
       else
          Self.Status := Done_Error; --TODO
       end if;
@@ -138,7 +159,7 @@ package body kv.apg.parse.token is
        Token : in     kv.apg.tokens.Token_Class) is
    begin
       --TODO: finish this logic
-      if Token.Get_Kind = A_String or else Token.Get_Kind = A_Block then
+      if Token.Get_Kind = A_Char or else Token.Get_Kind = A_String or else Token.Get_Kind = A_Block then
          Ingest_Constant(Self, Token);
       elsif Token.Get_Kind = A_Symbol then
          Ingest_Symbol(Self, Token);
@@ -151,21 +172,20 @@ package body kv.apg.parse.token is
    procedure Ingest_Completion
       (Self  : in out Token_State_Class;
        Token : in     kv.apg.tokens.Token_Class) is
-      use kv.apg.regex;
 
-      Node : kv.apg.regex.Node_Pointer_Type;
       Root : kv.apg.regex.Node_Pointer_Type;
       Incomplete : kv.apg.regex.Node_Pointer_Type;
    begin
-      Node := Allocate_Node(Token);
+--      Put_Line("Ingest_Completion");
 
       Root := Self.Tree.Get_Root;
-      --Put_Line("Root is " & (if (Root = null) then "null" else "good"));
+--      Put_Line("Root is " & (if (Root = null) then "null" else "good")); -- To_String(+Root.Image_This)
       Incomplete := Root.Get_Incomplete;
-      --Put_Line("Incomplete is " & (if (Incomplete = null) then "null" else "good"));
-      Incomplete.Complete_With(Node);
+--      Put_Line("Incomplete is " & (if (Incomplete = null) then "null" else "good"));
+      Incomplete.Complete_With(Token);
 
       Set_Expect(Self);
+--      Put_Line("Next expect state is " & Expectation_Type'IMAGE(Self.Expect));
    end Ingest_Completion;
 
    -------------------------------------------------------------------------

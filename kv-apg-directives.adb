@@ -51,7 +51,7 @@ package body kv.apg.directives is
        Name : in     String_Type;
        Tree : in     kv.apg.regex.Regular_Expression_Tree_Type) is
    begin
-      Put_Line("Token_Class.Initialize Name = '" & To_String(+Name) & "'");
+--      Put_Line("Token_Class.Initialize Name = '" & To_String(+Name) & "'");
       Self.Name := Name;
       Self.Tree := Tree;
    end Initialize;

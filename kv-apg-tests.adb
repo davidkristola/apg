@@ -4,6 +4,7 @@ with Ada.Characters.Conversions;
 with Ada.Strings.Wide_Wide_Unbounded;
 with Ada.Tags; use Ada.Tags;
 with Ada.Strings.UTF_Encoding.Strings;
+with Ada.Text_IO; use Ada.Text_IO;
 
 with kv.apg.lex;
 with kv.apg.tokens;
@@ -395,9 +396,97 @@ package body kv.apg.tests is
       Check_States(T, Errors => 0, Directives => 1);
       Directive := T.Parser.Next_Directive;
       Tree_Image := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Image_Tree;
-      T.Assert(Tree_Image = +("""%""|""mod"""), "wrong regex, got <" & To_String(+Tree_Image) & ">");
+      T.Assert(Tree_Image = +("(""%""|""mod"")"), "wrong regex, got <" & To_String(+Tree_Image) & ">");
       kv.apg.directives.Free(Directive);
    end Run;
+
+   ----------------------------------------------------------------------------
+   type Parse_Or_Token_2_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Or_Token_2_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      Tree_Image : String_Type;
+      use kv.apg.directives;
+      use kv.apg.regex; -- =
+   begin
+      Parse_This(T, "token abc = 'a' 'b' | 'c' ;" & Ada.Characters.Latin_1.LF);
+      Check_States(T, Errors => 0, Directives => 1);
+      Directive := T.Parser.Next_Directive;
+      Tree_Image := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Image_Tree;
+      T.Assert(Tree_Image = +("""a"" (""b""|""c"")"), "wrong regex, got <" & To_String(+Tree_Image) & ">");
+      kv.apg.directives.Free(Directive);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parse_Cat_Token_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Cat_Token_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      Tree_Image : String_Type;
+      use kv.apg.directives;
+      use kv.apg.regex; -- =
+   begin
+      Parse_This(T, "token ab = 'a' 'b';" & Ada.Characters.Latin_1.LF);
+      Check_States(T, Errors => 0, Directives => 1);
+      Directive := T.Parser.Next_Directive;
+      T.Assert(Directive.all'TAG = kv.apg.directives.Token_Class'TAG, "wrong class");
+      T.Assert(not kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Is_Empty, "tree shouldn't be null");
+      Tree_Image := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Image_Tree;
+      T.Assert(Tree_Image = +("""a"" ""b"""), "wrong regex, got " & To_String(+Tree_Image));
+      kv.apg.directives.Free(Directive);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parse_Or_Token_3_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Or_Token_3_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      Tree_Image : String_Type;
+      use kv.apg.directives;
+      use kv.apg.regex; -- =
+   begin
+      Parse_This(T, "token abcd = 'a' 'b' | 'c' | 'd' ;" & Ada.Characters.Latin_1.LF);
+      Check_States(T, Errors => 0, Directives => 1);
+      Directive := T.Parser.Next_Directive;
+      Tree_Image := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Image_Tree;
+      T.Assert(Tree_Image = +("""a"" ((""b""|""c"")|""d"")"), "wrong regex, got <" & To_String(+Tree_Image) & ">");
+      kv.apg.directives.Free(Directive);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parse_Star_Token_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Star_Token_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      Tree_Image : String_Type;
+      use kv.apg.directives;
+      use kv.apg.regex; -- =
+   begin
+      Parse_This(T, "token ab = 'a' 'b' * ;" & Ada.Characters.Latin_1.LF);
+      Check_States(T, Errors => 0, Directives => 1);
+      Directive := T.Parser.Next_Directive;
+      T.Assert(Directive.all'TAG = kv.apg.directives.Token_Class'TAG, "wrong class");
+      T.Assert(not kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Is_Empty, "tree shouldn't be null");
+      Tree_Image := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Image_Tree;
+      T.Assert(Tree_Image = +("""a"" (""b"")*"), "wrong regex, got " & To_String(+Tree_Image));
+      kv.apg.directives.Free(Directive);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parse_Subsequence_Token_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Subsequence_Token_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      Tree_Image : String_Type;
+      use kv.apg.directives;
+      use kv.apg.regex; -- =
+   begin
+      --Put_Line("------------");
+      Parse_This(T, "token abcbcbc = 'a' ('b' 'c') * ;" & Ada.Characters.Latin_1.LF);
+      Check_States(T, Errors => 0, Directives => 1);
+      Directive := T.Parser.Next_Directive;
+      T.Assert(Directive.all'TAG = kv.apg.directives.Token_Class'TAG, "wrong class");
+      T.Assert(not kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Is_Empty, "tree shouldn't be null");
+      Tree_Image := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Image_Tree;
+      T.Assert(Tree_Image = +("""a"" ((""b"" ""c""))*"), "wrong regex, got " & To_String(+Tree_Image));
+      kv.apg.directives.Free(Directive);
+   end Run;
+
 
 
    ----------------------------------------------------------------------------
@@ -427,11 +516,11 @@ package body kv.apg.tests is
       suite.register(new Parse_Basic_Token_Test, "Parse_Basic_Token_Test");
       suite.register(new Parse_Wild_Token_Test, "Parse_Wild_Token_Test");
       suite.register(new Parse_Or_Token_Test, "Parse_Or_Token_Test");
---      suite.register(new XXX, "XXX");
---      suite.register(new XXX, "XXX");
---      suite.register(new XXX, "XXX");
---      suite.register(new XXX, "XXX");
---      suite.register(new XXX, "XXX");
+      suite.register(new Parse_Or_Token_2_Test, "Parse_Or_Token_2_Test");
+      suite.register(new Parse_Cat_Token_Test, "Parse_Cat_Token_Test");
+      suite.register(new Parse_Or_Token_3_Test, "Parse_Or_Token_3_Test");
+      suite.register(new Parse_Star_Token_Test, "Parse_Star_Token_Test");
+      suite.register(new Parse_Subsequence_Token_Test, "Parse_Subsequence_Token_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
