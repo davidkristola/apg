@@ -179,10 +179,11 @@ package body kv.apg.parse.token is
 --      Put_Line("Ingest_Completion");
 
       Root := Self.Tree.Get_Root;
---      Put_Line("Root is " & (if (Root = null) then "null" else "good")); -- To_String(+Root.Image_This)
+--      Put_Line("Root is " & (if (Root = null) then "null" else To_String(+Root.Image_This))); -- "good"
       Incomplete := Root.Get_Incomplete;
---      Put_Line("Incomplete is " & (if (Incomplete = null) then "null" else "good"));
+--      Put_Line("Incomplete is " & (if (Incomplete = null) then "null" else To_String(+Incomplete.Image_This)));
       Incomplete.Complete_With(Token);
+--      Put_Line("Incomplete is NOW " & (if (Incomplete = null) then "null" else To_String(+Incomplete.Image_This)));
 
       Set_Expect(Self);
 --      Put_Line("Next expect state is " & Expectation_Type'IMAGE(Self.Expect));

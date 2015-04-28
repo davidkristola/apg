@@ -127,7 +127,6 @@ package kv.apg.regex is
    procedure Complete_With
       (Self  : in out Subsequence_Node_Class;
        Token : in     kv.apg.tokens.Token_Class);
---   overriding procedure Set_Complete(Self : in out Subsequence_Node_Class);
    overriding function Image_This(Self : in out Subsequence_Node_Class) return String_Type;
 
 private

@@ -162,6 +162,7 @@ package body kv.apg.regex is
       Match_Node : Match_Node_Pointer_Type;
       Wild_Node : Match_Any_Node_Pointer_Type;
       Star_Node : Star_Node_Pointer_Type;
+      Sub_Node : Subsequence_Node_Pointer_Type;
    begin
       --!@#$ horrible assumption!
       if Token.Get_Kind = A_Char or else Token.Get_Kind = A_String or else Token.Get_Kind = A_Block then
@@ -177,6 +178,10 @@ package body kv.apg.regex is
             Star_Node := new Star_Node_Class;
             Star_Node.Initialize;
             return Node_Pointer_Type(Star_Node);
+         elsif Token.Get_Data_As_String = "(" then
+            Sub_Node := new Subsequence_Node_Class;
+            Sub_Node.Initialize;
+            return Node_Pointer_Type(Sub_Node);
          end if;
       end if;
       return null;
@@ -243,7 +248,8 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    overriding function Is_Complete(Self : Or_Node_Class) return Boolean is
    begin
-      return (Self.A /= null) and (Self.B /= null); -- Both A and B must be set
+      -- Both A and B must be set and then B is complete
+      return (Self.A /= null) and ((Self.B /= null) and then (Self.B.Is_Complete));
    end Is_Complete;
 
    -------------------------------------------------------------------------
@@ -262,12 +268,16 @@ package body kv.apg.regex is
       (Self  : in out Or_Node_Class;
        Token : in     kv.apg.tokens.Token_Class) is
    begin
+--      Put_Line("Or_Node_Class.Complete_With " & Token.Get_Data_As_String);
       Self.B := Allocate_Node(Token);
    end Complete_With;
 
    -------------------------------------------------------------------------
    overriding function Image_This(Self : in out Or_Node_Class) return String_Type is
    begin
+      if Self.B = null then
+         return To_String_Type("(") & Self.A.Image_This & To_String_Type("|null");
+      end if;
       return To_String_Type("(") & Self.A.Image_This & To_String_Type("|") & Self.B.Image_This & To_String_Type(")");
    end Image_This;
 
@@ -350,7 +360,7 @@ package body kv.apg.regex is
       Node : Node_Pointer_Type;
    begin
       if Token.Get_Data_As_String = ")" then
---         Put_Line("complete! the subsequence is: " & To_String(+Self.A.Image_This));
+--         Put_Line("Complete_With: the subsequence is: " & To_String(+Self.A.Image_This));
          Self.Complete := True; --TODO: what if the subsequence isn't complete?!?!?!
       else
          --TODO: make this real
@@ -370,6 +380,12 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    overriding function Image_This(Self : in out Subsequence_Node_Class) return String_Type is
    begin
+      if Self.A = null then
+         return To_String_Type("(...");
+      end if;
+      if not Self.Complete then
+         return To_String_Type("(") & Self.A.Image_Tree & To_String_Type("...");
+      end if;
       return To_String_Type("(") & Self.A.Image_Tree & To_String_Type(")");
    end Image_This;
 
