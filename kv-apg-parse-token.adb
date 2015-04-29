@@ -107,16 +107,17 @@ package body kv.apg.parse.token is
       Star_Node : kv.apg.regex.Star_Node_Pointer_Type;
       A : kv.apg.regex.Node_Pointer_Type;
    begin
---      Put_Line("Starting star token processing");
+      Put_Line("Starting star token processing " & Token.Get_Data_As_String);
       Star_Node := new kv.apg.regex.Star_Node_Class;
       Star_Node.Initialize;
       Self.Tree.Detach(A); --!@#$ this isn't right. need to detach node from the working site, not the top level list
---      Put_Line("A is " & (if (A = null) then "null" else "good"));
+      Put_Line("A is " & (if (A = null) then "null" else To_String(+A.Image_This)));
       Star_Node.Set_A(A);
       Self.Tree.Append(kv.apg.regex.Node_Pointer_Type(Star_Node));
+      Put_Line("Tree is NOW " & To_String(+Self.Tree.Image_Tree));
 
       Set_Expect(Self);
---      Put_Line("Next expect state is " & Expectation_Type'IMAGE(Self.Expect));
+      Put_Line("Next expect state is " & Expectation_Type'IMAGE(Self.Expect));
    end Ingest_Star;
 
    -------------------------------------------------------------------------
@@ -125,13 +126,14 @@ package body kv.apg.parse.token is
        Token : in     kv.apg.tokens.Token_Class) is
       Sub_Node : Subsequence_Node_Pointer_Type;
    begin
---      Put_Line("Starting Subsequence token processing");
+      Put_Line("Starting Subsequence token processing " & Token.Get_Data_As_String);
       Sub_Node := new kv.apg.regex.Subsequence_Node_Class;
       Sub_Node.Initialize;
       Self.Tree.Append(kv.apg.regex.Node_Pointer_Type(Sub_Node));
+      Put_Line("Tree is NOW " & To_String(+Self.Tree.Image_Tree));
 
       Set_Expect(Self);
---      Put_Line("Next expect state is " & Expectation_Type'IMAGE(Self.Expect));
+      Put_Line("Next expect state is " & Expectation_Type'IMAGE(Self.Expect));
    end Ingest_Subsequence;
 
    -------------------------------------------------------------------------
@@ -139,7 +141,7 @@ package body kv.apg.parse.token is
       (Self  : in out Token_State_Class;
        Token : in     kv.apg.tokens.Token_Class) with Pre => (Token.Get_Kind = A_Symbol) is
    begin
---      Put_Line("Got symbol " & Token.Get_Data_As_String);
+      Put_Line("Got symbol " & Token.Get_Data_As_String);
       if Token.Get_Data_As_String = "." then
          Ingest_Dot(Self, Token);
       elsif Token.Get_Data_As_String = "|" then
@@ -176,17 +178,18 @@ package body kv.apg.parse.token is
       Root : kv.apg.regex.Node_Pointer_Type;
       Incomplete : kv.apg.regex.Node_Pointer_Type;
    begin
---      Put_Line("Ingest_Completion");
+      Put_Line("Ingest_Completion " & Token.Get_Data_As_String);
 
       Root := Self.Tree.Get_Root;
---      Put_Line("Root is " & (if (Root = null) then "null" else To_String(+Root.Image_This))); -- "good"
+      Put_Line("Root is " & (if (Root = null) then "null" else To_String(+Root.Image_This))); -- "good"
       Incomplete := Root.Get_Incomplete;
---      Put_Line("Incomplete is " & (if (Incomplete = null) then "null" else To_String(+Incomplete.Image_This)));
+      Put_Line("Incomplete is " & (if (Incomplete = null) then "null" else To_String(+Incomplete.Image_This)));
       Incomplete.Complete_With(Token);
---      Put_Line("Incomplete is NOW " & (if (Incomplete = null) then "null" else To_String(+Incomplete.Image_This)));
+      Put_Line("Incomplete is NOW " & (if (Incomplete = null) then "null" else To_String(+Incomplete.Image_This)));
+      Put_Line("Tree is NOW " & To_String(+Self.Tree.Image_Tree));
 
       Set_Expect(Self);
---      Put_Line("Next expect state is " & Expectation_Type'IMAGE(Self.Expect));
+      Put_Line("Next expect state is " & Expectation_Type'IMAGE(Self.Expect));
    end Ingest_Completion;
 
    -------------------------------------------------------------------------
