@@ -5,7 +5,7 @@ with kv.apg.regex;
 
 private package kv.apg.parse.token is
 
-   type Expectation_Type is (Name, Equal, Value, Value_Or_Eos, Value_To_Complete, Eos);
+   type Expectation_Type is (Name, Equal, Value, Value_Or_Eos);
    type Token_State_Class is new State_Class with
       record
          Expect     : Expectation_Type := Name;
