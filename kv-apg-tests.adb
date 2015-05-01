@@ -363,6 +363,7 @@ package body kv.apg.tests is
       use kv.apg.regex; -- =
 
    begin
+      Put_Line("------ token test: " & "token " & name & " = " & Definition);
       Parse_This(T, "token " & name & " = " & Definition & Ada.Characters.Latin_1.LF);
       Check_States(T, Errors => 0, Directives => 1);
       Directive := T.Parser.Next_Directive;
@@ -450,7 +451,7 @@ package body kv.apg.tests is
    procedure Run(T : in out Parse_Sub_Sub_Star_Token_Test) is
    begin
       Put_Line("----------");
-      Run_Token_Test(T, "subsub", "('c' ('d' 'e') * ) ;", "(""c"" (""d"" ""e"")*)");
+      Run_Token_Test(T, "subsub", "('c' ('d' 'e') * ) ;", "(""c"" ((""d"" ""e""))*)");
    end Run;
 
    ----------------------------------------------------------------------------
@@ -458,7 +459,7 @@ package body kv.apg.tests is
    procedure Run(T : in out Parse_Or_Sub_Sub_Star_Token_Test) is
    begin
       Put_Line("----------");
-      Run_Token_Test(T, "subsub", "('a' 'b' *) | ('c' ('d' 'e') *) ;", "((""a"" (""b"")*)|(""c"" (""d"" ""e"")*))");
+      Run_Token_Test(T, "subsub", "('a' 'b' * ) | ('c' ('d' 'e') * ) ;", "((""a"" (""b"")*)|(""c"" ((""d"" ""e""))*))");
    end Run;
 
 

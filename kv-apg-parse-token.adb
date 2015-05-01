@@ -143,13 +143,24 @@ package body kv.apg.parse.token is
    begin
       Put_Line("Got symbol " & Token.Get_Data_As_String);
       if Token.Get_Data_As_String = "." then
-         Ingest_Dot(Self, Token);
+--         Ingest_Dot(Self, Token);
+Self.Tree.Graft_To_Tree(Token);
+Self.Expect := Value_Or_Eos;
       elsif Token.Get_Data_As_String = "|" then
-         Ingest_Or(Self, Token);
+--         Ingest_Or(Self, Token);
+Self.Tree.Graft_To_Tree(Token);
+Self.Expect := Value_Or_Eos;
       elsif Token.Get_Data_As_String = "*" then
-         Ingest_Star(Self, Token);
+--         Ingest_Star(Self, Token);
+Self.Tree.Graft_To_Tree(Token);
+Self.Expect := Value_Or_Eos;
       elsif Token.Get_Data_As_String = "(" then
-         Ingest_Subsequence(Self, Token);
+--         Ingest_Subsequence(Self, Token);
+Self.Tree.Graft_To_Tree(Token);
+Self.Expect := Value_Or_Eos;
+      elsif Token.Get_Data_As_String = ")" then
+Self.Tree.Graft_To_Tree(Token);
+Self.Expect := Value_Or_Eos;
       else
          Self.Status := Done_Error; --TODO
       end if;
@@ -162,7 +173,9 @@ package body kv.apg.parse.token is
    begin
       --TODO: finish this logic
       if Token.Get_Kind = A_Char or else Token.Get_Kind = A_String or else Token.Get_Kind = A_Block then
-         Ingest_Constant(Self, Token);
+--         Ingest_Constant(Self, Token);
+Self.Tree.Graft_To_Tree(Token);
+Self.Expect := Value_Or_Eos;
       elsif Token.Get_Kind = A_Symbol then
          Ingest_Symbol(Self, Token);
       else

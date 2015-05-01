@@ -8,14 +8,24 @@ package kv.apg.regex is
 
    Inappropriate_Action_Error : exception;
 
-   type Regular_Expression_Tree_Type is new Ada.Finalization.Controlled with private;
 
    type Node_Class;
    type Node_Pointer_Type is access all Node_Class'CLASS;
-   type Node_Class is abstract tagged
+
+
+   type Reg_Ex_Container_Class is interface;
+   procedure Linear_Detach(Self : in out Reg_Ex_Container_Class; Node : out Node_Pointer_Type) is abstract;
+   procedure Linear_Attach(Self : in out Reg_Ex_Container_Class; Node : in  Node_Pointer_Type) is abstract;
+
+
+
+   type Node_Class is abstract new Reg_Ex_Container_Class with
       record
          Previous : Node_Pointer_Type;
       end record;
+
+   overriding procedure Linear_Detach(Self : in out Node_Class; Node : out Node_Pointer_Type);
+   overriding procedure Linear_Attach(Self : in out Node_Class; Node : in  Node_Pointer_Type);
 
    procedure Process_This(Self : in out Node_Class) is abstract;
    procedure Process_Tree(Self : in out Node_Class); -- Template method
@@ -28,6 +38,14 @@ package kv.apg.regex is
    function Image_This(Self : in out Node_Class) return String_Type is abstract;
    function Image_Tree(Self : in out Node_Class) return String_Type; -- Template method
 
+   procedure Prepare_For_Graft
+      (Self  : in out Node_Class;
+       Box   : in out Reg_Ex_Container_Class'CLASS); -- Default behavior
+
+   procedure Graft_To_Tree
+      (Self : in out Node_Class;
+       Node : in     Node_Pointer_Type); -- Default behavior for nodes that are always complete
+
 
    -- Detach the last node from the tree.
    procedure Detach
@@ -36,7 +54,10 @@ package kv.apg.regex is
 
 
 
+   type Regular_Expression_Tree_Type is new Ada.Finalization.Controlled and Reg_Ex_Container_Class with private;
 
+   overriding procedure Linear_Detach(Self : in out Regular_Expression_Tree_Type; Node : out Node_Pointer_Type);
+   overriding procedure Linear_Attach(Self : in out Regular_Expression_Tree_Type; Node : in  Node_Pointer_Type);
 
    -- Detach the last node from the tree.
    procedure Detach
@@ -65,6 +86,9 @@ package kv.apg.regex is
    function Allocate_Node
       (Token : in     kv.apg.tokens.Token_Class) return Node_Pointer_Type;
 
+   procedure Graft_To_Tree
+      (Tree  : in out Regular_Expression_Tree_Type;
+       Token : in     kv.apg.tokens.Token_Class);
 
 
 
@@ -93,6 +117,9 @@ package kv.apg.regex is
       end record;
    type Or_Node_Pointer_Type is access all Or_Node_Class;
    not overriding procedure Initialize(Self : in out Or_Node_Class);
+   overriding procedure Prepare_For_Graft
+      (Self  : in out Or_Node_Class;
+       Box   : in out Reg_Ex_Container_Class'CLASS);
    not overriding procedure Set_A(Self : in out Or_Node_Class; A : in     Node_Pointer_Type);
    not overriding procedure Set_B(Self : in out Or_Node_Class; B : in     Node_Pointer_Type);
    overriding procedure Process_This(Self : in out Or_Node_Class);
@@ -102,6 +129,9 @@ package kv.apg.regex is
       (Self  : in out Or_Node_Class;
        Token : in     kv.apg.tokens.Token_Class);
    overriding function Image_This(Self : in out Or_Node_Class) return String_Type;
+   overriding procedure Graft_To_Tree
+      (Self : in out Or_Node_Class;
+       Node : in     Node_Pointer_Type);
 
    type Star_Node_Class is new Node_Class with
       record
@@ -112,6 +142,9 @@ package kv.apg.regex is
    not overriding procedure Set_A(Self : in out Star_Node_Class; A : in     Node_Pointer_Type);
    overriding procedure Process_This(Self : in out Star_Node_Class);
    overriding function Image_This(Self : in out Star_Node_Class) return String_Type;
+   overriding procedure Prepare_For_Graft
+      (Self  : in out Star_Node_Class;
+       Box   : in out Reg_Ex_Container_Class'CLASS);
 
    type Subsequence_Node_Class is new Node_Class with
       record
@@ -128,10 +161,15 @@ package kv.apg.regex is
       (Self  : in out Subsequence_Node_Class;
        Token : in     kv.apg.tokens.Token_Class);
    overriding function Image_This(Self : in out Subsequence_Node_Class) return String_Type;
+   overriding procedure Graft_To_Tree
+      (Self : in out Subsequence_Node_Class;
+       Node : in     Node_Pointer_Type);
+   overriding procedure Linear_Detach(Self : in out Subsequence_Node_Class; Node : out Node_Pointer_Type);
+   overriding procedure Linear_Attach(Self : in out Subsequence_Node_Class; Node : in  Node_Pointer_Type);
 
 private
 
-   type Regular_Expression_Tree_Type is new Ada.Finalization.Controlled with
+   type Regular_Expression_Tree_Type is new Ada.Finalization.Controlled and Reg_Ex_Container_Class with
       record
          Root : Node_Pointer_Type;
       end record;

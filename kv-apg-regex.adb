@@ -16,6 +16,30 @@ package body kv.apg.regex is
    Quotation : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Quotation);
 
    -------------------------------------------------------------------------
+   procedure Linear_Detach(Self : in out Node_Class; Node : out Node_Pointer_Type) is
+   begin
+      Put_Line("Default Linear_Detach for " & To_String(+Self.Image_Tree));
+      Node := Self.Previous;
+      if Node /= null then
+         Self.Previous := Node.Previous;
+         Node.Previous := null;
+         Put_Line("detached " & To_String(+Node.Image_Tree) & ", leaving " & To_String(+Self.Image_Tree));
+      else
+         Put_Line("nothing to detach, returning null.");
+      end if;
+   end Linear_Detach;
+
+   -------------------------------------------------------------------------
+   procedure Linear_Attach(Self : in out Node_Class; Node : in  Node_Pointer_Type) is
+   begin
+      Put_Line("Default (push down) Linear_Attach for " & To_String(+Self.Image_Tree));
+      Node.Prepare_For_Graft(Self);
+      Node.Previous := Self.Previous;
+      Self.Previous := Node;
+      Put_Line("result: " & To_String(+Self.Image_Tree));
+   end Linear_Attach;
+
+   -------------------------------------------------------------------------
    procedure Process_Tree(Self : in out Node_Class) is
    begin
       if Self.Previous /= null then
@@ -82,6 +106,25 @@ package body kv.apg.regex is
       return Quotation & Self.Value & Quotation;
    end Image_This;
 
+   -------------------------------------------------------------------------
+   procedure Prepare_For_Graft
+      (Self  : in out Node_Class;
+       Box   : in out Reg_Ex_Container_Class'CLASS) is
+   begin
+      null; -- Default behavior: normally nothing needs to be done
+      Put_Line("Default (do nothing) Prepare_For_Graft for " & To_String(+Self.Image_Tree));
+   end Prepare_For_Graft;
+
+   -------------------------------------------------------------------------
+   procedure Graft_To_Tree
+      (Self : in out Node_Class;
+       Node : in     Node_Pointer_Type) is
+   begin
+      Self.Linear_Attach(Node); -- Default behavior for nodes that are always complete
+      Put_Line("default graft_to_tree result: " & To_String(+Self.Image_Tree));
+   end Graft_To_Tree;
+
+
 
    -------------------------------------------------------------------------
    procedure Detach
@@ -92,6 +135,30 @@ package body kv.apg.regex is
       Tree := Tree.Previous;
       Last.Previous := null;
    end Detach;
+
+
+
+
+
+   -------------------------------------------------------------------------
+   procedure Linear_Detach(Self : in out Regular_Expression_Tree_Type; Node : out Node_Pointer_Type) is
+   begin
+      Put_Line("Regular_Expression_Tree_Type.Linear_Detach for " & To_String(+Self.Image_Tree));
+      Node := Self.Root;
+      Self.Root := Node.Previous;
+      Node.Previous := null;
+      Put_Line("result: " & To_String(+Self.Image_Tree));
+   end Linear_Detach;
+
+   -------------------------------------------------------------------------
+   procedure Linear_Attach(Self : in out Regular_Expression_Tree_Type; Node : in  Node_Pointer_Type) is
+   begin
+      Put_Line("Regular_Expression_Tree_Type.Linear_Attach for " & To_String(+Self.Image_Tree));
+      Node.Prepare_For_Graft(Self);
+      Node.Previous := Self.Root;
+      Self.Root := Node;
+      Put_Line("result: " & To_String(+Self.Image_Tree));
+   end Linear_Attach;
 
 
    -------------------------------------------------------------------------
@@ -153,17 +220,24 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    function Image_Tree(Tree : in     Regular_Expression_Tree_Type) return String_Type is
    begin
+      if Tree.Root = null then
+         return To_String_Type("null");
+      end if;
       return Tree.Root.Image_Tree;
    end Image_Tree;
 
    -------------------------------------------------------------------------
    function Allocate_Node
       (Token : in     kv.apg.tokens.Token_Class) return Node_Pointer_Type is
+
       Match_Node : Match_Node_Pointer_Type;
       Wild_Node : Match_Any_Node_Pointer_Type;
       Star_Node : Star_Node_Pointer_Type;
       Sub_Node : Subsequence_Node_Pointer_Type;
+      Or_Node : Or_Node_Pointer_Type;
+
    begin
+      Put_Line("(reg ex) Allocate_Node called with <" & Token.Get_Data_As_String & ">");
       --!@#$ horrible assumption!
       if Token.Get_Kind = A_Char or else Token.Get_Kind = A_String or else Token.Get_Kind = A_Block then
          Match_Node := new Match_Node_Class;
@@ -182,11 +256,38 @@ package body kv.apg.regex is
             Sub_Node := new Subsequence_Node_Class;
             Sub_Node.Initialize;
             return Node_Pointer_Type(Sub_Node);
+         elsif Token.Get_Data_As_String = "|" then
+            Or_Node := new Or_Node_Class;
+            Or_Node.Initialize;
+            return Node_Pointer_Type(Or_Node);
          end if;
       end if;
+      Put_Line("Allocate_Node returning null");
       return null;
    end Allocate_Node;
 
+   -------------------------------------------------------------------------
+   procedure Graft_To_Tree
+      (Tree  : in out Regular_Expression_Tree_Type;
+       Token : in     kv.apg.tokens.Token_Class) is
+      Current : Node_Pointer_Type := Tree.Root;
+      Addition : Node_Pointer_Type := Allocate_Node(Token);
+   begin
+      Put_Line("Regular_Expression_Tree_Type.Graft_To_Tree");
+      if Current = null then
+         Put_Line("Tree is empty, adding first node!");
+         Tree.Linear_Attach(Addition);
+      elsif Current.Is_Complete then
+         Put_Line("Is_Complete, Addition.Prepare_For_Graft...");
+--         Addition.Prepare_For_Graft(Tree);
+         Put_Line("Tree.Linear_Attach(Addition)...");
+         Tree.Linear_Attach(Addition);
+      else
+         Put_Line("NOT Is_Complete");
+         Current.Graft_To_Tree(Addition);
+      end if;
+      Put_Line("result: " & To_String(+Tree.Image_Tree));
+   end Graft_To_Tree;
 
 
 
@@ -221,11 +322,29 @@ package body kv.apg.regex is
    end Image_This;
 
 
+
+
+
    -------------------------------------------------------------------------
    not overriding procedure Initialize(Self : in out Or_Node_Class) is
    begin
       null;
    end Initialize;
+
+   -------------------------------------------------------------------------
+   overriding procedure Prepare_For_Graft
+      (Self  : in out Or_Node_Class;
+       Box   : in out Reg_Ex_Container_Class'CLASS) is
+
+      Left : Node_Pointer_Type;
+
+   begin
+      Put_Line("Or_Node_Class.Prepare_For_Graft");
+      Box.Linear_Detach(Left);
+      Put_Line("Or_Node_Class.Prepare_For_Graft, detached and setting A with " & To_String(+Left.Image_Tree));
+      Self.Set_A(Left);
+      Put_Line("result: " & To_String(+Self.Image_Tree));
+   end Prepare_For_Graft;
 
    -------------------------------------------------------------------------
    not overriding procedure Set_A(Self : in out Or_Node_Class; A : in     Node_Pointer_Type) is
@@ -281,7 +400,29 @@ package body kv.apg.regex is
       return To_String_Type("(") & Self.A.Image_This & To_String_Type("|") & Self.B.Image_This & To_String_Type(")");
    end Image_This;
 
-
+   -------------------------------------------------------------------------
+   overriding procedure Graft_To_Tree
+      (Self : in out Or_Node_Class;
+       Node : in     Node_Pointer_Type) is
+   begin
+      Put_Line("Or_Node_Class.Graft_To_Tree");
+      if Self.Is_Complete then
+         Put_Line("Is_Complete");
+--         Node.Prepare_For_Graft(Self);
+         Put_Line("Self.Linear_Attach(Node)...");
+         Self.Linear_Attach(Node);
+      else
+         --TODO: is it so that only B can be incomplete?
+         if Self.B = null then
+            Put_Line("Filling in OR's B!");
+            Self.B := Node;
+         else
+            Put_Line("graft to B...");
+            Self.B.Graft_To_Tree(Node);
+         end if;
+      end if;
+      Put_Line("result: " & To_String(+Self.Image_Tree));
+   end Graft_To_Tree;
 
 
 
@@ -309,6 +450,21 @@ package body kv.apg.regex is
    begin
       return To_String_Type("(") & Self.A.Image_This & To_String_Type(")") & To_String_Type("*");
    end Image_This;
+
+   -------------------------------------------------------------------------
+   overriding procedure Prepare_For_Graft
+      (Self  : in out Star_Node_Class;
+       Box   : in out Reg_Ex_Container_Class'CLASS) is
+
+      Left : Node_Pointer_Type;
+
+   begin
+      Put_Line("Star_Node_Class.Prepare_For_Graft");
+      Box.Linear_Detach(Left);
+      Put_Line("Star_Node_Class.Prepare_For_Graft, detached and setting A with " & To_String(+Left.Image_Tree));
+      Self.Set_A(Left);
+      Put_Line("result: " & To_String(+Self.Image_Tree));
+   end Prepare_For_Graft;
 
 
 
@@ -388,5 +544,50 @@ package body kv.apg.regex is
       end if;
       return To_String_Type("(") & Self.A.Image_Tree & To_String_Type(")");
    end Image_This;
+
+   -------------------------------------------------------------------------
+   overriding procedure Graft_To_Tree
+      (Self : in out Subsequence_Node_Class;
+       Node : in     Node_Pointer_Type) is
+   begin
+      Put_Line("Subsequence_Node_Class.Graft_To_Tree");
+      if Self.A = null then
+         Put_Line("A empty, Self.Linear_Attach(Node) at this level");
+         Self.Linear_Attach(Node);
+      elsif Self.A.Is_Complete then
+         Put_Line("A is complete");
+         if Node = null then
+            Put_Line("null complete!");
+            Self.Complete := True; -- Must have been the non-token ')'
+         else
+            Put_Line("Self.Linear_Attach(Node) at this level");
+            Self.Linear_Attach(Node);
+         end if;
+      else
+         Put_Line("A is not complete, going down...");
+         Self.A.Graft_To_Tree(Node);
+      end if;
+      Put_Line("result: " & To_String(+Self.Image_Tree));
+   end Graft_To_Tree;
+
+   -------------------------------------------------------------------------
+   overriding procedure Linear_Detach(Self : in out Subsequence_Node_Class; Node : out Node_Pointer_Type) is
+   begin
+      Put_Line("Subsequence_Node_Class.Linear_Detach for " & To_String(+Self.Image_Tree));
+      Node := Self.A;
+      Self.A := Node.Previous;
+      Node.Previous := null;
+      Put_Line("result: " & To_String(+Self.Image_Tree));
+   end Linear_Detach;
+
+   -------------------------------------------------------------------------
+   overriding procedure Linear_Attach(Self : in out Subsequence_Node_Class; Node : in  Node_Pointer_Type) is
+   begin
+      Put_Line("Subsequence_Node_Class.Linear_Attach for " & To_String(+Self.Image_Tree));
+      Node.Prepare_For_Graft(Self);
+      Node.Previous := Self.A;
+      Self.A := Node;
+      Put_Line("result: " & To_String(+Self.Image_Tree));
+   end Linear_Attach;
 
 end kv.apg.regex;
