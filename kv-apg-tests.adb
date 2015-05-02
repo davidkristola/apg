@@ -363,6 +363,7 @@ package body kv.apg.tests is
       use kv.apg.regex; -- =
 
    begin
+      --kv.apg.regex.Set_Debug(True);
       Put_Line("------ token test: " & "token " & name & " = " & Definition);
       Parse_This(T, "token " & name & " = " & Definition & Ada.Characters.Latin_1.LF);
       Check_States(T, Errors => 0, Directives => 1);
@@ -373,6 +374,7 @@ package body kv.apg.tests is
       Tree_Image := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Image_Tree;
       T.Assert(Tree_Image = To_String_Type(Expected), "wrong regex, got <" & To_String(+Tree_Image) & ">, expected <" & Expected & ">");
       kv.apg.directives.Free(Directive);
+      --kv.apg.regex.Set_Debug(False);
    end Run_Token_Test;
 
 
@@ -450,7 +452,6 @@ package body kv.apg.tests is
    type Parse_Sub_Sub_Star_Token_Test is new Parser_Test_Class with null record;
    procedure Run(T : in out Parse_Sub_Sub_Star_Token_Test) is
    begin
-      Put_Line("----------");
       Run_Token_Test(T, "subsub", "('c' ('d' 'e') * ) ;", "(""c"" ((""d"" ""e""))*)");
    end Run;
 
@@ -458,8 +459,14 @@ package body kv.apg.tests is
    type Parse_Or_Sub_Sub_Star_Token_Test is new Parser_Test_Class with null record;
    procedure Run(T : in out Parse_Or_Sub_Sub_Star_Token_Test) is
    begin
-      Put_Line("----------");
       Run_Token_Test(T, "subsub", "('a' 'b' * ) | ('c' ('d' 'e') * ) ;", "((""a"" (""b"")*)|(""c"" ((""d"" ""e""))*))");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parse_Plus_Token_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Plus_Token_Test) is
+   begin
+      Run_Token_Test(T, "ab", "'a' 'b' + ;", """a"" (""b"")+");
    end Run;
 
 
@@ -499,7 +506,7 @@ package body kv.apg.tests is
       suite.register(new Parse_Sub_Sub_Token_Test, "Parse_Sub_Sub_Token_Test");
       suite.register(new Parse_Sub_Sub_Star_Token_Test, "Parse_Sub_Sub_Star_Token_Test");
       suite.register(new Parse_Or_Sub_Sub_Star_Token_Test, "Parse_Or_Sub_Sub_Star_Token_Test");
---      suite.register(new XXX, "XXX");
+      suite.register(new Parse_Plus_Token_Test, "Parse_Plus_Token_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
