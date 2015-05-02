@@ -9,6 +9,15 @@ package body kv.apg.lex is
    use Ada.Strings.Wide_Wide_Unbounded;
    use Ada.Characters.Conversions;
 
+   Debug : Boolean := False;
+
+   -------------------------------------------------------------------------
+   procedure Set_Debug(Value : in Boolean) is
+   begin
+      Debug := Value;
+   end Set_Debug;
+
+
    Quotation : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Quotation);
    Comment : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Number_Sign);
    Apostrophe : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Apostrophe);
@@ -36,6 +45,23 @@ package body kv.apg.lex is
       return In_Symbol;
    end Character_State;
 
+
+   Eos : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Semicolon);
+   Open_Paren : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Left_Parenthesis);
+   Close_Paren : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Right_Parenthesis);
+
+
+   ----------------------------------------------------------------------------
+   function Is_Mono_Symbol(Next : Wide_Wide_Character) return Boolean is
+   begin
+      --TODO: use a map or something
+      if Next = Eos or else Next = Open_Paren or else Next = Close_Paren then
+         return True;
+      end if;
+      return False;
+   end Is_Mono_Symbol;
+
+
    ----------------------------------------------------------------------------
    procedure Ingest_Character
       (Self : in out Lexer_Class;
@@ -61,9 +87,10 @@ package body kv.apg.lex is
             else
                Self.Complete_Token(kv.apg.tokens.A_Word);
                Self.State := Tentative_State;
+               Start_New_Token_If;
             end if;
          when In_Symbol =>
-            if Tentative_State = In_Symbol then -- Multi-character symbol
+            if Tentative_State = In_Symbol and then not Is_Mono_Symbol(Next) then -- Multi-character symbol
                Self.Accumulate_Character(Next);
             else
                Self.Complete_Token(kv.apg.tokens.A_Symbol);
@@ -100,7 +127,7 @@ package body kv.apg.lex is
                Self.Accumulate_Character(Next);
             end if;
       end case;
-      --Put_Line("State = " & Lex_State_Type'IMAGE(Self.State));
+      if Debug then Put_Line("State = " & Lex_State_Type'IMAGE(Self.State)); end if;
       if Next = Line_Feed then
          Self.Line := Self.Line + 1;
       end if;
@@ -130,6 +157,7 @@ package body kv.apg.lex is
       return Token;
    end Get_Next_Token;
 
+   ----------------------------------------------------------------------------
    Keep_First_Character : constant array (Lex_State_Type) of Boolean := (In_Word => True, In_Symbol => True, others => False);
 
    ----------------------------------------------------------------------------
@@ -142,6 +170,10 @@ package body kv.apg.lex is
          Self.Accumulate_Character(Next);
       end if;
       Self.Where := Self.Line;
+      if Is_Mono_Symbol(Next) then
+         if Debug then Put_Line("Auto-completing mono-symbol " & To_Character(Next)); end if;
+         Self.Complete_Token(kv.apg.tokens.A_Symbol);
+      end if;
    end Begin_Token;
 
    ----------------------------------------------------------------------------
@@ -150,8 +182,10 @@ package body kv.apg.lex is
        Kind : in     kv.apg.tokens.Token_Type) is
       Token : kv.apg.tokens.Token_Class;
    begin
+      if Debug then Put_Line("Completing token " & kv.apg.tokens.Token_Type'IMAGE(Kind)); end if;
       Token.Initialize(Kind, Self.Where, Self.Accum);
       Self.List.Append(Token);
+      Self.State := Between;
    end Complete_Token;
 
    ----------------------------------------------------------------------------
@@ -159,9 +193,9 @@ package body kv.apg.lex is
       (Self : in out Lexer_Class;
        Next : in     Wide_Wide_Character) is
    begin
-      --Put_Line("Adding '"&To_Character(Next)&"' to '"&To_String(+Self.Accum)&"'.");
+      if Debug then Put_Line("Adding '"&To_Character(Next)&"' to '"&To_String(+Self.Accum)&"'."); end if;
       Self.Accum := Self.Accum & Next;
-      --Put_Line("Self.Accum is now '"&To_String(+Self.Accum)&"'.");
+      if Debug then Put_Line("Self.Accum is now '"&To_String(+Self.Accum)&"'."); end if;
    end Accumulate_Character;
 
    ----------------------------------------------------------------------------

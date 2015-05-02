@@ -22,6 +22,10 @@ package kv.apg.lex is
    function Get_Next_Token
       (Self : in out Lexer_Class) return kv.apg.tokens.Token_Class;
 
+
+   -- Control debug output of package
+   procedure Set_Debug(Value : in Boolean);
+
 private
 
    use kv.apg.tokens;

@@ -114,6 +114,93 @@ package body kv.apg.tests is
    end Run;
 
    ----------------------------------------------------------------------------
+   type Ingest_Symbol_2_Test is new Lexer_Test_Class with null record;
+   procedure Run(T : in out Ingest_Symbol_2_Test) is
+   begin
+      Ingest_All(T, " := => ");
+      T.Assert(T.Lexer.Inbetween_Tokens = True, "Should be after symbol");
+      Check_Tokens_Available(T, 2, "two 2-char symbols");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Ingest_Symbol_3a_Test is new Lexer_Test_Class with null record;
+   procedure Run(T : in out Ingest_Symbol_3a_Test) is
+   begin
+      Ingest_All(T, "word; ");
+      T.Assert(T.Lexer.Inbetween_Tokens = True, "Should be after symbol");
+      Check_Tokens_Available(T, 2, "word+symbol");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Ingest_Symbol_3b_Test is new Lexer_Test_Class with null record;
+   procedure Run(T : in out Ingest_Symbol_3b_Test) is
+   begin
+      Ingest_All(T, "word;"); -- ';' should be a mono-char symbol and always self-complete
+      T.Assert(T.Lexer.Inbetween_Tokens = True, "Should be after symbol");
+      Check_Tokens_Available(T, 2, "word+symbol");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Ingest_Symbol_3c_Test is new Lexer_Test_Class with null record;
+   procedure Run(T : in out Ingest_Symbol_3c_Test) is
+      Token : kv.apg.tokens.Token_Class;
+   begin
+      Ingest_All(T, "word-word ");
+      T.Assert(T.Lexer.Inbetween_Tokens = True, "Should be after symbol");
+      Check_Tokens_Available(T, 3, "word+symbol-word (no spaces)");
+
+      Token := T.Lexer.Get_Next_Token;
+      T.Assert(Token.Get_Kind = A_Word, "Kind should be A_Word, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
+      T.Assert(Token.Get_Data_As_String = "word", "Word is wrong, got " & Token.Get_Data_As_String);
+
+      Token := T.Lexer.Get_Next_Token;
+      T.Assert(Token.Get_Kind = A_Symbol, "Kind should be A_Symbol, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
+      T.Assert(Token.Get_Data_As_String = "-", "- is wrong, got " & Token.Get_Data_As_String);
+
+      Token := T.Lexer.Get_Next_Token;
+      T.Assert(Token.Get_Kind = A_Word, "Kind should be A_Word, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
+      T.Assert(Token.Get_Data_As_String = "word", "second Word is wrong, got " & Token.Get_Data_As_String);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Ingest_Symbol_4_Test is new Lexer_Test_Class with null record;
+   procedure Run(T : in out Ingest_Symbol_4_Test) is
+      Token : kv.apg.tokens.Token_Class;
+   begin
+      --kv.apg.lex.Set_Debug(True);
+      Ingest_All(T, "(*);");
+      T.Assert(T.Lexer.Inbetween_Tokens = True, "Should be after symbol");
+      Check_Tokens_Available(T, 4, "(*);");
+
+      Token := T.Lexer.Get_Next_Token;
+      T.Assert(Token.Get_Kind = A_Symbol, "Kind should be A_Symbol, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
+      T.Assert(Token.Get_Data_As_String = "(", "( is wrong, got " & Token.Get_Data_As_String);
+
+      Token := T.Lexer.Get_Next_Token;
+      T.Assert(Token.Get_Kind = A_Symbol, "Kind should be A_Symbol, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
+      T.Assert(Token.Get_Data_As_String = "*", "* is wrong, got " & Token.Get_Data_As_String);
+
+      Token := T.Lexer.Get_Next_Token;
+      T.Assert(Token.Get_Kind = A_Symbol, "Kind should be A_Symbol, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
+      T.Assert(Token.Get_Data_As_String = ")", ") is wrong, got " & Token.Get_Data_As_String);
+
+      Token := T.Lexer.Get_Next_Token;
+      T.Assert(Token.Get_Kind = A_Symbol, "Kind should be A_Symbol, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
+      T.Assert(Token.Get_Data_As_String = ";", "; is wrong, got " & Token.Get_Data_As_String);
+
+      --kv.apg.lex.Set_Debug(False);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Ingest_Symbol_5_Test is new Lexer_Test_Class with null record;
+   procedure Run(T : in out Ingest_Symbol_5_Test) is
+   begin
+      Ingest_All(T, "'*';");
+      T.Assert(T.Lexer.Inbetween_Tokens = True, "Should be after symbol");
+      Check_Tokens_Available(T, 2, "char+symbol");
+   end Run;
+
+   ----------------------------------------------------------------------------
    type Ingest_String_Test is new Lexer_Test_Class with null record;
    procedure Run(T : in out Ingest_String_Test) is
    begin
@@ -364,7 +451,7 @@ package body kv.apg.tests is
 
    begin
       --kv.apg.regex.Set_Debug(True);
-      Put_Line("------ token test: " & "token " & name & " = " & Definition);
+      --Put_Line("------ token test: " & "token " & name & " = " & Definition);
       Parse_This(T, "token " & name & " = " & Definition & Ada.Characters.Latin_1.LF);
       Check_States(T, Errors => 0, Directives => 1);
       Directive := T.Parser.Next_Directive;
@@ -480,6 +567,15 @@ package body kv.apg.tests is
       suite.register(new Ingest_Comment_Test, "Ingest_Comment_Test");
       suite.register(new Ingest_Char_Test, "Ingest_Char_Test");
       suite.register(new Ingest_Symbol_Test, "Ingest_Symbol_Test");
+      suite.register(new Ingest_Symbol_2_Test, "Ingest_Symbol_2_Test");
+      suite.register(new Ingest_Symbol_3a_Test, "Ingest_Symbol_3a_Test");
+      suite.register(new Ingest_Symbol_3b_Test, "Ingest_Symbol_3b_Test");
+      suite.register(new Ingest_Symbol_3c_Test, "Ingest_Symbol_3c_Test");
+      suite.register(new Ingest_Symbol_4_Test, "Ingest_Symbol_4_Test");
+      suite.register(new Ingest_Symbol_5_Test, "Ingest_Symbol_5_Test");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
+
       suite.register(new Ingest_String_Test, "Ingest_String_Test");
       suite.register(new Ingest_A_Bunch_Of_Stuff_1_Test, "Ingest_A_Bunch_Of_Stuff_1_Test");
       suite.register(new Ingest_Block_Test, "Ingest_Block_Test");
