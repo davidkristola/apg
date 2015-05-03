@@ -3,6 +3,7 @@ with Ada.Finalization;
 with kv.core.wwstr; use kv.core.wwstr;
 
 with kv.apg.tokens;
+with kv.apg.nfa;
 
 package kv.apg.regex is
 

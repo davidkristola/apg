@@ -11,6 +11,7 @@ with kv.apg.tokens;
 with kv.apg.parse;
 with kv.apg.directives;
 with kv.apg.regex;
+with kv.apg.nfa;
 with kv.core.wwstr;
 
 package body kv.apg.tests is
@@ -557,6 +558,23 @@ package body kv.apg.tests is
    end Run;
 
 
+
+
+   ----------------------------------------------------------------------------
+   type Nfa_Test_Class is abstract new kv.core.ut.Test_Class with
+      record
+         N : aliased kv.apg.nfa.Nfa_Class;
+      end record;
+
+   ----------------------------------------------------------------------------
+   type Init_Nfa_Test is new Nfa_Test_Class with null record;
+   procedure Run(T : in out Init_Nfa_Test) is
+   begin
+      T.N.Initialize;
+      T.Assert(T.N.Get_State_Count = 0, "Wrong init state count (should be zero, is " & Natural'IMAGE(T.N.Get_State_Count) & ").");
+   end Run;
+
+
    ----------------------------------------------------------------------------
    procedure register(suite : in kv.core.ut.Suite_Pointer_Type) is
    begin
@@ -603,7 +621,8 @@ package body kv.apg.tests is
       suite.register(new Parse_Sub_Sub_Star_Token_Test, "Parse_Sub_Sub_Star_Token_Test");
       suite.register(new Parse_Or_Sub_Sub_Star_Token_Test, "Parse_Or_Sub_Sub_Star_Token_Test");
       suite.register(new Parse_Plus_Token_Test, "Parse_Plus_Token_Test");
---      suite.register(new XXX, "XXX");
+
+      suite.register(new Init_Nfa_Test, "Init_Nfa_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;
