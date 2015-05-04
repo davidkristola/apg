@@ -1,11 +1,9 @@
 
 with kv.core.wwstr; use kv.core.wwstr;
 
+with kv.apg.fast; use kv.apg.fast;
+
 package kv.apg.nfa is
-
-   type Acceptance_Type is (Match, Any, From_To);
-
-   type State_Id_Type is new Natural;
 
    type Nfa_Class is tagged private;
    type Nfa_Pointer_Type is access all Nfa_Class;
@@ -30,36 +28,6 @@ package kv.apg.nfa is
 private
 
 
-   type State_Id_List_Type is array (Natural range <>) of State_Id_Type;
-   type State_Id_List_Pointer_Type is access State_Id_List_Type;
-
-   type Transition_Type(Criteria : Acceptance_Type := Any) is
-      record
-         To_State : State_Id_Type;
-         case Criteria is
-            when Match =>
-               Value : Wide_Wide_Character;
-            when From_To =>
-               Lower : Wide_Wide_Character;
-               Upper : Wide_Wide_Character;
-            when Any =>
-               null;
-         end case;
-      end record;
-   type Transition_List_Type is array (Natural range <>) of Transition_Type;
-   type Transition_List_Pointer_Type is access Transition_List_Type;
-
-   type State_Class is
-      record
-         Id          : State_Id_Type;
-         Accepting   : Boolean;
-         Payload     : Integer;
-         Transitions : Transition_List_Pointer_Type;
-      end record;
-
-   type State_List_Type is array (State_Id_Type range <>) of State_Class;
-   type State_List_Pointer_Type is access State_List_Type;
-
 
    type Nfa_Class is tagged
       record
@@ -72,7 +40,7 @@ private
       record
          Nfa     : Nfa_Pointer_Type;
          Active  : Natural := 0; -- Count of active cursors
-         Cursors : State_Id_List_Pointer_Type;
+         Cursors : State_Id_List_Pointer_Type; --!@#$ use a boolean array (or two: cur/nxt)
       end record;
 
 end kv.apg.nfa;

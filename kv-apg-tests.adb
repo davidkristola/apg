@@ -12,6 +12,8 @@ with kv.apg.parse;
 with kv.apg.directives;
 with kv.apg.regex;
 with kv.apg.nfa;
+with kv.apg.fast;
+
 with kv.core.wwstr;
 
 package body kv.apg.tests is
@@ -559,6 +561,38 @@ package body kv.apg.tests is
 
 
 
+   ----------------------------------------------------------------------------
+   type Fast_Test_Class is abstract new kv.core.ut.Test_Class with null record;
+
+   ----------------------------------------------------------------------------
+   type Fast_Uninit_Test is new Fast_Test_Class with null record;
+   procedure Run(T : in out Fast_Uninit_Test) is
+      use kv.apg.fast;
+      Tr : Transition_Type;
+   begin
+      T.Assert(Go_To(Tr, To_Wide_Wide_Character(Character'('+'))) = Invalid_State, "Wrong destination for uninitialized transition");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Fast_Any_Test is new Fast_Test_Class with null record;
+   procedure Run(T : in out Fast_Any_Test) is
+      use kv.apg.fast;
+      Tr : Transition_Type;
+      Dest : constant State_Id_Type := 2;
+   begin
+      Set_Any(Tr, Dest);
+      T.Assert(Go_To(Tr, To_Wide_Wide_Character(Character'('+'))) = Dest, "Wrong destination for any transition");
+      T.Assert(Go_To(Tr, To_Wide_Wide_Character(Character'('z'))) = Dest, "Wrong destination for any transition");
+      T.Assert(Go_To(Tr, To_Wide_Wide_Character(Character'('a'))) = Dest, "Wrong destination for any transition");
+      T.Assert(Go_To(Tr, To_Wide_Wide_Character(Character'('A'))) = Dest, "Wrong destination for any transition");
+      T.Assert(Go_To(Tr, To_Wide_Wide_Character(Character'('Z'))) = Dest, "Wrong destination for any transition");
+      T.Assert(Go_To(Tr, To_Wide_Wide_Character(Ada.Characters.Latin_1.NUL)) = Dest, "Wrong destination for any transition");
+      T.Assert(Go_To(Tr, To_Wide_Wide_Character(Ada.Characters.Latin_1.Reserved_128)) = Dest, "Wrong destination for any transition");
+      T.Assert(Go_To(Tr, To_Wide_Wide_Character(Ada.Characters.Latin_1.LC_Y_Diaeresis)) = Dest, "Wrong destination for any transition");
+   end Run;
+
+
+
 
    ----------------------------------------------------------------------------
    type Nfa_Test_Class is abstract new kv.core.ut.Test_Class with
@@ -622,7 +656,16 @@ package body kv.apg.tests is
       suite.register(new Parse_Or_Sub_Sub_Star_Token_Test, "Parse_Or_Sub_Sub_Star_Token_Test");
       suite.register(new Parse_Plus_Token_Test, "Parse_Plus_Token_Test");
 
+      suite.register(new Fast_Uninit_Test, "Fast_Uninit_Test");
+      suite.register(new Fast_Any_Test, "Fast_Any_Test");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
+
+
       suite.register(new Init_Nfa_Test, "Init_Nfa_Test");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;
