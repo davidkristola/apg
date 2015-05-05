@@ -562,36 +562,91 @@ package body kv.apg.tests is
 
 
    ----------------------------------------------------------------------------
-   type Fast_Test_Class is abstract new kv.core.ut.Test_Class with null record;
+   type Fast_Test_Class is abstract new kv.core.ut.Test_Class with
+      record
+         Uut : kv.apg.fast.Transition_Type;
+      end record;
+
+   ----------------------------------------------------------------------------
+   procedure Check_Transition
+      (T : in out Fast_Test_Class'CLASS;
+       D : in     kv.apg.fast.State_Universe_Type;
+       C : in     Character;
+       E : in     String) is
+      use kv.apg.fast;
+      Answer : State_Universe_Type;
+   begin
+      Answer := Go_To(T.Uut, To_Wide_Wide_Character(C));
+      T.Assert(Answer = D, "Wrong destination on '"&C&"' for "&E&" transition, got " & State_Universe_Type'IMAGE(Answer) & ", expected " & State_Universe_Type'IMAGE(D));
+   end Check_Transition;
+
 
    ----------------------------------------------------------------------------
    type Fast_Uninit_Test is new Fast_Test_Class with null record;
    procedure Run(T : in out Fast_Uninit_Test) is
       use kv.apg.fast;
-      Tr : Transition_Type;
    begin
-      T.Assert(Go_To(Tr, To_Wide_Wide_Character(Character'('+'))) = Invalid_State, "Wrong destination for uninitialized transition");
+      Check_Transition(T, Invalid_State, '+', "uninitialized");
    end Run;
 
    ----------------------------------------------------------------------------
    type Fast_Any_Test is new Fast_Test_Class with null record;
    procedure Run(T : in out Fast_Any_Test) is
       use kv.apg.fast;
-      Tr : Transition_Type;
       Dest : constant State_Id_Type := 2;
+      Explanation : constant String := "any";
    begin
-      Set_Any(Tr, Dest);
-      T.Assert(Go_To(Tr, To_Wide_Wide_Character(Character'('+'))) = Dest, "Wrong destination for any transition");
-      T.Assert(Go_To(Tr, To_Wide_Wide_Character(Character'('z'))) = Dest, "Wrong destination for any transition");
-      T.Assert(Go_To(Tr, To_Wide_Wide_Character(Character'('a'))) = Dest, "Wrong destination for any transition");
-      T.Assert(Go_To(Tr, To_Wide_Wide_Character(Character'('A'))) = Dest, "Wrong destination for any transition");
-      T.Assert(Go_To(Tr, To_Wide_Wide_Character(Character'('Z'))) = Dest, "Wrong destination for any transition");
-      T.Assert(Go_To(Tr, To_Wide_Wide_Character(Ada.Characters.Latin_1.NUL)) = Dest, "Wrong destination for any transition");
-      T.Assert(Go_To(Tr, To_Wide_Wide_Character(Ada.Characters.Latin_1.Reserved_128)) = Dest, "Wrong destination for any transition");
-      T.Assert(Go_To(Tr, To_Wide_Wide_Character(Ada.Characters.Latin_1.LC_Y_Diaeresis)) = Dest, "Wrong destination for any transition");
+      Set_Any(T.Uut, Dest);
+      Check_Transition(T, Dest, '+', Explanation);
+      Check_Transition(T, Dest, 'z', Explanation);
+      Check_Transition(T, Dest, 'a', Explanation);
+      Check_Transition(T, Dest, 'Z', Explanation);
+      Check_Transition(T, Dest, 'A', Explanation);
+      Check_Transition(T, Dest, Ada.Characters.Latin_1.NUL, Explanation);
+      Check_Transition(T, Dest, Ada.Characters.Latin_1.Reserved_128, Explanation);
+      Check_Transition(T, Dest, Ada.Characters.Latin_1.LC_Y_Diaeresis, Explanation);
    end Run;
 
+   ----------------------------------------------------------------------------
+   type Fast_Match_Test is new Fast_Test_Class with null record;
+   procedure Run(T : in out Fast_Match_Test) is
+      use kv.apg.fast;
+      Dest : constant State_Id_Type := 9;
+      Explanation : constant String := "match";
+   begin
+      Set_Match(T.Uut, Dest, To_Wide_Wide_Character(Character'('+')));
+      Check_Transition(T, Dest, '+', Explanation);
+      Check_Transition(T, Invalid_State, 'z', Explanation);
+      Check_Transition(T, Invalid_State, 'a', Explanation);
+      Check_Transition(T, Invalid_State, 'Z', Explanation);
+      Check_Transition(T, Invalid_State, 'A', Explanation);
+      Check_Transition(T, Invalid_State, Ada.Characters.Latin_1.NUL, Explanation);
+      Check_Transition(T, Invalid_State, Ada.Characters.Latin_1.Reserved_128, Explanation);
+      Check_Transition(T, Invalid_State, Ada.Characters.Latin_1.LC_Y_Diaeresis, Explanation);
+   end Run;
 
+   ----------------------------------------------------------------------------
+   type Fast_Range_Test is new Fast_Test_Class with null record;
+   procedure Run(T : in out Fast_Range_Test) is
+      use kv.apg.fast;
+      Dest : constant State_Id_Type := 7;
+      Explanation : constant String := "range";
+      First_C : constant Character := 'b';
+      Last_C : constant Character := 'y';
+   begin
+      Set_Range(T.Uut, Dest, To_Wide_Wide_Character(First_C), To_Wide_Wide_Character(Last_C));
+      Check_Transition(T, Invalid_State, '+', Explanation);
+      Check_Transition(T, Invalid_State, 'a', Explanation);
+      for C in First_C .. Last_C loop
+         Check_Transition(T, Dest, C, Explanation);
+      end loop;
+      Check_Transition(T, Invalid_State, 'z', Explanation);
+      Check_Transition(T, Invalid_State, 'A', Explanation);
+      Check_Transition(T, Invalid_State, 'Z', Explanation);
+      Check_Transition(T, Invalid_State, Ada.Characters.Latin_1.NUL, Explanation);
+      Check_Transition(T, Invalid_State, Ada.Characters.Latin_1.Reserved_128, Explanation);
+      Check_Transition(T, Invalid_State, Ada.Characters.Latin_1.LC_Y_Diaeresis, Explanation);
+   end Run;
 
 
    ----------------------------------------------------------------------------
@@ -658,8 +713,8 @@ package body kv.apg.tests is
 
       suite.register(new Fast_Uninit_Test, "Fast_Uninit_Test");
       suite.register(new Fast_Any_Test, "Fast_Any_Test");
---      suite.register(new XXX, "XXX");
---      suite.register(new XXX, "XXX");
+      suite.register(new Fast_Match_Test, "Fast_Match_Test");
+      suite.register(new Fast_Range_Test, "Fast_Range_Test");
 
 
       suite.register(new Init_Nfa_Test, "Init_Nfa_Test");
