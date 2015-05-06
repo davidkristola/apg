@@ -31,7 +31,7 @@ private
 
    type Nfa_Class is tagged
       record
-         Start   : State_Id_Type := 0;
+         Start   : State_Id_Type := State_Id_Type'FIRST;
          States  : State_List_Pointer_Type;
          Count   : Natural := 0;
       end record;

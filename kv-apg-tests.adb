@@ -650,6 +650,124 @@ package body kv.apg.tests is
 
 
    ----------------------------------------------------------------------------
+   type Fast_State_Test_Class is abstract new kv.core.ut.Test_Class with
+      record
+         Uut : kv.apg.fast.State_Type;
+      end record;
+
+   ----------------------------------------------------------------------------
+   type Fast_Init_State_Accepting_Test is new Fast_State_Test_Class with null record;
+   procedure Run(T : in out Fast_Init_State_Accepting_Test) is
+      use kv.apg.fast;
+   begin
+      Set_Accepting(T.Uut, 8, 42);
+      T.Assert(Get_Id(T.Uut) = 8, "Should be ID 8 but is not!");
+      T.Assert(Is_Accepting(T.Uut), "Should be accepting but is not!");
+      T.Assert(Get_Key(T.Uut) = 42, "Key should be 42 but is not!");
+      T.Assert(Get_Transition_Count(T.Uut) = 0, "Get_Transition_Count should be 0 but is not!");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Fast_Init_State_Non_Accepting_Test is new Fast_State_Test_Class with null record;
+   procedure Run(T : in out Fast_Init_State_Non_Accepting_Test) is
+      use kv.apg.fast;
+   begin
+      Set_Non_Accepting(T.Uut, 7, 2);
+      T.Assert(Get_Id(T.Uut) = 7, "Should be ID 7 but is not!");
+      T.Assert(not Is_Accepting(T.Uut), "Should be not accepting but is!");
+      T.Assert(Get_Transition_Count(T.Uut) = 2, "Get_Transition_Count should be 2 but is not!");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Fast_Get_Count_Test is new Fast_State_Test_Class with null record;
+   procedure Run(T : in out Fast_Get_Count_Test) is
+      use kv.apg.fast;
+   begin
+      Set_Accepting(T.Uut, 6, 32, 3);
+      T.Assert(Get_Transition_Count(T.Uut) = 3, "Get_Transition_Count should be 3 but is not!");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Fast_Set_Trans_Test is new Fast_State_Test_Class with null record;
+   procedure Run(T : in out Fast_Set_Trans_Test) is
+      use kv.apg.fast;
+      Input : kv.apg.fast.Transition_Type;
+      Output : kv.apg.fast.Transition_Type;
+   begin
+      Set_Match(Input, 67, To_Wide_Wide_Character(Character'('#')));
+      Set_Match(Output, 33, To_Wide_Wide_Character(Character'('?')));
+      Set_Non_Accepting(T.Uut, 5, 4);
+      T.Assert(Get_Transition_Count(T.Uut) = 4, "Get_Transition_Count should be 4 but is not!");
+      Set_Transition(T.Uut, 1, Input);
+      Output := Get_Transition(T.Uut, 1);
+      T.Assert(Input = Output, "Could not set first transition!");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Fast_Empty_Set_Neg_Test is new Fast_State_Test_Class with null record;
+   procedure Run(T : in out Fast_Empty_Set_Neg_Test) is
+      use kv.apg.fast;
+      Input : kv.apg.fast.Transition_Type;
+   begin
+      Set_Accepting(T.Uut, 1, 88);
+      T.Assert(Get_Transition_Count(T.Uut) = 0, "Get_Transition_Count should be 0 but is not!");
+      Set_Match(Input, 2, To_Wide_Wide_Character(Character'('Q')));
+      begin
+         Set_Transition(T.Uut, 1, Input);
+         T.Assert(False, "Set of an invalid transition did not raise an exception!");
+      exception
+         when others =>
+            null;
+      end;
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Fast_Range_Set_Neg_Test is new Fast_State_Test_Class with null record;
+   procedure Run(T : in out Fast_Range_Set_Neg_Test) is
+      use kv.apg.fast;
+      Input : kv.apg.fast.Transition_Type;
+   begin
+      Set_Non_Accepting(T.Uut, 5, 4);
+      T.Assert(Get_Transition_Count(T.Uut) = 4, "Get_Transition_Count should be 4 but is not!");
+      Set_Match(Input, 2, To_Wide_Wide_Character(Character'('Q')));
+      begin
+         Set_Transition(T.Uut, 5, Input);
+         T.Assert(False, "Set of an invalid transition did not raise an exception!");
+      exception
+         when others =>
+            null;
+      end;
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Fast_Mark_Transitions_Test is new Fast_State_Test_Class with null record;
+   procedure Run(T : in out Fast_Mark_Transitions_Test) is
+      use kv.apg.fast;
+      T1 : kv.apg.fast.Transition_Type;
+      T2 : kv.apg.fast.Transition_Type;
+      T3 : kv.apg.fast.Transition_Type;
+      Next : aliased Active_State_List_Type := (1 => False, 2 => False, 3 => False);
+      Count : Natural := 5; -- preset with bad value
+      A : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('a'));
+      B : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('b'));
+   begin
+      Set_Match(T1, 1, A);
+      Set_Match(T2, 2, B);
+      Set_Any(T2, 3);
+      Set_Non_Accepting(T.Uut, 5, 3);
+      Set_Transition(T.Uut, 1, T1);
+      Set_Transition(T.Uut, 2, T2);
+      Set_Transition(T.Uut, 3, T3);
+      -- Make a transition to 1
+      Mark_Transitions(T.Uut, A, Next'UNCHECKED_ACCESS, Count);
+      T.Assert(Count = 2, "Expected count to be 2, not " & Natural'IMAGE(Count));
+      T.Assert(Next(1), "Expected Next(1) to be True but it isn't!");
+      T.Assert(not Next(2), "Expected Next(12 to be False but it isn't!");
+      T.Assert(Next(3), "Expected Next(3) to be True but it isn't!");
+   end Run;
+
+
+   ----------------------------------------------------------------------------
    type Nfa_Test_Class is abstract new kv.core.ut.Test_Class with
       record
          N : aliased kv.apg.nfa.Nfa_Class;
@@ -680,9 +798,6 @@ package body kv.apg.tests is
       suite.register(new Ingest_Symbol_3c_Test, "Ingest_Symbol_3c_Test");
       suite.register(new Ingest_Symbol_4_Test, "Ingest_Symbol_4_Test");
       suite.register(new Ingest_Symbol_5_Test, "Ingest_Symbol_5_Test");
---      suite.register(new XXX, "XXX");
---      suite.register(new XXX, "XXX");
-
       suite.register(new Ingest_String_Test, "Ingest_String_Test");
       suite.register(new Ingest_A_Bunch_Of_Stuff_1_Test, "Ingest_A_Bunch_Of_Stuff_1_Test");
       suite.register(new Ingest_Block_Test, "Ingest_Block_Test");
@@ -715,12 +830,15 @@ package body kv.apg.tests is
       suite.register(new Fast_Any_Test, "Fast_Any_Test");
       suite.register(new Fast_Match_Test, "Fast_Match_Test");
       suite.register(new Fast_Range_Test, "Fast_Range_Test");
-
+      suite.register(new Fast_Init_State_Accepting_Test, "Fast_Init_State_Accepting_Test");
+      suite.register(new Fast_Init_State_Non_Accepting_Test, "Fast_Init_State_Non_Accepting_Test");
+      suite.register(new Fast_Get_Count_Test, "Fast_Get_Count_Test");
+      suite.register(new Fast_Set_Trans_Test, "Fast_Set_Trans_Test");
+      suite.register(new Fast_Empty_Set_Neg_Test, "Fast_Empty_Set_Neg_Test");
+      suite.register(new Fast_Range_Set_Neg_Test, "Fast_Range_Set_Neg_Test");
+      suite.register(new Fast_Mark_Transitions_Test, "Fast_Mark_Transitions_Test");
 
       suite.register(new Init_Nfa_Test, "Init_Nfa_Test");
---      suite.register(new XXX, "XXX");
---      suite.register(new XXX, "XXX");
---      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;

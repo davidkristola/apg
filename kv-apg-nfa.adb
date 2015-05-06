@@ -6,7 +6,7 @@ package body kv.apg.nfa is
       (Self  : in out Nfa_Class;
        Alloc : in     Positive := 20) is
    begin
-      Self.States := new State_List_Type(0..State_Id_Type(Alloc-1));
+      Self.States := new State_List_Type(1..State_Id_Type(Alloc));
    end Initialize;
 
    ----------------------------------------------------------------------------
@@ -23,7 +23,7 @@ package body kv.apg.nfa is
    begin
       Self.Nfa := Nfa;
       Self.Active := 0;
-      Self.Cursors := new State_Id_List_Type(0..Nfa.Get_State_Count);
+      Self.Cursors := new State_Id_List_Type(1..State_Id_Type(Nfa.Get_State_Count));
    end Initialize;
 
 
