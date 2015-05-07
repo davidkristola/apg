@@ -4,7 +4,7 @@ package body kv.apg.nfa is
    ----------------------------------------------------------------------------
    procedure Initialize
       (Self  : in out Nfa_Class;
-       Alloc : in     Positive := 20) is
+       Alloc : in     Positive) is
    begin
       Self.States := new State_List_Type(1..State_Id_Type(Alloc));
    end Initialize;
@@ -13,8 +13,54 @@ package body kv.apg.nfa is
    function Get_State_Count
       (Self : in     Nfa_Class) return Natural is
    begin
-      return Self.Count;
+      return Self.States'LENGTH;
    end Get_State_Count;
+
+   ----------------------------------------------------------------------------
+   procedure Set_State_Accepting
+      (Self  : in out Nfa_Class;
+       State : in     State_Id_Type;
+       Key   : in     Key_Type;
+       Alloc : in     Natural := 0) is
+   begin
+      Set_Accepting(Self.States(State), State, Key, Alloc);
+   end Set_State_Accepting;
+
+   ----------------------------------------------------------------------------
+   procedure Set_State_Non_Accepting
+      (Self  : in out Nfa_Class;
+       State : in     State_Id_Type;
+       Alloc : in     Natural) is
+   begin
+      Set_Non_Accepting(Self.States(State), State, Alloc);
+   end Set_State_Non_Accepting;
+
+   ----------------------------------------------------------------------------
+   procedure Set_State_Transition
+      (Self  : in out Nfa_Class;
+       State : in     State_Id_Type;
+       Index : in     Positive;
+       Trans : in     Transition_Type) is
+   begin
+      Set_Transition(Self.States(State), Index, Trans);
+   end Set_State_Transition;
+
+   ----------------------------------------------------------------------------
+   function Recursive_Image(Self : Nfa_Class; Index : Natural) return String is
+   begin
+      if Index = 1 then
+         return Image(Self.States(1));
+      else
+         return Recursive_Image(Self, Index-1) & "/" & Image(Self.States(State_Id_Type(Index)));
+      end if;
+   end Recursive_Image;
+
+   ----------------------------------------------------------------------------
+   function Image(Self : Nfa_Class) return String is
+   begin
+      return "[" & Recursive_Image(Self, Self.States'LENGTH) & "]";
+   end Image;
+
 
    ----------------------------------------------------------------------------
    procedure Initialize

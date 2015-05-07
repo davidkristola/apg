@@ -10,10 +10,30 @@ package kv.apg.nfa is
 
    procedure Initialize
       (Self  : in out Nfa_Class;
-       Alloc : in     Positive := 20);
+       Alloc : in     Positive);
 
    function Get_State_Count
       (Self : in     Nfa_Class) return Natural;
+
+   procedure Set_State_Accepting
+      (Self  : in out Nfa_Class;
+       State : in     State_Id_Type;
+       Key   : in     Key_Type;
+       Alloc : in     Natural := 0);
+   procedure Set_State_Non_Accepting
+      (Self  : in out Nfa_Class;
+       State : in     State_Id_Type;
+       Alloc : in     Natural);
+   procedure Set_State_Transition
+      (Self  : in out Nfa_Class;
+       State : in     State_Id_Type;
+       Index : in     Positive;
+       Trans : in     Transition_Type);
+
+   function Image(Self : Nfa_Class) return String;
+
+
+
 
 
    type Nfa_State_Class is tagged private;
@@ -27,13 +47,10 @@ package kv.apg.nfa is
 
 private
 
-
-
    type Nfa_Class is tagged
       record
          Start   : State_Id_Type := State_Id_Type'FIRST;
          States  : State_List_Pointer_Type;
-         Count   : Natural := 0;
       end record;
 
    type Nfa_State_Class is tagged

@@ -37,8 +37,9 @@ package kv.apg.fast is
    procedure Set_Any(Self : in out Transition_Type; Dest : in State_Id_Type);
    procedure Set_Match(Self : in out Transition_Type; Dest : in State_Id_Type; Value : in Wide_Wide_Character);
    procedure Set_Range(Self : in out Transition_Type; Dest : in State_Id_Type; Lower : in Wide_Wide_Character; Upper : in Wide_Wide_Character);
+   function Image(Self : Transition_Type) return String;
 
-   function Go_To(Self : in Transition_Type; Check : in Wide_Wide_Character) return State_Universe_Type;
+   function Move(Self : in Transition_Type; Check : in Wide_Wide_Character) return State_Universe_Type;
 
    type Key_Type is new Integer;
 
@@ -68,6 +69,7 @@ package kv.apg.fast is
    function Get_Key(Self : State_Type) return Key_Type;
    function Get_Transition_Count(Self : State_Type) return Natural;
    function Get_Transition(Self : State_Type; Index : Positive) return Transition_Type;
+   function Image(Self : State_Type) return String;
 
    procedure Mark_Transitions
       (Self  : in     State_Type;

@@ -1,3 +1,4 @@
+with Interfaces;
 
 package body kv.apg.fast is
 
@@ -20,7 +21,41 @@ package body kv.apg.fast is
    end Set_Range;
 
    ----------------------------------------------------------------------------
-   function Go_To(Self : in Transition_Type; Check : in Wide_Wide_Character) return State_Universe_Type is
+   function Img(ID : State_Universe_Type) return String is
+      Decimal_Image : constant String := State_Universe_Type'IMAGE(ID);
+   begin
+      return Decimal_Image(2..Decimal_Image'LAST);
+   end Img;
+
+   ----------------------------------------------------------------------------
+   function Img(Char : Wide_Wide_Character) return String is
+      Decimal_Image : constant String := Interfaces.Unsigned_32'IMAGE(Interfaces.Unsigned_32(Wide_Wide_Character'POS(Char)));
+   begin
+      return Decimal_Image(2..Decimal_Image'LAST);
+   end Img;
+
+   ----------------------------------------------------------------------------
+   function Img(Key : Key_Type) return String is
+      Decimal_Image : constant String := Key_Type'IMAGE(Key);
+   begin
+      return Decimal_Image(2..Decimal_Image'LAST);
+   end Img;
+
+   ----------------------------------------------------------------------------
+   function Image(Self : Transition_Type) return String is
+   begin
+      case Self.Criteria is
+         when Any =>
+            return "any=>" & Img(Self.To_State);
+         when Match =>
+            return Img(Self.Value) & "=>" & Img(Self.To_State);
+         when From_To =>
+            return Img(Self.Lower) & "-" & Img(Self.Upper) & "=>" & Img(Self.To_State);
+      end case;
+   end Image;
+
+   ----------------------------------------------------------------------------
+   function Move(Self : in Transition_Type; Check : in Wide_Wide_Character) return State_Universe_Type is
    begin
       case Self.Criteria is
          when Any =>
@@ -38,7 +73,7 @@ package body kv.apg.fast is
                return Invalid_State;
             end if;
       end case;
-   end Go_To;
+   end Move;
 
 
 
@@ -64,7 +99,7 @@ package body kv.apg.fast is
       Self.Accepting := True;
       Self.Accepted_Key := Key;
       Allocate_Transition_Array(Self, Alloc);
-   end ;
+   end Set_Accepting;
 
    ----------------------------------------------------------------------------
    procedure Set_Non_Accepting
@@ -121,6 +156,39 @@ package body kv.apg.fast is
       return Self.Transitions(Index);
    end Get_Transition;
 
+
+   ----------------------------------------------------------------------------
+   function Trans_Img(Self : State_Type; Index : Natural) return String is
+   begin
+      if Index = 1 then
+         return Image(Self.Transitions(1));
+      else
+         return Trans_Img(Self, Index-1) & "," & Image(Self.Transitions(Index));
+      end if;
+   end Trans_Img;
+
+   ----------------------------------------------------------------------------
+   function Image(Self : State_Type) return String is
+      function State_Part return String is
+      begin
+         if Self.Accepting then
+            return "(" & Img(Self.Id) & ":" & Img(Self.Accepted_Key) & ")";
+         else
+            return Img(Self.Id);
+         end if;
+      end State_Part;
+      function Transition_Part return String is
+      begin
+         if Self.Transitions = null then
+            return "";
+         else
+            return Trans_Img(Self, Self.Transitions'LENGTH);
+         end if;
+      end Transition_Part;
+   begin
+      return State_Part & "{" & Transition_Part & "}";
+   end Image;
+
    ----------------------------------------------------------------------------
    procedure Mark_Transitions
       (Self  : in     State_Type;
@@ -131,7 +199,7 @@ package body kv.apg.fast is
    begin
       Count := 0;
       for I in Self.Transitions'RANGE loop
-         Destination := Go_To(Self.Transitions(I), Value);
+         Destination := Move(Self.Transitions(I), Value);
          if Destination /= Invalid_State then
             Count := Count + 1;
             Next(Destination) := True;

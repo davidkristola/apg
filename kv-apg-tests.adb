@@ -562,41 +562,43 @@ package body kv.apg.tests is
 
 
    ----------------------------------------------------------------------------
-   type Fast_Test_Class is abstract new kv.core.ut.Test_Class with
+   type Fast_Transition_Test_Class is abstract new kv.core.ut.Test_Class with
       record
          Uut : kv.apg.fast.Transition_Type;
       end record;
 
    ----------------------------------------------------------------------------
    procedure Check_Transition
-      (T : in out Fast_Test_Class'CLASS;
+      (T : in out Fast_Transition_Test_Class'CLASS;
        D : in     kv.apg.fast.State_Universe_Type;
        C : in     Character;
        E : in     String) is
       use kv.apg.fast;
       Answer : State_Universe_Type;
    begin
-      Answer := Go_To(T.Uut, To_Wide_Wide_Character(C));
+      Answer := Move(T.Uut, To_Wide_Wide_Character(C));
       T.Assert(Answer = D, "Wrong destination on '"&C&"' for "&E&" transition, got " & State_Universe_Type'IMAGE(Answer) & ", expected " & State_Universe_Type'IMAGE(D));
    end Check_Transition;
 
 
    ----------------------------------------------------------------------------
-   type Fast_Uninit_Test is new Fast_Test_Class with null record;
+   type Fast_Uninit_Test is new Fast_Transition_Test_Class with null record;
    procedure Run(T : in out Fast_Uninit_Test) is
       use kv.apg.fast;
    begin
       Check_Transition(T, Invalid_State, '+', "uninitialized");
+      T.Assert(Image(T.Uut) = ("any=>0"), "Wrong image! Got <" & (Image(T.Uut)) & ">");
    end Run;
 
    ----------------------------------------------------------------------------
-   type Fast_Any_Test is new Fast_Test_Class with null record;
+   type Fast_Any_Test is new Fast_Transition_Test_Class with null record;
    procedure Run(T : in out Fast_Any_Test) is
       use kv.apg.fast;
       Dest : constant State_Id_Type := 2;
       Explanation : constant String := "any";
    begin
       Set_Any(T.Uut, Dest);
+      T.Assert(Image(T.Uut) = ("any=>2"), "Wrong image! Got <" & (Image(T.Uut)) & ">");
       Check_Transition(T, Dest, '+', Explanation);
       Check_Transition(T, Dest, 'z', Explanation);
       Check_Transition(T, Dest, 'a', Explanation);
@@ -608,13 +610,14 @@ package body kv.apg.tests is
    end Run;
 
    ----------------------------------------------------------------------------
-   type Fast_Match_Test is new Fast_Test_Class with null record;
+   type Fast_Match_Test is new Fast_Transition_Test_Class with null record;
    procedure Run(T : in out Fast_Match_Test) is
       use kv.apg.fast;
       Dest : constant State_Id_Type := 9;
       Explanation : constant String := "match";
    begin
       Set_Match(T.Uut, Dest, To_Wide_Wide_Character(Character'('+')));
+      T.Assert(Image(T.Uut) = ("43=>9"), "Wrong image! Got <" & (Image(T.Uut)) & ">");
       Check_Transition(T, Dest, '+', Explanation);
       Check_Transition(T, Invalid_State, 'z', Explanation);
       Check_Transition(T, Invalid_State, 'a', Explanation);
@@ -626,7 +629,7 @@ package body kv.apg.tests is
    end Run;
 
    ----------------------------------------------------------------------------
-   type Fast_Range_Test is new Fast_Test_Class with null record;
+   type Fast_Range_Test is new Fast_Transition_Test_Class with null record;
    procedure Run(T : in out Fast_Range_Test) is
       use kv.apg.fast;
       Dest : constant State_Id_Type := 7;
@@ -635,6 +638,7 @@ package body kv.apg.tests is
       Last_C : constant Character := 'y';
    begin
       Set_Range(T.Uut, Dest, To_Wide_Wide_Character(First_C), To_Wide_Wide_Character(Last_C));
+      T.Assert(Image(T.Uut) = ("98-121=>7"), "Wrong image! Got <" & (Image(T.Uut)) & ">");
       Check_Transition(T, Invalid_State, '+', Explanation);
       Check_Transition(T, Invalid_State, 'a', Explanation);
       for C in First_C .. Last_C loop
@@ -661,6 +665,7 @@ package body kv.apg.tests is
       use kv.apg.fast;
    begin
       Set_Accepting(T.Uut, 8, 42);
+      T.Assert(Image(T.Uut) = ("(8:42){}"), "Wrong image! Got <" & (Image(T.Uut)) & ">");
       T.Assert(Get_Id(T.Uut) = 8, "Should be ID 8 but is not!");
       T.Assert(Is_Accepting(T.Uut), "Should be accepting but is not!");
       T.Assert(Get_Key(T.Uut) = 42, "Key should be 42 but is not!");
@@ -673,6 +678,7 @@ package body kv.apg.tests is
       use kv.apg.fast;
    begin
       Set_Non_Accepting(T.Uut, 7, 2);
+      T.Assert(Image(T.Uut) = ("7{any=>0,any=>0}"), "Wrong image! Got <" & (Image(T.Uut)) & ">");
       T.Assert(Get_Id(T.Uut) = 7, "Should be ID 7 but is not!");
       T.Assert(not Is_Accepting(T.Uut), "Should be not accepting but is!");
       T.Assert(Get_Transition_Count(T.Uut) = 2, "Get_Transition_Count should be 2 but is not!");
@@ -747,13 +753,13 @@ package body kv.apg.tests is
       T2 : kv.apg.fast.Transition_Type;
       T3 : kv.apg.fast.Transition_Type;
       Next : aliased Active_State_List_Type := (1 => False, 2 => False, 3 => False);
-      Count : Natural := 5; -- preset with bad value
+      Count : Natural := 5; -- pre-set with bad value
       A : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('a'));
       B : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('b'));
    begin
       Set_Match(T1, 1, A);
       Set_Match(T2, 2, B);
-      Set_Any(T2, 3);
+      Set_Any(T3, 3);
       Set_Non_Accepting(T.Uut, 5, 3);
       Set_Transition(T.Uut, 1, T1);
       Set_Transition(T.Uut, 2, T2);
@@ -762,23 +768,44 @@ package body kv.apg.tests is
       Mark_Transitions(T.Uut, A, Next'UNCHECKED_ACCESS, Count);
       T.Assert(Count = 2, "Expected count to be 2, not " & Natural'IMAGE(Count));
       T.Assert(Next(1), "Expected Next(1) to be True but it isn't!");
-      T.Assert(not Next(2), "Expected Next(12 to be False but it isn't!");
+      T.Assert(not Next(2), "Expected Next(1) to be False but it isn't!");
       T.Assert(Next(3), "Expected Next(3) to be True but it isn't!");
+      T.Assert(Image(T.Uut) = ("5{97=>1,98=>2,any=>3}"), "Wrong image! Got <" & (Image(T.Uut)) & ">");
    end Run;
 
 
    ----------------------------------------------------------------------------
    type Nfa_Test_Class is abstract new kv.core.ut.Test_Class with
       record
-         N : aliased kv.apg.nfa.Nfa_Class;
+         Uut : aliased kv.apg.nfa.Nfa_Class;
       end record;
 
    ----------------------------------------------------------------------------
    type Init_Nfa_Test is new Nfa_Test_Class with null record;
    procedure Run(T : in out Init_Nfa_Test) is
    begin
-      T.N.Initialize;
-      T.Assert(T.N.Get_State_Count = 0, "Wrong init state count (should be zero, is " & Natural'IMAGE(T.N.Get_State_Count) & ").");
+      T.Uut.Initialize(1);
+      T.Assert(T.Uut.Get_State_Count = 1, "Wrong init state count (should be 1, is " & Natural'IMAGE(T.Uut.Get_State_Count) & ").");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Image_Nfa_Test is new Nfa_Test_Class with null record;
+   procedure Run(T : in out Image_Nfa_Test) is
+      use kv.apg.fast;
+      T1 : kv.apg.fast.Transition_Type;
+      T2 : kv.apg.fast.Transition_Type;
+      A : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('a'));
+      B : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('b'));
+   begin
+      Set_Match(T1, 2, A);
+      Set_Match(T2, 2, B);
+      T.Uut.Initialize(2);
+      T.Assert(T.Uut.Get_State_Count = 2, "Wrong init state count (should be 2, is " & Natural'IMAGE(T.Uut.Get_State_Count) & ").");
+      T.Uut.Set_State_Non_Accepting(1, 2);
+      T.Uut.Set_State_Transition(1, 1, T1);
+      T.Uut.Set_State_Transition(1, 2, T2);
+      T.Uut.Set_State_Accepting(2, 36);
+      T.Assert(T.Uut.Image = ("[1{97=>2,98=>2}/(2:36){}]"), "Wrong image! Got <" & T.Uut.Image & ">");
    end Run;
 
 
@@ -839,7 +866,7 @@ package body kv.apg.tests is
       suite.register(new Fast_Mark_Transitions_Test, "Fast_Mark_Transitions_Test");
 
       suite.register(new Init_Nfa_Test, "Init_Nfa_Test");
---      suite.register(new XXX, "XXX");
+      suite.register(new Image_Nfa_Test, "Image_Nfa_Test");
 --      suite.register(new XXX, "XXX");
    end register;
 
