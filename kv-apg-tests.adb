@@ -810,6 +810,73 @@ package body kv.apg.tests is
 
 
    ----------------------------------------------------------------------------
+   type Nfa_State_Test_Class is abstract new kv.core.ut.Test_Class with
+      record
+         Nfa : aliased kv.apg.nfa.Nfa_Class;
+         Uut : aliased kv.apg.nfa.Nfa_State_Class;
+      end record;
+
+   ----------------------------------------------------------------------------
+   overriding procedure Set_Up(T : in out Nfa_State_Test_Class) is
+      use kv.apg.fast;
+      --
+      -- +----(c)-+                  +------+
+      -- |        ^                  |      |
+      -- v        |                  v      |
+      -- 1 -(a)-> 2 -(b)-> 3!  plus  2 -(a)-+
+      -- |        ^
+      -- |        |
+      -- +--(c)---+
+      --
+      -- This will accept "ab", "aab", "a*b", "cb", "cccb", "ccab", "cca*b", "(cc)*b", "(a|c)(a|c(a|c))*b"
+      --
+      T1_1 : kv.apg.fast.Transition_Type;
+      T1_2 : kv.apg.fast.Transition_Type;
+      T2_1 : kv.apg.fast.Transition_Type;
+      T2_2 : kv.apg.fast.Transition_Type;
+      T2_3 : kv.apg.fast.Transition_Type;
+      A : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('a'));
+      B : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('b'));
+      C : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('c'));
+   begin
+      Set_Match(T1_1, 2, A);
+      Set_Match(T1_2, 2, C);
+      Set_Match(T2_1, 1, C);
+      Set_Match(T2_2, 2, A);
+      Set_Match(T2_3, 3, B);
+      T.Nfa.Initialize(3); -- 3 states
+      T.Nfa.Set_State_Non_Accepting(1, 2);
+      T.Nfa.Set_State_Transition(1, 1, T1_1);
+      T.Nfa.Set_State_Transition(1, 2, T1_2);
+      T.Nfa.Set_State_Non_Accepting(2, 3);
+      T.Nfa.Set_State_Transition(2, 1, T2_1);
+      T.Nfa.Set_State_Transition(2, 2, T2_2);
+      T.Nfa.Set_State_Transition(2, 3, T2_3);
+      T.Nfa.Set_State_Accepting(3, 13); -- Payload 13 (and no transitions)
+   end Set_Up;
+
+   ----------------------------------------------------------------------------
+   type Sanity_Check_Nfa_State_Test is new Nfa_State_Test_Class with null record;
+   procedure Run(T : in out Sanity_Check_Nfa_State_Test) is
+      use kv.apg.fast;
+   begin
+      T.Assert(T.Nfa.Image = ("[1{97=>2,99=>2}/2{99=>1,97=>2,98=>3}/(3:13){}]"), "Wrong image! Got <" & T.Nfa.Image & ">");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Init_Nfa_State_Test is new Nfa_State_Test_Class with null record;
+   procedure Run(T : in out Init_Nfa_State_Test) is
+      use kv.apg.fast;
+   begin
+      T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
+      T.Assert(not T.Uut.Is_Accepting, "Should not be accepting yet");
+      T.Assert(T.Uut.Active_State_Count = 1, "Should have only one active state");
+      T.Assert(not T.Uut.Is_Terminal, "Should not be terminal yet");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed yet");
+      T.Assert(T.Uut.Move_Count = 0, "Should have no moves yet");
+   end Run;
+
+   ----------------------------------------------------------------------------
    procedure register(suite : in kv.core.ut.Suite_Pointer_Type) is
    begin
       suite.register(new Initial_State_Test, "Initial_State_Test");
@@ -852,7 +919,6 @@ package body kv.apg.tests is
       suite.register(new Parse_Sub_Sub_Star_Token_Test, "Parse_Sub_Sub_Star_Token_Test");
       suite.register(new Parse_Or_Sub_Sub_Star_Token_Test, "Parse_Or_Sub_Sub_Star_Token_Test");
       suite.register(new Parse_Plus_Token_Test, "Parse_Plus_Token_Test");
-
       suite.register(new Fast_Uninit_Test, "Fast_Uninit_Test");
       suite.register(new Fast_Any_Test, "Fast_Any_Test");
       suite.register(new Fast_Match_Test, "Fast_Match_Test");
@@ -864,9 +930,14 @@ package body kv.apg.tests is
       suite.register(new Fast_Empty_Set_Neg_Test, "Fast_Empty_Set_Neg_Test");
       suite.register(new Fast_Range_Set_Neg_Test, "Fast_Range_Set_Neg_Test");
       suite.register(new Fast_Mark_Transitions_Test, "Fast_Mark_Transitions_Test");
-
       suite.register(new Init_Nfa_Test, "Init_Nfa_Test");
       suite.register(new Image_Nfa_Test, "Image_Nfa_Test");
+
+      suite.register(new Sanity_Check_Nfa_State_Test, "Sanity_Check_Nfa_State_Test");
+      suite.register(new Init_Nfa_State_Test, "Init_Nfa_State_Test");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;
 

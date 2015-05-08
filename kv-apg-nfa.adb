@@ -72,5 +72,35 @@ package body kv.apg.nfa is
       Self.Cursors := new State_Id_List_Type(1..State_Id_Type(Nfa.Get_State_Count));
    end Initialize;
 
+   ----------------------------------------------------------------------------
+   function Is_Accepting(Self : Nfa_State_Class) return Boolean is
+   begin
+   return False;
+   end;
+
+   ----------------------------------------------------------------------------
+   function Is_Terminal(Self : Nfa_State_Class) return Boolean is
+   begin
+   return False;
+   end;
+
+   ----------------------------------------------------------------------------
+   function Is_Failed(Self : Nfa_State_Class) return Boolean is
+   begin
+   return False;
+   end;
+
+   ----------------------------------------------------------------------------
+   function Active_State_Count(Self : Nfa_State_Class) return Natural is
+   begin
+   return 0;
+   end;
+
+   ----------------------------------------------------------------------------
+   function Move_Count(Self : Nfa_State_Class) return Natural is
+   begin
+   return 0;
+   end;
+
 
 end kv.apg.nfa;

@@ -43,6 +43,11 @@ package kv.apg.nfa is
       (Self : in out Nfa_State_Class;
        Nfa  : in     Nfa_Pointer_Type);
 
+   function Is_Accepting(Self : Nfa_State_Class) return Boolean;
+   function Is_Terminal(Self : Nfa_State_Class) return Boolean;
+   function Is_Failed(Self : Nfa_State_Class) return Boolean;
+   function Active_State_Count(Self : Nfa_State_Class) return Natural;
+   function Move_Count(Self : Nfa_State_Class) return Natural;
 
 
 private
