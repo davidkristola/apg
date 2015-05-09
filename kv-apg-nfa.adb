@@ -1,4 +1,6 @@
 
+with Ada.Text_IO; use Ada.Text_IO;
+
 package body kv.apg.nfa is
 
    ----------------------------------------------------------------------------
@@ -56,50 +58,167 @@ package body kv.apg.nfa is
    end Recursive_Image;
 
    ----------------------------------------------------------------------------
+   function Get_Start_State(Self : Nfa_Class) return State_Id_Type is
+   begin
+      return Self.Start;
+   end Get_Start_State;
+
+   ----------------------------------------------------------------------------
+   function Is_Accepting(Self : Nfa_Class; State : State_Id_Type) return Boolean is
+   begin
+      return Is_Accepting(Self.States(State));
+   end Is_Accepting;
+
+   ----------------------------------------------------------------------------
+   function Transition_Count(Self : Nfa_Class; State : State_Id_Type) return Natural is
+   begin
+--      Put_Line("Transition_Count checking " & State_Id_Type'IMAGE(State) & ", transitions = " & Natural'IMAGE(Get_Transition_Count(Self.States(State))));
+      return Get_Transition_Count(Self.States(State));
+   end Transition_Count;
+
+   ----------------------------------------------------------------------------
    function Image(Self : Nfa_Class) return String is
    begin
       return "[" & Recursive_Image(Self, Self.States'LENGTH) & "]";
    end Image;
 
+   ----------------------------------------------------------------------------
+   procedure Mark_Transitions
+      (Self  : in     Nfa_Class;
+       These : in     Active_State_List_Pointer_Type;
+       Next  : in     Active_State_List_Pointer_Type;
+       Value : in     Wide_Wide_Character) is
+      Count : Natural := 0;
+   begin
+      for I in These.all'RANGE loop
+         if These(I) then
+            Mark_Transitions(Self.States(I), Value, Next, Count);
+         end if;
+      end loop;
+   end Mark_Transitions;
+
+
+
+
+
+   ----------------------------------------------------------------------------
+   procedure Clear_State_List(List : in     Active_State_List_Pointer_Type) is
+   begin
+      for I in List.all'RANGE loop
+         List(I) := False;
+      end loop;
+   end Clear_State_List;
+
+   ----------------------------------------------------------------------------
+   function Active_Count(List : in     Active_State_List_Pointer_Type) return Natural is
+      Count : Natural := 0;
+   begin
+      for I in List.all'RANGE loop
+         if List(I) then
+            Count := Count + 1;
+         end if;
+      end loop;
+      return Count;
+   end Active_Count;
+
+   ----------------------------------------------------------------------------
+   function Accepting_Count(Self : in     Nfa_State_Class; List : in     Active_State_List_Pointer_Type) return Natural is
+      Count : Natural := 0;
+   begin
+      for I in List.all'RANGE loop
+         if List(I) then
+            if Self.Nfa.Is_Accepting(I) then
+               Count := Count + 1;
+            end if;
+         end if;
+      end loop;
+      return Count;
+   end Accepting_Count;
+
+   ----------------------------------------------------------------------------
+   function Transition_Count(Self : in     Nfa_State_Class; List : in     Active_State_List_Pointer_Type) return Natural is
+      Count : Natural := 0;
+   begin
+      for I in List.all'RANGE loop
+         if List(I) then
+            Count := Count + Self.Nfa.Transition_Count(I);
+         end if;
+      end loop;
+      return Count;
+   end Transition_Count;
+
+   ----------------------------------------------------------------------------
+   procedure Activate(List : in     Active_State_List_Pointer_Type; State : in     State_Id_Type) is
+   begin
+      List(State) := True;
+   end Activate;
 
    ----------------------------------------------------------------------------
    procedure Initialize
       (Self : in out Nfa_State_Class;
        Nfa  : in     Nfa_Pointer_Type) is
+      State_Count : State_Universe_Type;
    begin
       Self.Nfa := Nfa;
-      Self.Active := 0;
-      Self.Cursors := new State_Id_List_Type(1..State_Id_Type(Nfa.Get_State_Count));
+      State_Count := State_Universe_Type(Nfa.Get_State_Count);
+      Self.Previous := new Active_State_List_Type(1..State_Count);
+      Self.Next := new Active_State_List_Type(1..State_Count);
+      -- reset:
+      Clear_State_List(Self.Previous);
+      Clear_State_List(Self.Next);
+      Activate(Self.Previous, Self.Nfa.Get_Start_State);
+      Activate(Self.Next, Self.Nfa.Get_Start_State);
    end Initialize;
+
+   ----------------------------------------------------------------------------
+   procedure Swap_Current_And_Previous
+      (Self  : in out Nfa_State_Class) is
+      Temp : Active_State_List_Pointer_Type;
+   begin
+      Temp := Self.Previous;
+      Self.Previous := Self.Next;
+      Self.Next := Temp;
+   end Swap_Current_And_Previous;
+
+   ----------------------------------------------------------------------------
+   procedure Ingest
+      (Self  : in out Nfa_State_Class;
+       Input : in     Wide_Wide_Character) is
+   begin
+      Swap_Current_And_Previous(Self);
+      Clear_State_List(Self.Next);
+      Self.Nfa.Mark_Transitions(Self.Previous, Self.Next, Input);
+      Self.Moves := Self.Moves + 1;
+   end Ingest;
 
    ----------------------------------------------------------------------------
    function Is_Accepting(Self : Nfa_State_Class) return Boolean is
    begin
-   return False;
+      return Accepting_Count(Self, Self.Next) = 1; -- Accepting_Count > 1 is an error state!
    end;
 
    ----------------------------------------------------------------------------
    function Is_Terminal(Self : Nfa_State_Class) return Boolean is
    begin
-   return False;
+      return Transition_Count(Self, Self.Next) = 0;
    end;
 
    ----------------------------------------------------------------------------
    function Is_Failed(Self : Nfa_State_Class) return Boolean is
    begin
-   return False;
+      return Active_Count(Self.Next) = 0;
    end;
 
    ----------------------------------------------------------------------------
    function Active_State_Count(Self : Nfa_State_Class) return Natural is
    begin
-   return 0;
-   end;
+      return Active_Count(Self.Next);
+   end Active_State_Count;
 
    ----------------------------------------------------------------------------
    function Move_Count(Self : Nfa_State_Class) return Natural is
    begin
-   return 0;
+      return Self.Moves;
    end;
 
 

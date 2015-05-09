@@ -855,6 +855,18 @@ package body kv.apg.tests is
       T.Nfa.Set_State_Accepting(3, 13); -- Payload 13 (and no transitions)
    end Set_Up;
 
+
+   ----------------------------------------------------------------------------
+   procedure Ingest_All(T : in out Nfa_State_Test_Class'CLASS; S : in String) is
+      WS : constant Wide_Wide_String := To_Wide_Wide_String(S);
+   begin
+      for WC of WS loop
+         T.Uut.Ingest(WC);
+      end loop;
+   end Ingest_All;
+
+
+
    ----------------------------------------------------------------------------
    type Sanity_Check_Nfa_State_Test is new Nfa_State_Test_Class with null record;
    procedure Run(T : in out Sanity_Check_Nfa_State_Test) is
@@ -875,6 +887,100 @@ package body kv.apg.tests is
       T.Assert(not T.Uut.Is_Failed, "Should not be failed yet");
       T.Assert(T.Uut.Move_Count = 0, "Should have no moves yet");
    end Run;
+
+   ----------------------------------------------------------------------------
+   type Failed_Nfa_State_Test is new Nfa_State_Test_Class with null record;
+   procedure Run(T : in out Failed_Nfa_State_Test) is
+      use kv.apg.fast;
+      X : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('x'));
+   begin
+      T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
+      T.Uut.Ingest(X);
+      T.Assert(T.Uut.Move_Count = 1, "Should have 1 move");
+      T.Assert(not T.Uut.Is_Accepting, "Should not be accepting");
+      T.Assert(T.Uut.Active_State_Count = 0, "Should have no active states");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(T.Uut.Is_Failed, "Should be failed");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Short_1_Nfa_State_Test is new Nfa_State_Test_Class with null record;
+   procedure Run(T : in out Short_1_Nfa_State_Test) is
+   begin
+      T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
+      Ingest_All(T, "ab");
+      T.Assert(T.Uut.Move_Count = 2, "Should have 2 move");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(T.Uut.Active_State_Count = 1, "Should have one active state");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Short_2_Nfa_State_Test is new Nfa_State_Test_Class with null record;
+   procedure Run(T : in out Short_2_Nfa_State_Test) is
+   begin
+      T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
+      Ingest_All(T, "cb");
+      T.Assert(T.Uut.Move_Count = 2, "Should have 2 move");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(T.Uut.Active_State_Count = 1, "Should have one active state");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Long_1_Nfa_State_Test is new Nfa_State_Test_Class with null record;
+   procedure Run(T : in out Long_1_Nfa_State_Test) is
+   begin
+      T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
+      Ingest_All(T, "ccab");
+      T.Assert(T.Uut.Move_Count = 4, "Should have 4 move");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(T.Uut.Active_State_Count = 1, "Should have one active state");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Long_2_Nfa_State_Test is new Nfa_State_Test_Class with null record;
+   procedure Run(T : in out Long_2_Nfa_State_Test) is
+   begin
+      T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
+      Ingest_All(T, "accaccaaaaab");
+      T.Assert(T.Uut.Move_Count = 12, "Should have 12 move");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(T.Uut.Active_State_Count = 1, "Should have one active state");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Long_3_Nfa_State_Test is new Nfa_State_Test_Class with null record;
+   procedure Run(T : in out Long_3_Nfa_State_Test) is
+   begin
+      T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
+      Ingest_All(T, "accaccaaaaa");
+      T.Assert(T.Uut.Move_Count = 11, "Should have 12 move");
+      T.Assert(not T.Uut.Is_Accepting, "Should not be accepting");
+      T.Assert(T.Uut.Active_State_Count = 1, "Should have one active state");
+      T.Assert(not T.Uut.Is_Terminal, "Should not be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Long_4_Nfa_State_Test is new Nfa_State_Test_Class with null record;
+   procedure Run(T : in out Long_4_Nfa_State_Test) is
+   begin
+      T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
+      Ingest_All(T, "accaccaaaaqa");
+      T.Assert(T.Uut.Move_Count = 12, "Should have 12 move");
+      T.Assert(not T.Uut.Is_Accepting, "Should not be accepting");
+      T.Assert(T.Uut.Active_State_Count = 0, "Should have no active states");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(T.Uut.Is_Failed, "Should be failed");
+   end Run;
+
 
    ----------------------------------------------------------------------------
    procedure register(suite : in kv.core.ut.Suite_Pointer_Type) is
@@ -935,8 +1041,13 @@ package body kv.apg.tests is
 
       suite.register(new Sanity_Check_Nfa_State_Test, "Sanity_Check_Nfa_State_Test");
       suite.register(new Init_Nfa_State_Test, "Init_Nfa_State_Test");
---      suite.register(new XXX, "XXX");
---      suite.register(new XXX, "XXX");
+      suite.register(new Failed_Nfa_State_Test, "Failed_Nfa_State_Test");
+      suite.register(new Short_1_Nfa_State_Test, "Short_1_Nfa_State_Test");
+      suite.register(new Short_2_Nfa_State_Test, "Short_2_Nfa_State_Test");
+      suite.register(new Long_1_Nfa_State_Test, "Long_1_Nfa_State_Test");
+      suite.register(new Long_2_Nfa_State_Test, "Long_2_Nfa_State_Test");
+      suite.register(new Long_3_Nfa_State_Test, "Long_3_Nfa_State_Test");
+      suite.register(new Long_4_Nfa_State_Test, "Long_4_Nfa_State_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;
