@@ -32,7 +32,7 @@ package kv.apg.fast is
          end case;
       end record;
    type Transition_List_Type is array (Positive range <>) of Transition_Type;
-   type Transition_List_Pointer_Type is access Transition_List_Type;
+   type Transition_List_Pointer_Type is access all Transition_List_Type;
 
    procedure Set_Any(Self : in out Transition_Type; Dest : in State_Id_Type);
    procedure Set_Match(Self : in out Transition_Type; Dest : in State_Id_Type; Value : in Wide_Wide_Character);
@@ -78,7 +78,7 @@ package kv.apg.fast is
        Count :    out Natural);
 
    type State_List_Type is array (State_Id_Type range <>) of State_Type;
-   type State_List_Pointer_Type is access State_List_Type;
+   type State_List_Pointer_Type is access all State_List_Type;
 
 end kv.apg.fast;
 

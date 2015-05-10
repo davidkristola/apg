@@ -12,6 +12,10 @@ package kv.apg.nfa is
       (Self  : in out Nfa_Class;
        Alloc : in     Positive);
 
+   procedure Initialize
+      (Self     : in out Nfa_Class;
+       Existing : in     State_List_Pointer_Type);
+
    function Get_State_Count
       (Self : in     Nfa_Class) return Natural;
 
@@ -33,6 +37,7 @@ package kv.apg.nfa is
    function Image(Self : Nfa_Class) return String;
    function Get_Start_State(Self : Nfa_Class) return State_Id_Type;
    function Is_Accepting(Self : Nfa_Class; State : State_Id_Type) return Boolean;
+   function Is_Terminal(Self : Nfa_Class; State : State_Id_Type) return Boolean;
    function Transition_Count(Self : Nfa_Class; State : State_Id_Type) return Natural;
 
    procedure Mark_Transitions

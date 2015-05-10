@@ -23,6 +23,7 @@ package body kv.apg.tests is
    use kv.apg.tokens;
    use Ada.Strings.Wide_Wide_Unbounded;
    use kv.core.wwstr;
+   use kv.apg.fast;
 
    Pi : constant Wide_Wide_Character := Wide_Wide_Character'VAL(16#03C0#);
    Three : constant Wide_Wide_Character := '3';
@@ -810,11 +811,14 @@ package body kv.apg.tests is
 
 
    ----------------------------------------------------------------------------
-   type Nfa_State_Test_Class is abstract new kv.core.ut.Test_Class with
+   type Base_Nfa_State_Test_Class is abstract new kv.core.ut.Test_Class with
       record
          Nfa : aliased kv.apg.nfa.Nfa_Class;
          Uut : aliased kv.apg.nfa.Nfa_State_Class;
       end record;
+
+   ----------------------------------------------------------------------------
+   type Nfa_State_Test_Class is abstract new Base_Nfa_State_Test_Class with null record;
 
    ----------------------------------------------------------------------------
    overriding procedure Set_Up(T : in out Nfa_State_Test_Class) is
@@ -857,7 +861,7 @@ package body kv.apg.tests is
 
 
    ----------------------------------------------------------------------------
-   procedure Ingest_All(T : in out Nfa_State_Test_Class'CLASS; S : in String) is
+   procedure Ingest_All(T : in out Base_Nfa_State_Test_Class'CLASS; S : in String) is
       WS : constant Wide_Wide_String := To_Wide_Wide_String(S);
    begin
       for WC of WS loop
@@ -899,7 +903,7 @@ package body kv.apg.tests is
       T.Assert(T.Uut.Move_Count = 1, "Should have 1 move");
       T.Assert(not T.Uut.Is_Accepting, "Should not be accepting");
       T.Assert(T.Uut.Active_State_Count = 0, "Should have no active states");
-      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Terminal, "Should not be terminal");
       T.Assert(T.Uut.Is_Failed, "Should be failed");
    end Run;
 
@@ -977,9 +981,71 @@ package body kv.apg.tests is
       T.Assert(T.Uut.Move_Count = 12, "Should have 12 move");
       T.Assert(not T.Uut.Is_Accepting, "Should not be accepting");
       T.Assert(T.Uut.Active_State_Count = 0, "Should have no active states");
-      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Terminal, "Should not be terminal");
       T.Assert(T.Uut.Is_Failed, "Should be failed");
    end Run;
+
+
+   package Static_Nfa_Definition is
+      A : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('a'));
+      B : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('b'));
+      C : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('c'));
+      D : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('d'));
+      E : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('e'));
+      T1 : aliased Transition_List_Type := (1 => (Any, 1), 2 => (Match, 2, A));
+      T2 : aliased Transition_List_Type := (1 => (Match, 3, B));
+      T3 : aliased Transition_List_Type := (1 => (Match, 4, C), 2 => (Match, 3, B));
+      State_List : aliased State_List_Type :=
+         (1 => (1, False, 0, T1'ACCESS),
+          2 => (2, False, 0, T2'ACCESS),
+          3 => (3, False, 0, T3'ACCESS),
+          4 => (4, True, 1, null)
+          );
+   end Static_Nfa_Definition;
+
+   type Static_Nfa_State_Test_Class is abstract new Base_Nfa_State_Test_Class with null record;
+
+   ----------------------------------------------------------------------------
+   overriding procedure Set_Up(T : in out Static_Nfa_State_Test_Class) is
+   begin
+      T.Nfa.Initialize(Static_Nfa_Definition.State_List'ACCESS);
+      T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
+   end Set_Up;
+
+   ----------------------------------------------------------------------------
+   type Abc_State_Test is new Static_Nfa_State_Test_Class with null record;
+   procedure Run(T : in out Abc_State_Test) is
+   begin
+      Ingest_All(T, "abc");
+      T.Assert(T.Uut.Move_Count = 3, "Should have 3 move");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(T.Uut.Active_State_Count = 2, "Should have two active states");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type False_Start_State_Test is new Static_Nfa_State_Test_Class with null record;
+   procedure Run(T : in out False_Start_State_Test) is
+   begin
+      Ingest_All(T, "abxxxabc");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(T.Uut.Active_State_Count = 2, "Should have two active states");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Longer_State_Test is new Static_Nfa_State_Test_Class with null record;
+   procedure Run(T : in out Longer_State_Test) is
+   begin
+      Ingest_All(T, "aqwsdewasdcdesawdrdfgdewaabbbbbbbbbbbbbbbbbbbbbbbbbbbc");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(T.Uut.Active_State_Count = 2, "Should have two active states");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+   end Run;
+
 
 
    ----------------------------------------------------------------------------
@@ -1048,6 +1114,11 @@ package body kv.apg.tests is
       suite.register(new Long_2_Nfa_State_Test, "Long_2_Nfa_State_Test");
       suite.register(new Long_3_Nfa_State_Test, "Long_3_Nfa_State_Test");
       suite.register(new Long_4_Nfa_State_Test, "Long_4_Nfa_State_Test");
+
+      suite.register(new Abc_State_Test, "Abc_State_Test");
+      suite.register(new False_Start_State_Test, "False_Start_State_Test");
+      suite.register(new Longer_State_Test, "Longer_State_Test");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;

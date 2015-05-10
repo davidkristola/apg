@@ -12,6 +12,14 @@ package body kv.apg.nfa is
    end Initialize;
 
    ----------------------------------------------------------------------------
+   procedure Initialize
+      (Self     : in out Nfa_Class;
+       Existing : in     State_List_Pointer_Type) is
+   begin
+      Self.States := Existing;
+   end Initialize;
+
+   ----------------------------------------------------------------------------
    function Get_State_Count
       (Self : in     Nfa_Class) return Natural is
    begin
@@ -70,6 +78,12 @@ package body kv.apg.nfa is
    end Is_Accepting;
 
    ----------------------------------------------------------------------------
+   function Is_Terminal(Self : Nfa_Class; State : State_Id_Type) return Boolean is
+   begin
+      return Get_Transition_Count(Self.States(State)) = 0; -- Has no exit transitions
+   end Is_Terminal;
+
+   ----------------------------------------------------------------------------
    function Transition_Count(Self : Nfa_Class; State : State_Id_Type) return Natural is
    begin
 --      Put_Line("Transition_Count checking " & State_Id_Type'IMAGE(State) & ", transitions = " & Natural'IMAGE(Get_Transition_Count(Self.States(State))));
@@ -102,7 +116,8 @@ package body kv.apg.nfa is
 
 
    ----------------------------------------------------------------------------
-   procedure Clear_State_List(List : in     Active_State_List_Pointer_Type) is
+   procedure Clear_State_List
+      (List : in     Active_State_List_Pointer_Type) is
    begin
       for I in List.all'RANGE loop
          List(I) := False;
@@ -110,33 +125,71 @@ package body kv.apg.nfa is
    end Clear_State_List;
 
    ----------------------------------------------------------------------------
-   function Active_Count(List : in     Active_State_List_Pointer_Type) return Natural is
-      Count : Natural := 0;
+   procedure Activate
+      (List  : in     Active_State_List_Pointer_Type;
+       State : in     State_Id_Type) is
    begin
-      for I in List.all'RANGE loop
-         if List(I) then
-            Count := Count + 1;
-         end if;
-      end loop;
-      return Count;
-   end Active_Count;
+      List(State) := True;
+   end Activate;
 
    ----------------------------------------------------------------------------
-   function Accepting_Count(Self : in     Nfa_State_Class; List : in     Active_State_List_Pointer_Type) return Natural is
+   type State_Check_Function_Pointer_Type is access function(Nfa : Nfa_Pointer_Type; State : State_Id_Type) return Boolean;
+
+   ----------------------------------------------------------------------------
+   function For_Each_Active_State_Count_If
+      (Nfa    : in     Nfa_Pointer_Type;
+       Active : in     Active_State_List_Pointer_Type;
+       Check  : in     State_Check_Function_Pointer_Type) return Natural is
       Count : Natural := 0;
    begin
-      for I in List.all'RANGE loop
-         if List(I) then
-            if Self.Nfa.Is_Accepting(I) then
+      for State in Active.all'RANGE loop
+         if Active(State) then
+            if Check(Nfa, State) then
                Count := Count + 1;
             end if;
          end if;
       end loop;
       return Count;
+   end For_Each_Active_State_Count_If;
+
+
+   ----------------------------------------------------------------------------
+   function Count_Me(Nfa : Nfa_Pointer_Type; State : State_Id_Type) return Boolean is
+   begin
+      return True;
+   end Count_Me;
+
+   ----------------------------------------------------------------------------
+   function Active_Count
+      (List : in     Active_State_List_Pointer_Type) return Natural is
+   begin
+      return For_Each_Active_State_Count_If(null, List, Count_Me'ACCESS);
+   end Active_Count;
+
+   ----------------------------------------------------------------------------
+   function Count_Accepting(Nfa : Nfa_Pointer_Type; State : State_Id_Type) return Boolean is
+   begin
+      return Nfa.Is_Accepting(State);
+   end Count_Accepting;
+
+   ----------------------------------------------------------------------------
+   function Count_Terminal_Accepting(Nfa : Nfa_Pointer_Type; State : State_Id_Type) return Boolean is
+   begin
+      return Nfa.Is_Accepting(State) and then Nfa.Is_Terminal(State);
+   end Count_Terminal_Accepting;
+
+   ----------------------------------------------------------------------------
+   function Accepting_Count
+      (Nfa    : in     Nfa_Pointer_Type;
+       Active : in     Active_State_List_Pointer_Type) return Natural is
+   begin
+      return For_Each_Active_State_Count_If(Nfa, Active, Count_Accepting'ACCESS);
    end Accepting_Count;
 
    ----------------------------------------------------------------------------
-   function Transition_Count(Self : in     Nfa_State_Class; List : in     Active_State_List_Pointer_Type) return Natural is
+   function Transition_Count
+      (Self : in     Nfa_State_Class;
+       List : in     Active_State_List_Pointer_Type) return Natural is
       Count : Natural := 0;
    begin
       for I in List.all'RANGE loop
@@ -146,12 +199,6 @@ package body kv.apg.nfa is
       end loop;
       return Count;
    end Transition_Count;
-
-   ----------------------------------------------------------------------------
-   procedure Activate(List : in     Active_State_List_Pointer_Type; State : in     State_Id_Type) is
-   begin
-      List(State) := True;
-   end Activate;
 
    ----------------------------------------------------------------------------
    procedure Initialize
@@ -194,13 +241,13 @@ package body kv.apg.nfa is
    ----------------------------------------------------------------------------
    function Is_Accepting(Self : Nfa_State_Class) return Boolean is
    begin
-      return Accepting_Count(Self, Self.Next) = 1; -- Accepting_Count > 1 is an error state!
+      return Accepting_Count(Self.Nfa, Self.Next) > 0;
    end;
 
    ----------------------------------------------------------------------------
    function Is_Terminal(Self : Nfa_State_Class) return Boolean is
    begin
-      return Transition_Count(Self, Self.Next) = 0;
+      return For_Each_Active_State_Count_If(Self.Nfa, Self.Next, Count_Terminal_Accepting'ACCESS) > 0; --TODO: what if there are more than one terminal accepting state?
    end;
 
    ----------------------------------------------------------------------------
