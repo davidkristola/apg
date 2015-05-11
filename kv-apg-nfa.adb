@@ -5,10 +5,20 @@ package body kv.apg.nfa is
 
    ----------------------------------------------------------------------------
    procedure Initialize
-      (Self  : in out Nfa_Class;
-       Alloc : in     Positive) is
+      (Self   : in out Nfa_Class;
+       Alloc  : in     Positive;
+       Preset : in     Boolean := False;
+       Key    : in     Key_Type := 0) is
+      Last : State_Id_Type := State_Id_Type(Alloc);
    begin
-      Self.States := new State_List_Type(1..State_Id_Type(Alloc));
+      Self.States := new State_List_Type(1..Last);
+      if Preset then
+         --Put_Line("Presetting " & Positive'IMAGE(Alloc) & " states with the last one accepting/key=" & Key_Type'IMAGE(Key));
+         for I in 1..State_Universe_Type(Last) - 1 loop
+            Set_Non_Accepting(Self.States(I), I, 0);
+         end loop;
+         Set_Accepting(Self.States(Last), Last, Key);
+      end if;
    end Initialize;
 
    ----------------------------------------------------------------------------
@@ -56,6 +66,15 @@ package body kv.apg.nfa is
    end Set_State_Transition;
 
    ----------------------------------------------------------------------------
+   procedure Append_State_Transition
+      (Self  : in out Nfa_Class;
+       State : in     State_Id_Type;
+       Trans : in     Transition_Type) is
+   begin
+      Append_Transition(Self.States(State), Trans);
+   end Append_State_Transition;
+
+   ----------------------------------------------------------------------------
    function Recursive_Image(Self : Nfa_Class; Index : Natural) return String is
    begin
       if Index = 1 then
@@ -95,6 +114,12 @@ package body kv.apg.nfa is
    begin
       return "[" & Recursive_Image(Self, Self.States'LENGTH) & "]";
    end Image;
+
+   ----------------------------------------------------------------------------
+   function Get_Transition(Self : Nfa_Class; State : State_Id_Type; Index : Positive) return Transition_Type is
+   begin
+      return Get_Transition(Self.States(State), Index);
+   end Get_Transition;
 
    ----------------------------------------------------------------------------
    procedure Mark_Transitions
@@ -210,12 +235,19 @@ package body kv.apg.nfa is
       State_Count := State_Universe_Type(Nfa.Get_State_Count);
       Self.Previous := new Active_State_List_Type(1..State_Count);
       Self.Next := new Active_State_List_Type(1..State_Count);
-      -- reset:
+      Self.Reset;
+   end Initialize;
+
+   ----------------------------------------------------------------------------
+   procedure Reset
+      (Self : in out Nfa_State_Class) is
+   begin
       Clear_State_List(Self.Previous);
       Clear_State_List(Self.Next);
       Activate(Self.Previous, Self.Nfa.Get_Start_State);
       Activate(Self.Next, Self.Nfa.Get_Start_State);
-   end Initialize;
+      Self.Moves := 0;
+   end Reset;
 
    ----------------------------------------------------------------------------
    procedure Swap_Current_And_Previous

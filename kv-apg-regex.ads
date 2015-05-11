@@ -4,6 +4,7 @@ with kv.core.wwstr; use kv.core.wwstr;
 
 with kv.apg.tokens;
 with kv.apg.nfa;
+with kv.apg.fast; use kv.apg.fast;
 
 package kv.apg.regex is
 
@@ -35,6 +36,11 @@ package kv.apg.regex is
    procedure Graft_To_Tree
       (Self : in out Node_Class;
        Node : in     Node_Pointer_Type); -- Default behavior for nodes that are always complete
+   function Count_Nfa_Transition_Sets(Self : Node_Class) return Natural is abstract;
+   procedure Set_Nfa_Transitions
+      (Self  : in out Node_Class;
+       NFA   : in out kv.apg.nfa.Nfa_Class;
+       Start : in out State_Id_Type) is abstract;
 
 
 
@@ -59,6 +65,8 @@ package kv.apg.regex is
       (Tree  : in out Regular_Expression_Tree_Type;
        Token : in     kv.apg.tokens.Token_Class);
 
+
+   function To_Nfa(Tree : Regular_Expression_Tree_Type; Key : Key_Type) return kv.apg.nfa.Nfa_Class;
 
 
    -- Control debug output of package
@@ -86,12 +94,22 @@ private
    not overriding procedure Initialize(Self : in out Match_Node_Class; Value : in     String_Type);
    overriding procedure Process_This(Self : in out Match_Node_Class);
    overriding function Image_This(Self : in out Match_Node_Class) return String_Type;
+   overriding function Count_Nfa_Transition_Sets(Self : Match_Node_Class) return Natural;
+   overriding procedure Set_Nfa_Transitions
+      (Self  : in out Match_Node_Class;
+       NFA   : in out kv.apg.nfa.Nfa_Class;
+       Start : in out State_Id_Type);
 
 
    type Match_Any_Node_Class is new Node_Class with null record;
    type Match_Any_Node_Pointer_Type is access all Match_Any_Node_Class;
    overriding procedure Process_This(Self : in out Match_Any_Node_Class);
    overriding function Image_This(Self : in out Match_Any_Node_Class) return String_Type;
+   overriding function Count_Nfa_Transition_Sets(Self : Match_Any_Node_Class) return Natural;
+   overriding procedure Set_Nfa_Transitions
+      (Self  : in out Match_Any_Node_Class;
+       NFA   : in out kv.apg.nfa.Nfa_Class;
+       Start : in out State_Id_Type);
 
 
    type Or_Node_Class is new Node_Class with
@@ -109,6 +127,13 @@ private
    overriding procedure Graft_To_Tree
       (Self : in out Or_Node_Class;
        Node : in     Node_Pointer_Type);
+   overriding function Count_Nfa_Transition_Sets(Self : Or_Node_Class) return Natural;
+   overriding procedure Set_Nfa_Transitions
+      (Self  : in out Or_Node_Class;
+       NFA   : in out kv.apg.nfa.Nfa_Class;
+       Start : in out State_Id_Type);
+
+
 
    type Star_Node_Class is new Node_Class with
       record
@@ -120,6 +145,13 @@ private
    overriding procedure Prepare_For_Graft
       (Self  : in out Star_Node_Class;
        Box   : in out Reg_Ex_Container_Class'CLASS);
+   overriding function Count_Nfa_Transition_Sets(Self : Star_Node_Class) return Natural;
+   overriding procedure Set_Nfa_Transitions
+      (Self  : in out Star_Node_Class;
+       NFA   : in out kv.apg.nfa.Nfa_Class;
+       Start : in out State_Id_Type);
+
+
 
    type Plus_Node_Class is new Node_Class with
       record
@@ -131,6 +163,13 @@ private
    overriding procedure Prepare_For_Graft
       (Self  : in out Plus_Node_Class;
        Box   : in out Reg_Ex_Container_Class'CLASS);
+   overriding function Count_Nfa_Transition_Sets(Self : Plus_Node_Class) return Natural;
+   overriding procedure Set_Nfa_Transitions
+      (Self  : in out Plus_Node_Class;
+       NFA   : in out kv.apg.nfa.Nfa_Class;
+       Start : in out State_Id_Type);
+
+
 
    type Subsequence_Node_Class is new Node_Class with
       record
@@ -146,5 +185,10 @@ private
        Node : in     Node_Pointer_Type);
    overriding procedure Linear_Detach(Self : in out Subsequence_Node_Class; Node : out Node_Pointer_Type);
    overriding procedure Linear_Attach(Self : in out Subsequence_Node_Class; Node : in  Node_Pointer_Type);
+   overriding function Count_Nfa_Transition_Sets(Self : Subsequence_Node_Class) return Natural;
+   overriding procedure Set_Nfa_Transitions
+      (Self  : in out Subsequence_Node_Class;
+       NFA   : in out kv.apg.nfa.Nfa_Class;
+       Start : in out State_Id_Type);
 
 end kv.apg.regex;

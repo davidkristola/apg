@@ -68,26 +68,12 @@ package body kv.apg.regex is
    procedure Linear_Detach(Self : in out Node_Class; Node : out Node_Pointer_Type) is
    begin
       raise Inappropriate_Action_Error;
---      Put_Line("Default Linear_Detach for " & To_String(+Self.Image_Tree));
---      Node := Self.Previous;
---      if Node /= null then
---         Self.Previous := Node.Previous;
---         Node.Previous := null;
---         Put_Line("detached " & To_String(+Node.Image_Tree) & ", leaving " & To_String(+Self.Image_Tree));
---      else
---         Put_Line("nothing to detach, returning null.");
---      end if;
    end Linear_Detach;
 
    -------------------------------------------------------------------------
    procedure Linear_Attach(Self : in out Node_Class; Node : in  Node_Pointer_Type) is
    begin
       raise Inappropriate_Action_Error;
---      Put_Line("Default (push down) Linear_Attach for " & To_String(+Self.Image_Tree));
---      Node.Prepare_For_Graft(Self);
---      Node.Previous := Self.Previous;
---      Self.Previous := Node;
---      Put_Line("result: " & To_String(+Self.Image_Tree));
    end Linear_Attach;
 
    -------------------------------------------------------------------------
@@ -116,24 +102,6 @@ package body kv.apg.regex is
       return Answer;
    end Image_Tree;
 
-
-   -------------------------------------------------------------------------
-   not overriding procedure Initialize(Self : in out Match_Node_Class; Value : in     String_Type) is
-   begin
-      Self.Value := Value;
-   end Initialize;
-
-   -------------------------------------------------------------------------
-   procedure Process_This(Self : in out Match_Node_Class) is
-   begin
-      if Debug then Put_Line("Match_Node_Class.Process_This"); end if;
-   end Process_This;
-
-   -------------------------------------------------------------------------
-   overriding function Image_This(Self : in out Match_Node_Class) return String_Type is
-   begin
-      return Quotation & Self.Value & Quotation;
-   end Image_This;
 
    -------------------------------------------------------------------------
    procedure Prepare_For_Graft
@@ -230,6 +198,20 @@ package body kv.apg.regex is
    end Graft_To_Tree;
 
 
+   -------------------------------------------------------------------------
+   function To_Nfa(Tree : Regular_Expression_Tree_Type; Key : Key_Type) return kv.apg.nfa.Nfa_Class is
+      RegEx_NFA : kv.apg.nfa.Nfa_Class;
+      States : Natural;
+      Start_State : State_Id_Type := 1;
+   begin
+      if Debug then Put_Line("Regular_Expression_Tree_Type.To_Nfa"); end if;
+      States := Tree.Root.Count_Nfa_Transition_Sets + 1;
+      if Debug then Put_Line("RegEx tree NFA states = " & Natural'IMAGE(States)); end if;
+      RegEx_NFA.Initialize(States, True, Key);
+      --RegEx_NFA.Set_State_Accepting(State_Id_Type(States), Key);
+      Tree.Root.Set_Nfa_Transitions(RegEx_NFA, Start_State);
+      return RegEx_NFA;
+   end To_Nfa;
 
 
 
@@ -237,6 +219,55 @@ package body kv.apg.regex is
 
 
 
+
+
+
+   -------------------------------------------------------------------------
+   not overriding procedure Initialize(Self : in out Match_Node_Class; Value : in     String_Type) is
+   begin
+      Self.Value := Value;
+   end Initialize;
+
+   -------------------------------------------------------------------------
+   procedure Process_This(Self : in out Match_Node_Class) is
+   begin
+      if Debug then Put_Line("Match_Node_Class.Process_This"); end if;
+   end Process_This;
+
+   -------------------------------------------------------------------------
+   overriding function Image_This(Self : in out Match_Node_Class) return String_Type is
+   begin
+      return Quotation & Self.Value & Quotation;
+   end Image_This;
+
+   -------------------------------------------------------------------------
+   overriding function Count_Nfa_Transition_Sets(Self : Match_Node_Class) return Natural is
+   begin
+      return Ada.Strings.Wide_Wide_Unbounded.Length(Self.Value) + (if Self.Previous = null then 0 else Self.Previous.Count_Nfa_Transition_Sets);
+   end Count_Nfa_Transition_Sets;
+
+   -------------------------------------------------------------------------
+   overriding procedure Set_Nfa_Transitions
+      (Self  : in out Match_Node_Class;
+       NFA   : in out kv.apg.nfa.Nfa_Class;
+       Start : in out State_Id_Type) is
+      Transition : Transition_Type;
+      First_And_Only_Transition : constant := 1;
+      Destination : State_Id_Type;
+   begin
+      if Debug then Put_Line("Match_Node_Class.Set_Nfa_Transitions starting at " & State_Id_Type'IMAGE(Start)); end if;
+      if Self.Previous /= null then
+         Self.Previous.Set_Nfa_Transitions(NFA, Start);
+      end if;
+      for WWC of Ada.Strings.Wide_Wide_Unbounded.To_Wide_Wide_String(Self.Value) loop
+         --NFA.Set_State_Non_Accepting(Start, First_And_Only_Transition);
+         Destination := Start + 1;
+         Set_Match(Transition, Destination, WWC);
+         --NFA.Set_State_Transition(Start, First_And_Only_Transition, Transition);
+         NFA.Append_State_Transition(Start, Transition);
+         Start := Start + 1;
+      end loop;
+   end Set_Nfa_Transitions;
 
 
 
@@ -255,6 +286,29 @@ package body kv.apg.regex is
       return To_String_Type(".");
    end Image_This;
 
+   -------------------------------------------------------------------------
+   overriding function Count_Nfa_Transition_Sets(Self : Match_Any_Node_Class) return Natural is
+   begin
+      return 1 + (if Self.Previous = null then 0 else Self.Previous.Count_Nfa_Transition_Sets);
+   end Count_Nfa_Transition_Sets;
+
+   -------------------------------------------------------------------------
+   overriding procedure Set_Nfa_Transitions
+      (Self  : in out Match_Any_Node_Class;
+       NFA   : in out kv.apg.nfa.Nfa_Class;
+       Start : in out State_Id_Type) is
+      Transition : Transition_Type;
+      Destination : State_Id_Type;
+   begin
+      if Debug then Put_Line("Match_Any_Node_Class.Set_Nfa_Transitions starting at " & State_Id_Type'IMAGE(Start)); end if;
+      if Self.Previous /= null then
+         Self.Previous.Set_Nfa_Transitions(NFA, Start);
+      end if;
+      Destination := Start + 1;
+      Set_Any(Transition, Destination);
+      NFA.Append_State_Transition(Start, Transition);
+      Start := Start + 1;
+   end Set_Nfa_Transitions;
 
 
 
@@ -318,6 +372,29 @@ package body kv.apg.regex is
       if Debug then Put_Line("result: " & To_String(+Self.Image_Tree)); end if;
    end Graft_To_Tree;
 
+   -------------------------------------------------------------------------
+   overriding function Count_Nfa_Transition_Sets(Self : Or_Node_Class) return Natural is
+   begin
+      -- The OR part contributes A + B - 1 transition sets because the first set includes going to A *or* B.
+      return (Self.A.Count_Nfa_Transition_Sets + Self.B.Count_Nfa_Transition_Sets - 1) + (if Self.Previous = null then 0 else Self.Previous.Count_Nfa_Transition_Sets);
+   end Count_Nfa_Transition_Sets;
+
+   -------------------------------------------------------------------------
+   overriding procedure Set_Nfa_Transitions
+      (Self  : in out Or_Node_Class;
+       NFA   : in out kv.apg.nfa.Nfa_Class;
+       Start : in out State_Id_Type) is
+   begin
+      if Debug then Put_Line("Or_Node_Class.Set_Nfa_Transitions starting at " & State_Id_Type'IMAGE(Start)); end if;
+      if Self.Previous /= null then
+         Self.Previous.Set_Nfa_Transitions(NFA, Start);
+      end if;
+      Self.A.Set_Nfa_Transitions(NFA, Start);
+      Self.B.Set_Nfa_Transitions(NFA, Start);
+      if Debug then Put_Line("result: " & NFA.Image); end if;
+   end Set_Nfa_Transitions;
+
+
 
 
 
@@ -348,6 +425,34 @@ package body kv.apg.regex is
       if Debug then Put_Line("result: " & To_String(+Self.Image_Tree)); end if;
    end Prepare_For_Graft;
 
+   -------------------------------------------------------------------------
+   overriding function Count_Nfa_Transition_Sets(Self : Star_Node_Class) return Natural is
+   begin
+      return Self.A.Count_Nfa_Transition_Sets + (if Self.Previous = null then 0 else Self.Previous.Count_Nfa_Transition_Sets);
+   end Count_Nfa_Transition_Sets;
+
+   -------------------------------------------------------------------------
+   overriding procedure Set_Nfa_Transitions
+      (Self  : in out Star_Node_Class;
+       NFA   : in out kv.apg.nfa.Nfa_Class;
+       Start : in out State_Id_Type) is
+       Start_Of_Star : State_Id_Type;
+       Transition : Transition_Type;
+   begin
+      if Debug then Put_Line("Star_Node_Class.Set_Nfa_Transitions starting at " & State_Id_Type'IMAGE(Start)); end if;
+      if Self.Previous /= null then
+         Self.Previous.Set_Nfa_Transitions(NFA, Start);
+      end if;
+      Start_Of_Star := Start + 1;
+      Self.A.Set_Nfa_Transitions(NFA, Start);
+      if Debug then Put_Line("Star jump back to " & State_Id_Type'IMAGE(Start_Of_Star) & " from " & State_Id_Type'IMAGE(Start)); end if;
+      --Set_Match(Transition, Start_Of_Star, );
+      Transition := NFA.Get_Transition(Start_Of_Star - 1, 1);
+      if Debug then Put_Line("Copied transition = " & Image(Transition)); end if;
+      if Debug then Put_Line("Current NFA = " & NFA.Image); end if;
+      --Set_Dest(Transition, Start_Of_Star);
+      NFA.Append_State_Transition(Start, Transition);
+   end Set_Nfa_Transitions;
 
 
 
@@ -378,6 +483,24 @@ package body kv.apg.regex is
       Self.A := Left;
       if Debug then Put_Line("result: " & To_String(+Self.Image_Tree)); end if;
    end Prepare_For_Graft;
+
+   -------------------------------------------------------------------------
+   overriding function Count_Nfa_Transition_Sets(Self : Plus_Node_Class) return Natural is
+   begin
+      return (Self.A.Count_Nfa_Transition_Sets * 2) + (if Self.Previous = null then 0 else Self.Previous.Count_Nfa_Transition_Sets);
+   end Count_Nfa_Transition_Sets;
+
+   -------------------------------------------------------------------------
+   overriding procedure Set_Nfa_Transitions
+      (Self  : in out Plus_Node_Class;
+       NFA   : in out kv.apg.nfa.Nfa_Class;
+       Start : in out State_Id_Type) is
+   begin
+      if Debug then Put_Line("Plus_Node_Class.Set_Nfa_Transitions starting at " & State_Id_Type'IMAGE(Start)); end if;
+      if Self.Previous /= null then
+         Self.Previous.Set_Nfa_Transitions(NFA, Start);
+      end if;
+   end Set_Nfa_Transitions;
 
 
 
@@ -455,5 +578,24 @@ package body kv.apg.regex is
       Self.A := Node;
       if Debug then Put_Line("result: " & To_String(+Self.Image_Tree)); end if;
    end Linear_Attach;
+
+   -------------------------------------------------------------------------
+   overriding function Count_Nfa_Transition_Sets(Self : Subsequence_Node_Class) return Natural is
+   begin
+      return Self.A.Count_Nfa_Transition_Sets + (if Self.Previous = null then 0 else Self.Previous.Count_Nfa_Transition_Sets);
+   end Count_Nfa_Transition_Sets;
+
+   -------------------------------------------------------------------------
+   overriding procedure Set_Nfa_Transitions
+      (Self  : in out Subsequence_Node_Class;
+       NFA   : in out kv.apg.nfa.Nfa_Class;
+       Start : in out State_Id_Type) is
+   begin
+      if Debug then Put_Line("Subsequence_Node_Class.Set_Nfa_Transitions starting at " & State_Id_Type'IMAGE(Start)); end if;
+      if Self.Previous /= null then
+         Self.Previous.Set_Nfa_Transitions(NFA, Start);
+      end if;
+      Self.A.Set_Nfa_Transitions(NFA, Start);
+   end Set_Nfa_Transitions;
 
 end kv.apg.regex;

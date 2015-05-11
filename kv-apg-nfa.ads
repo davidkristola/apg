@@ -9,8 +9,10 @@ package kv.apg.nfa is
    type Nfa_Pointer_Type is access all Nfa_Class;
 
    procedure Initialize
-      (Self  : in out Nfa_Class;
-       Alloc : in     Positive);
+      (Self   : in out Nfa_Class;
+       Alloc  : in     Positive;
+       Preset : in     Boolean := False;
+       Key    : in     Key_Type := 0);
 
    procedure Initialize
       (Self     : in out Nfa_Class;
@@ -33,12 +35,17 @@ package kv.apg.nfa is
        State : in     State_Id_Type;
        Index : in     Positive;
        Trans : in     Transition_Type);
+   procedure Append_State_Transition
+      (Self  : in out Nfa_Class;
+       State : in     State_Id_Type;
+       Trans : in     Transition_Type);
 
    function Image(Self : Nfa_Class) return String;
    function Get_Start_State(Self : Nfa_Class) return State_Id_Type;
    function Is_Accepting(Self : Nfa_Class; State : State_Id_Type) return Boolean;
    function Is_Terminal(Self : Nfa_Class; State : State_Id_Type) return Boolean;
    function Transition_Count(Self : Nfa_Class; State : State_Id_Type) return Natural;
+   function Get_Transition(Self : Nfa_Class; State : State_Id_Type; Index : Positive) return Transition_Type;
 
    procedure Mark_Transitions
       (Self  : in     Nfa_Class;
@@ -54,6 +61,9 @@ package kv.apg.nfa is
    procedure Initialize
       (Self : in out Nfa_State_Class;
        Nfa  : in     Nfa_Pointer_Type);
+
+   procedure Reset
+      (Self : in out Nfa_State_Class);
 
    procedure Ingest
       (Self  : in out Nfa_State_Class;

@@ -1,6 +1,9 @@
+with Ada.Unchecked_Deallocation;
 with Interfaces;
 
 package body kv.apg.fast is
+
+   procedure Free is new Ada.Unchecked_Deallocation(Transition_List_Type, Transition_List_Pointer_Type);
 
    ----------------------------------------------------------------------------
    procedure Set_Any(Self : in out Transition_Type; Dest : in State_Id_Type) is
@@ -19,6 +22,12 @@ package body kv.apg.fast is
    begin
       Self := (Criteria => From_To, To_State => Dest, Lower => Lower, Upper => Upper);
    end Set_Range;
+
+   ----------------------------------------------------------------------------
+   procedure Set_Dest(Self : in out Transition_Type; Dest : in State_Id_Type) is
+   begin
+      Self.To_State := Dest;
+   end Set_Dest;
 
    ----------------------------------------------------------------------------
    function Img(ID : State_Universe_Type) return String is
@@ -121,6 +130,25 @@ package body kv.apg.fast is
       -- Fail fast
       Self.Transitions(Index) := Trans;
    end Set_Transition;
+
+   ----------------------------------------------------------------------------
+   procedure Append_Transition
+      (Self  : in out State_Type;
+       Trans : in     Transition_Type) is
+      Old : Transition_List_Pointer_Type := Self.Transitions;
+   begin
+      if Self.Transitions = null then
+         Self.Transitions := new Transition_List_Type(1..1);
+         Self.Transitions(1) := Trans;
+      else
+         Self.Transitions := new Transition_List_Type(1..Old'LENGTH+1);
+         for I in 1..Old'LENGTH loop
+            Self.Transitions(I) := Old(I);
+         end loop;
+         Self.Transitions(Old'LENGTH+1) := Trans;
+         Free(Old);
+      end if;
+   end Append_Transition;
 
    ----------------------------------------------------------------------------
    function Get_Id(Self : State_Type) return State_Universe_Type is

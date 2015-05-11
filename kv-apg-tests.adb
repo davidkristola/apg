@@ -774,6 +774,22 @@ package body kv.apg.tests is
       T.Assert(Image(T.Uut) = ("5{97=>1,98=>2,any=>3}"), "Wrong image! Got <" & (Image(T.Uut)) & ">");
    end Run;
 
+   ----------------------------------------------------------------------------
+   type Fast_Append_Trans_Test is new Fast_State_Test_Class with null record;
+   procedure Run(T : in out Fast_Append_Trans_Test) is
+      use kv.apg.fast;
+      T_1 : kv.apg.fast.Transition_Type;
+      T_2 : kv.apg.fast.Transition_Type;
+   begin
+      Set_Match(T_1, 67, To_Wide_Wide_Character(Character'('a')));
+      Set_Match(T_2, 33, To_Wide_Wide_Character(Character'('b')));
+      Set_Non_Accepting(T.Uut, 5, 1);
+      Set_Transition(T.Uut, 1, T_1);
+      Append_Transition(T.Uut, T_2);
+      T.Assert(Get_Transition_Count(T.Uut) = 2, "Get_Transition_Count should be 2 but is not!");
+      T.Assert(Image(T.Uut) = ("5{97=>67,98=>33}"), "Wrong image! Got <" & (Image(T.Uut)) & ">");
+   end Run;
+
 
    ----------------------------------------------------------------------------
    type Nfa_Test_Class is abstract new kv.core.ut.Test_Class with
@@ -1046,6 +1062,102 @@ package body kv.apg.tests is
       T.Assert(not T.Uut.Is_Failed, "Should not be failed");
    end Run;
 
+   ----------------------------------------------------------------------------
+   type Reset_Start_State_Test is new Static_Nfa_State_Test_Class with null record;
+   procedure Run(T : in out Reset_Start_State_Test) is
+   begin
+      Ingest_All(T, "aqwsdewasdcdesawdrdfgdewaabbbbbbbbbbbbbbbbbbbbbbbbbbbc");
+      T.Uut.Reset;
+      Ingest_All(T, "abxxxabc");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(T.Uut.Active_State_Count = 2, "Should have two active states");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+   end Run;
+
+
+   ----------------------------------------------------------------------------
+   type RegEx_Nfa_Test_Class is abstract new Base_Nfa_State_Test_Class with
+      record
+         Lexer : kv.apg.lex.Lexer_Class;
+         Parser : kv.apg.parse.Parser_Class;
+      end record;
+
+   ----------------------------------------------------------------------------
+   procedure Parse_Line(T : in out RegEx_Nfa_Test_Class'CLASS; S : in String) is
+      WS : constant Wide_Wide_String := To_Wide_Wide_String(S & Ada.Characters.Latin_1.LF);
+      Token : kv.apg.tokens.Token_Class;
+   begin
+      for WC of WS loop
+         T.Lexer.Ingest_Character(WC);
+      end loop;
+      while T.Lexer.Tokens_Available > 0 loop
+         Token := T.Lexer.Get_Next_Token;
+         T.Parser.Ingest_Token(Token);
+      end loop;
+   end Parse_Line;
+
+   ----------------------------------------------------------------------------
+   type RegEx_To_Nfa_1_Test is new RegEx_Nfa_Test_Class with null record;
+   procedure Run(T : in out RegEx_To_Nfa_1_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      Expected_Image : constant String := "[1{97=>2}/2{98=>3}/3{99=>4}/4{97=>2,100=>5}/(5:13){}]";
+   begin
+      Parse_Line(T, "token foo = ('a' 'b' 'c') * 'd';");
+      Directive := T.Parser.Next_Directive;
+
+      --kv.apg.regex.Set_Debug(True);
+      T.Nfa := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.To_Nfa(13);
+
+      T.Assert(T.Nfa.Image = Expected_Image, "Wrong image! Expected <"&Expected_Image&">, got <" & T.Nfa.Image & ">");
+
+      T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
+
+      kv.apg.directives.Free(Directive);
+      --kv.apg.regex.Set_Debug(False);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type RegEx_To_Nfa_2_Test is new RegEx_Nfa_Test_Class with null record;
+   procedure Run(T : in out RegEx_To_Nfa_2_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      Expected_Image : constant String := "[1{any=>2}/2{any=>2,100=>3}/(3:8){}]";
+   begin
+      Parse_Line(T, "token foo = . * 'd';");
+      Directive := T.Parser.Next_Directive;
+
+      --kv.apg.regex.Set_Debug(True);
+      T.Nfa := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.To_Nfa(8);
+
+      T.Assert(T.Nfa.Image = Expected_Image, "Wrong image! Expected <"&Expected_Image&">, got <" & T.Nfa.Image & ">");
+
+      T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
+
+      kv.apg.directives.Free(Directive);
+      --kv.apg.regex.Set_Debug(False);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type RegEx_To_Nfa_3_Test is new RegEx_Nfa_Test_Class with null record;
+   procedure Run(T : in out RegEx_To_Nfa_3_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      Expected_Image : constant String := "[1{97=>2,100=>4}/2{98=>3}/3{99=>7}/4{101=>5}/5{102=>6}/(6:7){}]";
+   begin
+      Parse_Line(T, "token foo = ""abc"" | ""def"";");
+      Directive := T.Parser.Next_Directive;
+
+      kv.apg.regex.Set_Debug(True);
+      T.Log("Tree = " & To_String(+kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Image_Tree));
+      T.Nfa := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.To_Nfa(7);
+
+      T.Assert(T.Nfa.Image = Expected_Image, "Wrong image! Expected <"&Expected_Image&">, got <" & T.Nfa.Image & ">");
+
+      T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
+
+      kv.apg.directives.Free(Directive);
+      kv.apg.regex.Set_Debug(False);
+   end Run;
+
 
 
    ----------------------------------------------------------------------------
@@ -1102,6 +1214,7 @@ package body kv.apg.tests is
       suite.register(new Fast_Empty_Set_Neg_Test, "Fast_Empty_Set_Neg_Test");
       suite.register(new Fast_Range_Set_Neg_Test, "Fast_Range_Set_Neg_Test");
       suite.register(new Fast_Mark_Transitions_Test, "Fast_Mark_Transitions_Test");
+      suite.register(new Fast_Append_Trans_Test, "Fast_Append_Trans_Test");
       suite.register(new Init_Nfa_Test, "Init_Nfa_Test");
       suite.register(new Image_Nfa_Test, "Image_Nfa_Test");
 
@@ -1118,6 +1231,11 @@ package body kv.apg.tests is
       suite.register(new Abc_State_Test, "Abc_State_Test");
       suite.register(new False_Start_State_Test, "False_Start_State_Test");
       suite.register(new Longer_State_Test, "Longer_State_Test");
+      suite.register(new Reset_Start_State_Test, "Reset_Start_State_Test");
+
+      suite.register(new RegEx_To_Nfa_1_Test, "RegEx_To_Nfa_1_Test");
+      suite.register(new RegEx_To_Nfa_2_Test, "RegEx_To_Nfa_2_Test");
+      suite.register(new RegEx_To_Nfa_3_Test, "RegEx_To_Nfa_3_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");

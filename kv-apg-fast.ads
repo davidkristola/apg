@@ -38,6 +38,7 @@ package kv.apg.fast is
    procedure Set_Match(Self : in out Transition_Type; Dest : in State_Id_Type; Value : in Wide_Wide_Character);
    procedure Set_Range(Self : in out Transition_Type; Dest : in State_Id_Type; Lower : in Wide_Wide_Character; Upper : in Wide_Wide_Character);
    function Image(Self : Transition_Type) return String;
+   procedure Set_Dest(Self : in out Transition_Type; Dest : in State_Id_Type);
 
    function Move(Self : in Transition_Type; Check : in Wide_Wide_Character) return State_Universe_Type;
 
@@ -63,6 +64,9 @@ package kv.apg.fast is
    procedure Set_Transition
       (Self  : in out State_Type;
        Index : in     Positive;
+       Trans : in     Transition_Type);
+   procedure Append_Transition
+      (Self  : in out State_Type;
        Trans : in     Transition_Type);
    function Get_Id(Self : State_Type) return State_Universe_Type;
    function Is_Accepting(Self : State_Type) return Boolean;
