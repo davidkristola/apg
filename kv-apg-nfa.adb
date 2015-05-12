@@ -1,7 +1,23 @@
-
+with Interfaces;
 with Ada.Text_IO; use Ada.Text_IO;
 
 package body kv.apg.nfa is
+
+   Debug : Boolean := False;
+
+   -------------------------------------------------------------------------
+   procedure Set_Debug(Value : in Boolean) is
+   begin
+      Debug := Value;
+   end Set_Debug;
+
+   ----------------------------------------------------------------------------
+   function Img(Char : Wide_Wide_Character) return String is
+      Decimal_Image : constant String := Interfaces.Unsigned_32'IMAGE(Interfaces.Unsigned_32(Wide_Wide_Character'POS(Char)));
+   begin
+      return Decimal_Image(2..Decimal_Image'LAST);
+   end Img;
+
 
    ----------------------------------------------------------------------------
    procedure Initialize
@@ -13,7 +29,7 @@ package body kv.apg.nfa is
    begin
       Self.States := new State_List_Type(1..Last);
       if Preset then
-         --Put_Line("Presetting " & Positive'IMAGE(Alloc) & " states with the last one accepting/key=" & Key_Type'IMAGE(Key));
+         if Debug then Put_Line("Presetting " & Positive'IMAGE(Alloc) & " states with the last one accepting/key=" & Key_Type'IMAGE(Key)); end if;
          for I in 1..State_Universe_Type(Last) - 1 loop
             Set_Non_Accepting(Self.States(I), I, 0);
          end loop;
@@ -129,6 +145,7 @@ package body kv.apg.nfa is
        Value : in     Wide_Wide_Character) is
       Count : Natural := 0;
    begin
+      if Debug then Put_Line("Mark_Transitions on " & Img(Value)); end if;
       for I in These.all'RANGE loop
          if These(I) then
             Mark_Transitions(Self.States(I), Value, Next, Count);
@@ -136,7 +153,24 @@ package body kv.apg.nfa is
       end loop;
    end Mark_Transitions;
 
-
+   ----------------------------------------------------------------------------
+   procedure Epsilon_Transitions
+      (Self  : in     Nfa_Class;
+       Next  : in     Active_State_List_Pointer_Type) is
+      Active : Natural;
+      Previous : Natural := 0;
+   begin
+      Active := Active_Count(Next);
+      while Active /= Previous loop
+         Previous := Active;
+         for I in Next.all'RANGE loop
+            if Next(I) then
+               Mark_Epsilon_Transitions(Self.States(I), Next);
+            end if;
+         end loop;
+         Active := Active_Count(Next);
+      end loop;
+   end Epsilon_Transitions;
 
 
 
@@ -242,11 +276,15 @@ package body kv.apg.nfa is
    procedure Reset
       (Self : in out Nfa_State_Class) is
    begin
+      if Debug then Put_Line("Nfa_State_Class.Reset"); end if;
       Clear_State_List(Self.Previous);
       Clear_State_List(Self.Next);
       Activate(Self.Previous, Self.Nfa.Get_Start_State);
       Activate(Self.Next, Self.Nfa.Get_Start_State);
+      Self.Nfa.Epsilon_Transitions(Self.Previous);
+      Self.Nfa.Epsilon_Transitions(Self.Next);
       Self.Moves := 0;
+      if Debug then Put_Line("Nfa_State_Class.Reset complete"); end if;
    end Reset;
 
    ----------------------------------------------------------------------------
@@ -267,6 +305,8 @@ package body kv.apg.nfa is
       Swap_Current_And_Previous(Self);
       Clear_State_List(Self.Next);
       Self.Nfa.Mark_Transitions(Self.Previous, Self.Next, Input);
+      -- Now process epsilon transitions until there are no more to process
+      Self.Nfa.Epsilon_Transitions(Self.Next);
       Self.Moves := Self.Moves + 1;
    end Ingest;
 

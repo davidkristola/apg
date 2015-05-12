@@ -792,6 +792,32 @@ package body kv.apg.tests is
 
 
    ----------------------------------------------------------------------------
+   type Fast_Epsilon_Test is new Fast_State_Test_Class with null record;
+   procedure Run(T : in out Fast_Epsilon_Test) is
+      T1 : kv.apg.fast.Transition_Type;
+      T2 : kv.apg.fast.Transition_Type;
+      T3 : kv.apg.fast.Transition_Type;
+      Next : aliased Active_State_List_Type := (1 => False, 2 => False, 3 => False);
+      A : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('a'));
+      B : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('b'));
+   begin
+      Set_Match(T1, 1, A);
+      Set_Match(T2, 2, B);
+      Set_Epsilon(T3, 3);
+      Set_Non_Accepting(T.Uut, 5, 3);
+      Set_Transition(T.Uut, 1, T1);
+      Set_Transition(T.Uut, 2, T2);
+      Set_Transition(T.Uut, 3, T3);
+      -- Make a transition to 3
+      Mark_Epsilon_Transitions(T.Uut, Next'UNCHECKED_ACCESS);
+      T.Assert(not Next(1), "Expected Next(1) to be False but it isn't!");
+      T.Assert(not Next(2), "Expected Next(1) to be False but it isn't!");
+      T.Assert(Next(3), "Expected Next(3) to be True but it isn't!");
+      T.Assert(Image(T.Uut) = ("5{97=>1,98=>2,ɛ=>3}"), "Wrong image! Got <" & (Image(T.Uut)) & ">");
+   end Run;
+
+
+   ----------------------------------------------------------------------------
    type Nfa_Test_Class is abstract new kv.core.ut.Test_Class with
       record
          Uut : aliased kv.apg.nfa.Nfa_Class;
@@ -1101,27 +1127,42 @@ package body kv.apg.tests is
    type RegEx_To_Nfa_1_Test is new RegEx_Nfa_Test_Class with null record;
    procedure Run(T : in out RegEx_To_Nfa_1_Test) is
       Directive : kv.apg.directives.Directive_Pointer_Type;
-      Expected_Image : constant String := "[1{97=>2}/2{98=>3}/3{99=>4}/4{97=>2,100=>5}/(5:13){}]";
+      Expected_Image : constant String := "[1{ɛ=>2,ɛ=>6}/2{97=>3}/3{98=>4}/4{99=>5}/5{ɛ=>2,ɛ=>6}/6{100=>7}/(7:13){}]";
    begin
       Parse_Line(T, "token foo = ('a' 'b' 'c') * 'd';");
       Directive := T.Parser.Next_Directive;
 
       --kv.apg.regex.Set_Debug(True);
       T.Nfa := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.To_Nfa(13);
+      --kv.apg.regex.Set_Debug(False);
 
       T.Assert(T.Nfa.Image = Expected_Image, "Wrong image! Expected <"&Expected_Image&">, got <" & T.Nfa.Image & ">");
 
       T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
 
+      --kv.apg.fast.Set_Debug(True);
+      --kv.apg.nfa.Set_Debug(True);
+      Ingest_All(T, "d");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+
+      T.Uut.Reset;
+      Ingest_All(T, "abcabcabcd");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+      --kv.apg.fast.Set_Debug(False);
+      --kv.apg.nfa.Set_Debug(False);
+
       kv.apg.directives.Free(Directive);
-      --kv.apg.regex.Set_Debug(False);
    end Run;
 
    ----------------------------------------------------------------------------
    type RegEx_To_Nfa_2_Test is new RegEx_Nfa_Test_Class with null record;
    procedure Run(T : in out RegEx_To_Nfa_2_Test) is
       Directive : kv.apg.directives.Directive_Pointer_Type;
-      Expected_Image : constant String := "[1{any=>2}/2{any=>2,100=>3}/(3:8){}]";
+      Expected_Image : constant String := "[1{ɛ=>2,ɛ=>4}/2{any=>3}/3{ɛ=>2,ɛ=>4}/4{100=>5}/(5:8){}]";
    begin
       Parse_Line(T, "token foo = . * 'd';");
       Directive := T.Parser.Next_Directive;
@@ -1133,6 +1174,16 @@ package body kv.apg.tests is
 
       T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
 
+      Ingest_All(T, "d");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+      T.Uut.Reset;
+      Ingest_All(T, "KSDFKJASDFKJFDGKJFd");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+
       kv.apg.directives.Free(Directive);
       --kv.apg.regex.Set_Debug(False);
    end Run;
@@ -1141,22 +1192,63 @@ package body kv.apg.tests is
    type RegEx_To_Nfa_3_Test is new RegEx_Nfa_Test_Class with null record;
    procedure Run(T : in out RegEx_To_Nfa_3_Test) is
       Directive : kv.apg.directives.Directive_Pointer_Type;
-      Expected_Image : constant String := "[1{97=>2,100=>4}/2{98=>3}/3{99=>7}/4{101=>5}/5{102=>6}/(6:7){}]";
+      Expected_Image : constant String := "[1{ɛ=>2,ɛ=>6}/2{97=>3}/3{98=>4}/4{99=>5}/5{ɛ=>10}/6{100=>7}/7{101=>8}/8{102=>9}/9{ɛ=>10}/(10:7){}]";
    begin
       Parse_Line(T, "token foo = ""abc"" | ""def"";");
       Directive := T.Parser.Next_Directive;
 
-      kv.apg.regex.Set_Debug(True);
-      T.Log("Tree = " & To_String(+kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Image_Tree));
+--      kv.apg.regex.Set_Debug(True);
+--      T.Log("Tree = " & To_String(+kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Image_Tree));
       T.Nfa := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.To_Nfa(7);
 
       T.Assert(T.Nfa.Image = Expected_Image, "Wrong image! Expected <"&Expected_Image&">, got <" & T.Nfa.Image & ">");
 
       T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
 
+      Ingest_All(T, "abc");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+      T.Uut.Reset;
+      Ingest_All(T, "def");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+
       kv.apg.directives.Free(Directive);
       kv.apg.regex.Set_Debug(False);
    end Run;
+
+   ----------------------------------------------------------------------------
+   type RegEx_To_Nfa_4_Test is new RegEx_Nfa_Test_Class with null record;
+   procedure Run(T : in out RegEx_To_Nfa_4_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      Expected_Image : constant String := "[1{97=>2}/2{ɛ=>1,ɛ=>3}/3{98=>4}/4{ɛ=>3,ɛ=>5}/5{99=>6}/6{ɛ=>5,ɛ=>7}/(7:99){}]";
+   begin
+      Parse_Line(T, "token foo = 'a' + 'b' + 'c' +;");
+      Directive := T.Parser.Next_Directive;
+
+      --kv.apg.regex.Set_Debug(True);
+      T.Nfa := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.To_Nfa(99);
+
+      T.Assert(T.Nfa.Image = Expected_Image, "Wrong image! Expected <"&Expected_Image&">, got <" & T.Nfa.Image & ">");
+
+      T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
+
+      Ingest_All(T, "abc");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+      T.Uut.Reset;
+      Ingest_All(T, "aaaaaaaaaaabcc");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+
+      kv.apg.directives.Free(Directive);
+      --kv.apg.regex.Set_Debug(False);
+   end Run;
+
 
 
 
@@ -1203,6 +1295,7 @@ package body kv.apg.tests is
       suite.register(new Parse_Sub_Sub_Star_Token_Test, "Parse_Sub_Sub_Star_Token_Test");
       suite.register(new Parse_Or_Sub_Sub_Star_Token_Test, "Parse_Or_Sub_Sub_Star_Token_Test");
       suite.register(new Parse_Plus_Token_Test, "Parse_Plus_Token_Test");
+
       suite.register(new Fast_Uninit_Test, "Fast_Uninit_Test");
       suite.register(new Fast_Any_Test, "Fast_Any_Test");
       suite.register(new Fast_Match_Test, "Fast_Match_Test");
@@ -1215,6 +1308,8 @@ package body kv.apg.tests is
       suite.register(new Fast_Range_Set_Neg_Test, "Fast_Range_Set_Neg_Test");
       suite.register(new Fast_Mark_Transitions_Test, "Fast_Mark_Transitions_Test");
       suite.register(new Fast_Append_Trans_Test, "Fast_Append_Trans_Test");
+      suite.register(new Fast_Epsilon_Test, "Fast_Epsilon_Test");
+
       suite.register(new Init_Nfa_Test, "Init_Nfa_Test");
       suite.register(new Image_Nfa_Test, "Image_Nfa_Test");
 
@@ -1236,7 +1331,7 @@ package body kv.apg.tests is
       suite.register(new RegEx_To_Nfa_1_Test, "RegEx_To_Nfa_1_Test");
       suite.register(new RegEx_To_Nfa_2_Test, "RegEx_To_Nfa_2_Test");
       suite.register(new RegEx_To_Nfa_3_Test, "RegEx_To_Nfa_3_Test");
---      suite.register(new XXX, "XXX");
+      suite.register(new RegEx_To_Nfa_4_Test, "RegEx_To_Nfa_4_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;

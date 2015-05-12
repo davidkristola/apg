@@ -16,7 +16,7 @@ package kv.apg.fast is
    type Active_State_List_Pointer_Type is access all Active_State_List_Type;
 
 
-   type Acceptance_Type is (Match, Any, From_To);
+   type Acceptance_Type is (Epsilon, Match, Any, From_To);
 
    type Transition_Type(Criteria : Acceptance_Type := Any) is
       record
@@ -27,7 +27,7 @@ package kv.apg.fast is
             when From_To =>
                Lower : Wide_Wide_Character;
                Upper : Wide_Wide_Character;
-            when Any =>
+            when Epsilon | Any =>
                null;
          end case;
       end record;
@@ -37,10 +37,14 @@ package kv.apg.fast is
    procedure Set_Any(Self : in out Transition_Type; Dest : in State_Id_Type);
    procedure Set_Match(Self : in out Transition_Type; Dest : in State_Id_Type; Value : in Wide_Wide_Character);
    procedure Set_Range(Self : in out Transition_Type; Dest : in State_Id_Type; Lower : in Wide_Wide_Character; Upper : in Wide_Wide_Character);
-   function Image(Self : Transition_Type) return String;
+   procedure Set_Epsilon(Self : in out Transition_Type; Dest : in State_Id_Type);
    procedure Set_Dest(Self : in out Transition_Type; Dest : in State_Id_Type);
+   function Image(Self : Transition_Type) return String;
 
    function Move(Self : in Transition_Type; Check : in Wide_Wide_Character) return State_Universe_Type;
+   function Epsilon_Move(Self : in Transition_Type) return State_Universe_Type;
+
+
 
    type Key_Type is new Integer;
 
@@ -80,9 +84,15 @@ package kv.apg.fast is
        Value : in     Wide_Wide_Character;
        Next  : in     Active_State_List_Pointer_Type;
        Count :    out Natural);
+   procedure Mark_Epsilon_Transitions
+      (Self  : in     State_Type;
+       Next  : in     Active_State_List_Pointer_Type);
 
    type State_List_Type is array (State_Id_Type range <>) of State_Type;
    type State_List_Pointer_Type is access all State_List_Type;
+
+   -- Control debug output of package
+   procedure Set_Debug(Value : in Boolean);
 
 end kv.apg.fast;
 

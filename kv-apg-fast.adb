@@ -1,9 +1,19 @@
 with Ada.Unchecked_Deallocation;
 with Interfaces;
+with Ada.Text_IO; use Ada.Text_IO;
 
 package body kv.apg.fast is
 
    procedure Free is new Ada.Unchecked_Deallocation(Transition_List_Type, Transition_List_Pointer_Type);
+
+   Debug : Boolean := False;
+
+   -------------------------------------------------------------------------
+   procedure Set_Debug(Value : in Boolean) is
+   begin
+      Debug := Value;
+   end Set_Debug;
+
 
    ----------------------------------------------------------------------------
    procedure Set_Any(Self : in out Transition_Type; Dest : in State_Id_Type) is
@@ -22,6 +32,12 @@ package body kv.apg.fast is
    begin
       Self := (Criteria => From_To, To_State => Dest, Lower => Lower, Upper => Upper);
    end Set_Range;
+
+   ----------------------------------------------------------------------------
+   procedure Set_Epsilon(Self : in out Transition_Type; Dest : in State_Id_Type) is
+   begin
+      Self := (Criteria => Epsilon, To_State => Dest);
+   end Set_Epsilon;
 
    ----------------------------------------------------------------------------
    procedure Set_Dest(Self : in out Transition_Type; Dest : in State_Id_Type) is
@@ -54,6 +70,8 @@ package body kv.apg.fast is
    function Image(Self : Transition_Type) return String is
    begin
       case Self.Criteria is
+         when Epsilon =>
+            return "ɛ=>" & Img(Self.To_State);
          when Any =>
             return "any=>" & Img(Self.To_State);
          when Match =>
@@ -67,10 +85,13 @@ package body kv.apg.fast is
    function Move(Self : in Transition_Type; Check : in Wide_Wide_Character) return State_Universe_Type is
    begin
       case Self.Criteria is
+         when Epsilon =>
+            return Invalid_State;
          when Any =>
             return Self.To_State;
          when Match =>
             if Check = Self.Value then
+               if Debug then Put_Line(Img(Self.Value) & "=>" & Img(Self.To_State)); end if;
                return Self.To_State;
             else
                return Invalid_State;
@@ -83,6 +104,17 @@ package body kv.apg.fast is
             end if;
       end case;
    end Move;
+
+   ----------------------------------------------------------------------------
+   function Epsilon_Move(Self : in Transition_Type) return State_Universe_Type is
+   begin
+      if Self.Criteria = Epsilon then
+         if Debug then Put_Line("ɛ=>" & Img(Self.To_State)); end if;
+         return Self.To_State;
+      else
+         return Invalid_State;
+      end if;
+   end Epsilon_Move;
 
 
 
@@ -226,6 +258,9 @@ package body kv.apg.fast is
       Destination : State_Universe_Type;
    begin
       Count := 0;
+      if Self.Transitions = null then
+         return;
+      end if;
       for I in Self.Transitions'RANGE loop
          Destination := Move(Self.Transitions(I), Value);
          if Destination /= Invalid_State then
@@ -234,6 +269,23 @@ package body kv.apg.fast is
          end if;
       end loop;
    end Mark_Transitions;
+
+   ----------------------------------------------------------------------------
+   procedure Mark_Epsilon_Transitions
+      (Self  : in     State_Type;
+       Next  : in     Active_State_List_Pointer_Type) is
+      Destination : State_Universe_Type;
+   begin
+      if Self.Transitions = null then
+         return;
+      end if;
+      for I in Self.Transitions'RANGE loop
+         Destination := Epsilon_Move(Self.Transitions(I));
+         if Destination /= Invalid_State then
+            Next(Destination) := True;
+         end if;
+      end loop;
+   end Mark_Epsilon_Transitions;
 
 end kv.apg.fast;
 

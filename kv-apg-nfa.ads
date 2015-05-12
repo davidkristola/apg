@@ -53,6 +53,10 @@ package kv.apg.nfa is
        Next  : in     Active_State_List_Pointer_Type;
        Value : in     Wide_Wide_Character);
 
+   procedure Epsilon_Transitions
+      (Self  : in     Nfa_Class;
+       Next  : in     Active_State_List_Pointer_Type);
+
 
 
    type Nfa_State_Class is tagged private;
@@ -75,6 +79,8 @@ package kv.apg.nfa is
    function Active_State_Count(Self : Nfa_State_Class) return Natural;
    function Move_Count(Self : Nfa_State_Class) return Natural;
 
+   -- Control debug output of package
+   procedure Set_Debug(Value : in Boolean);
 
 private
 
@@ -91,5 +97,8 @@ private
          Next     : Active_State_List_Pointer_Type;
          Moves    : Natural := 0;
       end record;
+
+   function Active_Count
+      (List : in     Active_State_List_Pointer_Type) return Natural;
 
 end kv.apg.nfa;

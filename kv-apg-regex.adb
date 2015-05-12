@@ -376,7 +376,7 @@ package body kv.apg.regex is
    overriding function Count_Nfa_Transition_Sets(Self : Or_Node_Class) return Natural is
    begin
       -- The OR part contributes A + B - 1 transition sets because the first set includes going to A *or* B.
-      return (Self.A.Count_Nfa_Transition_Sets + Self.B.Count_Nfa_Transition_Sets - 1) + (if Self.Previous = null then 0 else Self.Previous.Count_Nfa_Transition_Sets);
+      return (Self.A.Count_Nfa_Transition_Sets + Self.B.Count_Nfa_Transition_Sets + 3) + (if Self.Previous = null then 0 else Self.Previous.Count_Nfa_Transition_Sets);
    end Count_Nfa_Transition_Sets;
 
    -------------------------------------------------------------------------
@@ -384,13 +384,47 @@ package body kv.apg.regex is
       (Self  : in out Or_Node_Class;
        NFA   : in out kv.apg.nfa.Nfa_Class;
        Start : in out State_Id_Type) is
+      Start_A : State_Id_Type;
+      End_A : State_Id_Type;
+      Start_B : State_Id_Type;
+      End_B : State_Id_Type;
+      Start_Next : State_Id_Type;
+      Transition : Transition_Type;
    begin
       if Debug then Put_Line("Or_Node_Class.Set_Nfa_Transitions starting at " & State_Id_Type'IMAGE(Start)); end if;
       if Self.Previous /= null then
          Self.Previous.Set_Nfa_Transitions(NFA, Start);
       end if;
+
+      Start_A := Start + 1;
+      End_A := Start_A + State_Id_Type(Self.A.Count_Nfa_Transition_Sets);
+      Start_B := End_A + 1;
+      End_B := Start_B + State_Id_Type(Self.B.Count_Nfa_Transition_Sets);
+      Start_Next := End_B + 1;
+      if Debug then Put_Line("Adding epsilon transitions to " & State_Id_Type'IMAGE(Start_A) & State_Id_Type'IMAGE(Start_B) & State_Id_Type'IMAGE(Start_Next)); end if;
+
+      -- Add first Epsilon transition to both A and B
+      Set_Epsilon(Transition, Start_A);
+      NFA.Append_State_Transition(Start, Transition);
+      Set_Epsilon(Transition, Start_B);
+      NFA.Append_State_Transition(Start, Transition);
+      Start := Start + 1;
+
       Self.A.Set_Nfa_Transitions(NFA, Start);
+
+      -- Start should now be End_A
+
+      Set_Epsilon(Transition, Start_Next);
+      NFA.Append_State_Transition(Start, Transition);
+      Start := Start + 1;
+
       Self.B.Set_Nfa_Transitions(NFA, Start);
+
+      -- Start should now be End_B
+
+      NFA.Append_State_Transition(Start, Transition);
+      Start := Start + 1;
+
       if Debug then Put_Line("result: " & NFA.Image); end if;
    end Set_Nfa_Transitions;
 
@@ -428,7 +462,7 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    overriding function Count_Nfa_Transition_Sets(Self : Star_Node_Class) return Natural is
    begin
-      return Self.A.Count_Nfa_Transition_Sets + (if Self.Previous = null then 0 else Self.Previous.Count_Nfa_Transition_Sets);
+      return (Self.A.Count_Nfa_Transition_Sets + 2) + (if Self.Previous = null then 0 else Self.Previous.Count_Nfa_Transition_Sets);
    end Count_Nfa_Transition_Sets;
 
    -------------------------------------------------------------------------
@@ -436,22 +470,32 @@ package body kv.apg.regex is
       (Self  : in out Star_Node_Class;
        NFA   : in out kv.apg.nfa.Nfa_Class;
        Start : in out State_Id_Type) is
-       Start_Of_Star : State_Id_Type;
-       Transition : Transition_Type;
+
+       Sub_Start : State_Id_Type;
+       Star_End : State_Id_Type;
+       Transition_Begin : Transition_Type;
+       Transition_End : Transition_Type;
+
    begin
       if Debug then Put_Line("Star_Node_Class.Set_Nfa_Transitions starting at " & State_Id_Type'IMAGE(Start)); end if;
       if Self.Previous /= null then
          Self.Previous.Set_Nfa_Transitions(NFA, Start);
       end if;
-      Start_Of_Star := Start + 1;
+
+      Sub_Start := Start + 1;
+      Star_End := Sub_Start + State_Id_Type(Self.A.Count_Nfa_Transition_Sets) + 1;
+
+      Set_Epsilon(Transition_Begin, Sub_Start);
+      Set_Epsilon(Transition_End, Star_End);
+      NFA.Append_State_Transition(Start, Transition_Begin);
+      NFA.Append_State_Transition(Start, Transition_End);
+      Start := Start + 1;
+
       Self.A.Set_Nfa_Transitions(NFA, Start);
-      if Debug then Put_Line("Star jump back to " & State_Id_Type'IMAGE(Start_Of_Star) & " from " & State_Id_Type'IMAGE(Start)); end if;
-      --Set_Match(Transition, Start_Of_Star, );
-      Transition := NFA.Get_Transition(Start_Of_Star - 1, 1);
-      if Debug then Put_Line("Copied transition = " & Image(Transition)); end if;
-      if Debug then Put_Line("Current NFA = " & NFA.Image); end if;
-      --Set_Dest(Transition, Start_Of_Star);
-      NFA.Append_State_Transition(Start, Transition);
+
+      NFA.Append_State_Transition(Start, Transition_Begin);
+      NFA.Append_State_Transition(Start, Transition_End);
+      Start := Start + 1;
    end Set_Nfa_Transitions;
 
 
@@ -487,7 +531,7 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    overriding function Count_Nfa_Transition_Sets(Self : Plus_Node_Class) return Natural is
    begin
-      return (Self.A.Count_Nfa_Transition_Sets * 2) + (if Self.Previous = null then 0 else Self.Previous.Count_Nfa_Transition_Sets);
+      return (Self.A.Count_Nfa_Transition_Sets + 1) + (if Self.Previous = null then 0 else Self.Previous.Count_Nfa_Transition_Sets);
    end Count_Nfa_Transition_Sets;
 
    -------------------------------------------------------------------------
@@ -495,11 +539,29 @@ package body kv.apg.regex is
       (Self  : in out Plus_Node_Class;
        NFA   : in out kv.apg.nfa.Nfa_Class;
        Start : in out State_Id_Type) is
+
+       Sub_Start : State_Id_Type;
+       Star_End : State_Id_Type;
+       Transition_Begin : Transition_Type;
+       Transition_End : Transition_Type;
+
    begin
       if Debug then Put_Line("Plus_Node_Class.Set_Nfa_Transitions starting at " & State_Id_Type'IMAGE(Start)); end if;
       if Self.Previous /= null then
          Self.Previous.Set_Nfa_Transitions(NFA, Start);
       end if;
+
+      Sub_Start := Start;
+      Star_End := Sub_Start + State_Id_Type(Self.A.Count_Nfa_Transition_Sets) + 1;
+
+      Set_Epsilon(Transition_Begin, Sub_Start);
+      Set_Epsilon(Transition_End, Star_End);
+
+      Self.A.Set_Nfa_Transitions(NFA, Start);
+
+      NFA.Append_State_Transition(Start, Transition_Begin);
+      NFA.Append_State_Transition(Start, Transition_End);
+      Start := Start + 1;
    end Set_Nfa_Transitions;
 
 
