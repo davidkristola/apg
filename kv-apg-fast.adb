@@ -46,6 +46,20 @@ package body kv.apg.fast is
    end Set_Dest;
 
    ----------------------------------------------------------------------------
+   function Get_Dest(Self : Transition_Type) return State_Universe_Type is
+   begin
+      return Self.To_State;
+   end Get_Dest;
+
+   ----------------------------------------------------------------------------
+   procedure Renumber(Self : in out Transition_Type; Offset : in     Integer) is
+   begin
+      if Self.To_State /= Invalid_State then
+         Self.To_State := State_Universe_Type(Integer(Self.To_State) + Offset);
+      end if;
+   end Renumber;
+
+   ----------------------------------------------------------------------------
    function Img(ID : State_Universe_Type) return String is
       Decimal_Image : constant String := State_Universe_Type'IMAGE(ID);
    begin
@@ -181,6 +195,39 @@ package body kv.apg.fast is
          Free(Old);
       end if;
    end Append_Transition;
+
+   ----------------------------------------------------------------------------
+   procedure Renumber(Self : in out State_Type; Offset : in     Integer) is
+   begin
+      if Self.Id /= Invalid_State then
+         Self.Id := State_Universe_Type(Integer(Self.Id) + Offset);
+      end if;
+      if Self.Transitions = null then
+         return;
+      end if;
+      for I in Self.Transitions'RANGE loop
+         Renumber(Self.Transitions(I), Offset);
+      end loop;
+   end Renumber;
+
+   ----------------------------------------------------------------------------
+   procedure Init_By_Deep_Copy
+      (Self  : in out State_Type;
+       Other : in     State_Type) is
+   begin
+      Self.Id := Other.Id;
+      Self.Accepting := Other.Accepting;
+      Self.Accepted_Key := Other.Accepted_Key;
+      if Other.Transitions = null then
+         return; -- No transitions to copy.
+      end if;
+      Allocate_Transition_Array(Self, Other.Transitions'LENGTH);
+      for I in Self.Transitions'RANGE loop
+         Self.Transitions(I) := Other.Transitions(I);
+      end loop;
+   end Init_By_Deep_Copy;
+
+
 
    ----------------------------------------------------------------------------
    function Get_Id(Self : State_Type) return State_Universe_Type is

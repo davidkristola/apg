@@ -816,6 +816,56 @@ package body kv.apg.tests is
       T.Assert(Image(T.Uut) = ("5{97=>1,98=>2,ɛ=>3}"), "Wrong image! Got <" & (Image(T.Uut)) & ">");
    end Run;
 
+   ----------------------------------------------------------------------------
+   type Fast_Renumber_T_Test is new Fast_State_Test_Class with null record;
+   procedure Run(T : in out Fast_Renumber_T_Test) is
+      T_1 : kv.apg.fast.Transition_Type;
+      T_2 : kv.apg.fast.Transition_Type;
+   begin
+      Set_Match(T_1, 67, To_Wide_Wide_Character(Character'('a')));
+      Renumber(T_1, -10);
+      Renumber(T_2, 10);
+      T.Assert(Get_Dest(T_1) = 57, "Get_Dest(T_1) = 57 should be but is not!");
+      T.Assert(Get_Dest(T_2) = Invalid_State, "Get_Dest(T_2) = Invalid_State should be but is not!");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Fast_Renumber_S_Test is new Fast_State_Test_Class with null record;
+   procedure Run(T : in out Fast_Renumber_S_Test) is
+      use kv.apg.fast;
+      T_1 : kv.apg.fast.Transition_Type;
+      T_2 : kv.apg.fast.Transition_Type;
+   begin
+      Set_Match(T_1, 67, To_Wide_Wide_Character(Character'('a')));
+      Set_Match(T_2, 33, To_Wide_Wide_Character(Character'('b')));
+      Set_Non_Accepting(T.Uut, 5, 1);
+      Set_Transition(T.Uut, 1, T_1);
+      Append_Transition(T.Uut, T_2);
+      Renumber(T.Uut, 3);
+      T.Assert(Get_Dest(Get_Transition(T.Uut, 1)) = 70, "Get_Dest(T_1) = 70 should be but is not!");
+      T.Assert(Get_Dest(Get_Transition(T.Uut, 2)) = 36, "Get_Dest(T_2) = 36 should be but is not!");
+      T.Assert(Get_Id(T.Uut) = 8, "Get_Id(T.Uut) = 8 should be but is not!");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Fast_Deep_Copy_Test is new Fast_State_Test_Class with null record;
+   procedure Run(T : in out Fast_Deep_Copy_Test) is
+      use kv.apg.fast;
+      T_1 : kv.apg.fast.Transition_Type;
+      T_2 : kv.apg.fast.Transition_Type;
+      Copy : State_Type;
+   begin
+      Set_Match(T_1, 67, To_Wide_Wide_Character(Character'('a')));
+      Set_Match(T_2, 33, To_Wide_Wide_Character(Character'('b')));
+      Set_Non_Accepting(T.Uut, 5, 1);
+      Set_Transition(T.Uut, 1, T_1);
+      Append_Transition(T.Uut, T_2);
+      Init_By_Deep_Copy(Copy, T.Uut);
+      T.Assert(Get_Transition_Count(Copy) = 2, "Get_Transition_Count should be 2 but is not!");
+      T.Assert(Image(Copy) = ("5{97=>67,98=>33}"), "Wrong image! Got <" & (Image(Copy)) & ">");
+   end Run;
+
+
 
    ----------------------------------------------------------------------------
    type Nfa_Test_Class is abstract new kv.core.ut.Test_Class with
@@ -850,6 +900,76 @@ package body kv.apg.tests is
       T.Uut.Set_State_Accepting(2, 36);
       T.Assert(T.Uut.Image = ("[1{97=>2,98=>2}/(2:36){}]"), "Wrong image! Got <" & T.Uut.Image & ">");
    end Run;
+
+   ----------------------------------------------------------------------------
+   type Combine_Nfa_Test is new Nfa_Test_Class with null record;
+   procedure Run(T : in out Combine_Nfa_Test) is
+      use kv.apg.nfa;
+      Nfas : Nfa_Array_Type(1..3);
+      T1 : kv.apg.fast.Transition_Type;
+      T2 : kv.apg.fast.Transition_Type;
+      T3 : kv.apg.fast.Transition_Type;
+      A : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('a'));
+      B : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('b'));
+      C : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('c'));
+      D : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('d'));
+      Expected_Image : constant String := "[1{ɛ=>2,ɛ=>4,ɛ=>6}/2{97=>3}/(3:1){}/4{98=>5}/(5:2){}/6{99=>7}/(7:3){}]";
+      Recognizer : kv.apg.nfa.Nfa_State_Class;
+   begin
+      Nfas(1).Initialize(Alloc => 2, Key => 1);
+      Nfas(2).Initialize(Alloc => 2, Key => 2);
+      Nfas(3).Initialize(Alloc => 2, Key => 3);
+
+      Set_Match(T1, 2, A);
+      Set_Match(T2, 2, B);
+      Set_Match(T3, 2, C);
+
+      Nfas(1).Set_State_Non_Accepting(State => 1, Alloc => 1);
+      Nfas(1).Set_State_Transition(State => 1, Index => 1, Trans => T1);
+      Nfas(1).Set_State_Accepting(State => 2, Key => 1);
+
+      Nfas(2).Set_State_Non_Accepting(State => 1, Alloc => 1);
+      Nfas(2).Set_State_Transition(State => 1, Index => 1, Trans => T2);
+      Nfas(2).Set_State_Accepting(State => 2, Key => 2);
+
+      Nfas(3).Set_State_Non_Accepting(State => 1, Alloc => 1);
+      Nfas(3).Set_State_Transition(State => 1, Index => 1, Trans => T3);
+      Nfas(3).Set_State_Accepting(State => 2, Key => 3);
+
+      --kv.apg.nfa.Set_Debug(True);
+      T.Uut.Initialize(Nfas);
+      T.Assert(T.Uut.Get_State_Count = 7, "Wrong init state count (should be 7, is " & Natural'IMAGE(T.Uut.Get_State_Count) & ").");
+      T.Assert(T.Uut.Image = Expected_Image, "Wrong image! Expected <"&Expected_Image&">, got <" & T.Uut.Image & ">");
+      kv.apg.nfa.Set_Debug(False);
+
+      Recognizer.Initialize(T.Uut'UNCHECKED_ACCESS);
+      Recognizer.Ingest(A);
+      T.Assert(Recognizer.Is_Accepting, "Should be accepting after 'a'");
+      T.Assert(Recognizer.Is_Terminal, "Should be terminal after 'a'");
+      T.Assert(Recognizer.Get_Key = 1, "Should be key = 1 after 'a'");
+
+      Recognizer.Reset;
+      Recognizer.Ingest(B);
+      T.Assert(Recognizer.Is_Accepting, "Should be accepting after 'b'");
+      T.Assert(Recognizer.Is_Terminal, "Should be terminal after 'b'");
+      T.Assert(Recognizer.Get_Key = 2, "Should be key = 2 after 'b'");
+
+      Recognizer.Reset;
+      Recognizer.Ingest(C);
+      T.Assert(Recognizer.Is_Accepting, "Should be accepting after 'c'");
+      T.Assert(Recognizer.Is_Terminal, "Should be terminal after 'c'");
+      T.Assert(Recognizer.Get_Key = 3, "Should be key = 3 after 'c'");
+
+      Recognizer.Reset;
+      Recognizer.Ingest(D);
+      T.Assert(not Recognizer.Is_Accepting, "Should NOT be accepting after 'd'");
+      T.Assert(Recognizer.Is_Failed, "Should be Is_Failed after 'd'");
+   exception
+      when others =>
+         kv.apg.nfa.Set_Debug(False);
+         T.Assert(False, "exception");
+   end Run;
+
 
 
    ----------------------------------------------------------------------------
@@ -960,6 +1080,7 @@ package body kv.apg.tests is
       T.Assert(T.Uut.Active_State_Count = 1, "Should have one active state");
       T.Assert(T.Uut.Is_Terminal, "Should be terminal");
       T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+      T.Assert(T.Uut.Get_Key = 13, "Should be key = 13, was " & Key_Type'IMAGE(T.Uut.Get_Key));
    end Run;
 
    ----------------------------------------------------------------------------
@@ -1309,9 +1430,13 @@ package body kv.apg.tests is
       suite.register(new Fast_Mark_Transitions_Test, "Fast_Mark_Transitions_Test");
       suite.register(new Fast_Append_Trans_Test, "Fast_Append_Trans_Test");
       suite.register(new Fast_Epsilon_Test, "Fast_Epsilon_Test");
+      suite.register(new Fast_Renumber_T_Test, "Fast_Renumber_T_Test");
+      suite.register(new Fast_Renumber_S_Test, "Fast_Renumber_S_Test");
+      suite.register(new Fast_Deep_Copy_Test, "Fast_Deep_Copy_Test");
 
       suite.register(new Init_Nfa_Test, "Init_Nfa_Test");
       suite.register(new Image_Nfa_Test, "Image_Nfa_Test");
+      suite.register(new Combine_Nfa_Test, "Combine_Nfa_Test");
 
       suite.register(new Sanity_Check_Nfa_State_Test, "Sanity_Check_Nfa_State_Test");
       suite.register(new Init_Nfa_State_Test, "Init_Nfa_State_Test");

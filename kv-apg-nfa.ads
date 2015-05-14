@@ -7,6 +7,7 @@ package kv.apg.nfa is
 
    type Nfa_Class is tagged private;
    type Nfa_Pointer_Type is access all Nfa_Class;
+   type Nfa_Array_Type is array (Positive range <>) of aliased Nfa_Class;
 
    procedure Initialize
       (Self   : in out Nfa_Class;
@@ -17,6 +18,10 @@ package kv.apg.nfa is
    procedure Initialize
       (Self     : in out Nfa_Class;
        Existing : in     State_List_Pointer_Type);
+
+   procedure Initialize
+      (Self    : in out Nfa_Class;
+       Combine : in     Nfa_Array_Type);
 
    function Get_State_Count
       (Self : in     Nfa_Class) return Natural;
@@ -46,6 +51,7 @@ package kv.apg.nfa is
    function Is_Terminal(Self : Nfa_Class; State : State_Id_Type) return Boolean;
    function Transition_Count(Self : Nfa_Class; State : State_Id_Type) return Natural;
    function Get_Transition(Self : Nfa_Class; State : State_Id_Type; Index : Positive) return Transition_Type;
+   function Get_Key(Self : Nfa_Class; State : State_Id_Type) return Key_Type;
 
    procedure Mark_Transitions
       (Self  : in     Nfa_Class;
@@ -78,6 +84,7 @@ package kv.apg.nfa is
    function Is_Failed(Self : Nfa_State_Class) return Boolean;
    function Active_State_Count(Self : Nfa_State_Class) return Natural;
    function Move_Count(Self : Nfa_State_Class) return Natural;
+   function Get_Key(Self : Nfa_State_Class) return Key_Type;
 
    -- Control debug output of package
    procedure Set_Debug(Value : in Boolean);

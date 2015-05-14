@@ -46,10 +46,56 @@ package body kv.apg.nfa is
    end Initialize;
 
    ----------------------------------------------------------------------------
+   procedure Initialize
+      (Self    : in out Nfa_Class;
+       Combine : in     Nfa_Array_Type) is
+
+      Total_States : Positive := 1;
+      Offset : Positive := 1;
+      To_Start : Transition_Type;
+      Current : State_Id_Type;
+      Index : Natural := 0;
+
+   begin
+      if Debug then Put_Line("Initialize(Combine)"); end if;
+      for I of Combine loop
+         Total_States := Total_States + I.Get_State_Count;
+      end loop;
+      Self.States := new State_List_Type(1..State_Id_Type(Total_States));
+      if Debug then Put_Line("Total_States = " & Positive'IMAGE(Total_States)); end if;
+
+      -- This is the epsilon transition to all start nodes node
+      Set_Non_Accepting(Self => Self.States(1), Id => 1, Alloc => Combine'LENGTH);
+
+      for I of Combine loop
+         if Debug then Put_Line("Combining <" & I.Image & ">"); end if;
+         Current := State_Id_Type(Offset + 1);
+         Index := Index + 1;
+         Set_Epsilon(To_Start, Current);
+         Set_Transition(Self.States(1), Index, To_Start);
+         if Debug then Put_Line("Current = " & State_Id_Type'IMAGE(Current) & ", Offset = " & Positive'IMAGE(Offset)); end if;
+         for J of I.States.all loop
+            if Debug then Put_Line("deep copy <" & Image(J) & ">"); end if;
+            Init_By_Deep_Copy(Self.States(Current), J);
+            Renumber(Self.States(Current), Offset);
+            if Debug then Put_Line("yields Self.States("&State_Id_Type'IMAGE(Current)&") = <" & Image(Self.States(Current)) & ">"); end if;
+            Current := Current + 1;
+         end loop;
+         if Debug then Put_Line("end loop"); end if;
+         Offset := Offset + I.Get_State_Count;
+         if Debug then Put_Line("Next Offset will be " & Positive'IMAGE(Offset)); end if;
+      end loop;
+   end Initialize;
+
+   ----------------------------------------------------------------------------
    function Get_State_Count
       (Self : in     Nfa_Class) return Natural is
    begin
-      return Self.States'LENGTH;
+      if Self.States = null then
+         return 0;
+      else
+         return Self.States'LENGTH;
+      end if;
    end Get_State_Count;
 
    ----------------------------------------------------------------------------
@@ -128,6 +174,9 @@ package body kv.apg.nfa is
    ----------------------------------------------------------------------------
    function Image(Self : Nfa_Class) return String is
    begin
+      if Self.States = null then
+         return "[null]";
+      end if;
       return "[" & Recursive_Image(Self, Self.States'LENGTH) & "]";
    end Image;
 
@@ -136,6 +185,12 @@ package body kv.apg.nfa is
    begin
       return Get_Transition(Self.States(State), Index);
    end Get_Transition;
+
+   ----------------------------------------------------------------------------
+   function Get_Key(Self : Nfa_Class; State : State_Id_Type) return Key_Type is
+   begin
+      return Get_Key(Self.States(State));
+   end Get_Key;
 
    ----------------------------------------------------------------------------
    procedure Mark_Transitions
@@ -171,6 +226,8 @@ package body kv.apg.nfa is
          Active := Active_Count(Next);
       end loop;
    end Epsilon_Transitions;
+
+
 
 
 
@@ -338,7 +395,18 @@ package body kv.apg.nfa is
    function Move_Count(Self : Nfa_State_Class) return Natural is
    begin
       return Self.Moves;
-   end;
+   end Move_Count;
+
+   ----------------------------------------------------------------------------
+   function Get_Key(Self : Nfa_State_Class) return Key_Type is
+   begin
+      for S in Self.Next'RANGE loop
+         if Self.Next(S) then
+            return Self.Nfa.Get_Key(S);
+         end if;
+      end loop;
+      return Key_Type'FIRST;
+   end Get_Key;
 
 
 end kv.apg.nfa;
