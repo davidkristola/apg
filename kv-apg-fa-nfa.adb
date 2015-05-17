@@ -1,7 +1,7 @@
 with Interfaces;
 with Ada.Text_IO; use Ada.Text_IO;
 
-package body kv.apg.nfa is
+package body kv.apg.fa.nfa is
 
    Debug : Boolean := False;
 
@@ -409,4 +409,4 @@ package body kv.apg.nfa is
    end Get_Key;
 
 
-end kv.apg.nfa;
+end kv.apg.fa.nfa;

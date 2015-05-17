@@ -1,7 +1,7 @@
 with Interfaces;
 with Ada.Text_IO; use Ada.Text_IO;
 
-package body kv.apg.dfa is
+package body kv.apg.fa.dfa is
 
    Debug : Boolean := False;
 
@@ -141,4 +141,4 @@ package body kv.apg.dfa is
 
 
 
-end kv.apg.dfa;
+end kv.apg.fa.dfa;

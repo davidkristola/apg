@@ -3,7 +3,7 @@ with kv.core.wwstr; use kv.core.wwstr;
 
 with kv.apg.fast; use kv.apg.fast;
 
-package kv.apg.nfa is
+package kv.apg.fa.nfa is
 
    type Nfa_Class is tagged private;
    type Nfa_Pointer_Type is access all Nfa_Class;
@@ -108,4 +108,4 @@ private
    function Active_Count
       (List : in     Active_State_List_Pointer_Type) return Natural;
 
-end kv.apg.nfa;
+end kv.apg.fa.nfa;

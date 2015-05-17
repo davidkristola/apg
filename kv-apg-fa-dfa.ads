@@ -2,7 +2,7 @@ with kv.core.wwstr; use kv.core.wwstr;
 
 with kv.apg.fast; use kv.apg.fast;
 
-package kv.apg.dfa is
+package kv.apg.fa.dfa is
 
    type Dfa_Class is tagged private;
    type Dfa_Pointer_Type is access all Dfa_Class;
@@ -64,4 +64,4 @@ private
          Moves : Natural := 0;
       end record;
 
-end kv.apg.dfa;
+end kv.apg.fa.dfa;

@@ -11,9 +11,9 @@ with kv.apg.tokens;
 with kv.apg.parse;
 with kv.apg.directives;
 with kv.apg.regex;
-with kv.apg.nfa;
 with kv.apg.fast;
-with kv.apg.dfa;
+with kv.apg.fa.nfa;
+with kv.apg.fa.dfa;
 
 with kv.core.wwstr;
 
@@ -871,7 +871,7 @@ package body kv.apg.tests is
    ----------------------------------------------------------------------------
    type Nfa_Test_Class is abstract new kv.core.ut.Test_Class with
       record
-         Uut : aliased kv.apg.nfa.Nfa_Class;
+         Uut : aliased kv.apg.fa.nfa.Nfa_Class;
       end record;
 
    ----------------------------------------------------------------------------
@@ -905,7 +905,7 @@ package body kv.apg.tests is
    ----------------------------------------------------------------------------
    type Combine_Nfa_Test is new Nfa_Test_Class with null record;
    procedure Run(T : in out Combine_Nfa_Test) is
-      use kv.apg.nfa;
+      use kv.apg.fa.nfa;
       Nfas : Nfa_Array_Type(1..3);
       T1 : kv.apg.fast.Transition_Type;
       T2 : kv.apg.fast.Transition_Type;
@@ -915,7 +915,7 @@ package body kv.apg.tests is
       C : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('c'));
       D : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('d'));
       Expected_Image : constant String := "[1{ɛ=>2,ɛ=>4,ɛ=>6}/2{97=>3}/(3:1){}/4{98=>5}/(5:2){}/6{99=>7}/(7:3){}]";
-      Recognizer : kv.apg.nfa.Nfa_State_Class;
+      Recognizer : kv.apg.fa.nfa.Nfa_State_Class;
    begin
       Nfas(1).Initialize(Alloc => 2, Key => 1);
       Nfas(2).Initialize(Alloc => 2, Key => 2);
@@ -937,11 +937,11 @@ package body kv.apg.tests is
       Nfas(3).Set_State_Transition(State => 1, Index => 1, Trans => T3);
       Nfas(3).Set_State_Accepting(State => 2, Key => 3);
 
-      --kv.apg.nfa.Set_Debug(True);
+      --kv.apg.fa.nfa.Set_Debug(True);
       T.Uut.Initialize(Nfas);
       T.Assert(T.Uut.Get_State_Count = 7, "Wrong init state count (should be 7, is " & Natural'IMAGE(T.Uut.Get_State_Count) & ").");
       T.Assert(T.Uut.Image = Expected_Image, "Wrong image! Expected <"&Expected_Image&">, got <" & T.Uut.Image & ">");
-      kv.apg.nfa.Set_Debug(False);
+      kv.apg.fa.nfa.Set_Debug(False);
 
       Recognizer.Initialize(T.Uut'UNCHECKED_ACCESS);
       Recognizer.Ingest(A);
@@ -967,7 +967,7 @@ package body kv.apg.tests is
       T.Assert(Recognizer.Is_Failed, "Should be Is_Failed after 'd'");
    exception
       when others =>
-         kv.apg.nfa.Set_Debug(False);
+         kv.apg.fa.nfa.Set_Debug(False);
          T.Assert(False, "exception");
    end Run;
 
@@ -976,8 +976,8 @@ package body kv.apg.tests is
    ----------------------------------------------------------------------------
    type Base_Nfa_State_Test_Class is abstract new kv.core.ut.Test_Class with
       record
-         Nfa : aliased kv.apg.nfa.Nfa_Class;
-         Uut : aliased kv.apg.nfa.Nfa_State_Class;
+         Nfa : aliased kv.apg.fa.nfa.Nfa_Class;
+         Uut : aliased kv.apg.fa.nfa.Nfa_State_Class;
       end record;
 
    ----------------------------------------------------------------------------
@@ -1263,7 +1263,7 @@ package body kv.apg.tests is
       T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
 
       --kv.apg.fast.Set_Debug(True);
-      --kv.apg.nfa.Set_Debug(True);
+      --kv.apg.fa.nfa.Set_Debug(True);
       Ingest_All(T, "d");
       T.Assert(T.Uut.Is_Accepting, "Should be accepting");
       T.Assert(T.Uut.Is_Terminal, "Should be terminal");
@@ -1275,7 +1275,7 @@ package body kv.apg.tests is
       T.Assert(T.Uut.Is_Terminal, "Should be terminal");
       T.Assert(not T.Uut.Is_Failed, "Should not be failed");
       --kv.apg.fast.Set_Debug(False);
-      --kv.apg.nfa.Set_Debug(False);
+      --kv.apg.fa.nfa.Set_Debug(False);
 
       kv.apg.directives.Free(Directive);
    end Run;
@@ -1375,8 +1375,8 @@ package body kv.apg.tests is
    ----------------------------------------------------------------------------
    type Base_Dfa_State_Test_Class is abstract new kv.core.ut.Test_Class with
       record
-         Dfa : aliased kv.apg.dfa.Dfa_Class;
-         Uut : aliased kv.apg.Dfa.Dfa_State_Class;
+         Dfa : aliased kv.apg.fa.dfa.Dfa_Class;
+         Uut : aliased kv.apg.fa.dfa.Dfa_State_Class;
       end record;
 
    ----------------------------------------------------------------------------
@@ -1414,45 +1414,45 @@ package body kv.apg.tests is
    ----------------------------------------------------------------------------
    overriding procedure Set_Up(T : in out Dfa_State_Test_Class) is
    begin
-      --kv.apg.dfa.Set_Debug(True);
+      --kv.apg.fa.dfa.Set_Debug(True);
       T.Dfa.Initialize(Static_Dfa_Definition.State_List'ACCESS);
       T.Uut.Initialize(T.Dfa'UNCHECKED_ACCESS);
-      kv.apg.dfa.Set_Debug(False);
+      kv.apg.fa.dfa.Set_Debug(False);
    end Set_Up;
 
    ----------------------------------------------------------------------------
    type Dfa_1_State_Test is new Dfa_State_Test_Class with null record;
    procedure Run(T : in out Dfa_1_State_Test) is
    begin
-      --kv.apg.dfa.Set_Debug(True);
+      --kv.apg.fa.dfa.Set_Debug(True);
       Ingest_All(T, "abcd");
       T.Assert(T.Uut.Is_Accepting, "Should be accepting");
       T.Assert(not T.Uut.Is_Terminal, "Should not be terminal");
       T.Assert(not T.Uut.Is_Failed, "Should not be failed");
-      --kv.apg.dfa.Set_Debug(False);
+      --kv.apg.fa.dfa.Set_Debug(False);
    end Run;
 
    ----------------------------------------------------------------------------
    type Dfa_2_State_Test is new Dfa_State_Test_Class with null record;
    procedure Run(T : in out Dfa_2_State_Test) is
    begin
-      --kv.apg.dfa.Set_Debug(True);
+      --kv.apg.fa.dfa.Set_Debug(True);
       Ingest_All(T, "abcde");
       T.Assert(not T.Uut.Is_Accepting, "Should not be accepting");
       T.Assert(T.Uut.Is_Failed, "Should be failed");
-      --kv.apg.dfa.Set_Debug(False);
+      --kv.apg.fa.dfa.Set_Debug(False);
    end Run;
 
    ----------------------------------------------------------------------------
    type Dfa_3_State_Test is new Dfa_State_Test_Class with null record;
    procedure Run(T : in out Dfa_3_State_Test) is
    begin
-      --kv.apg.dfa.Set_Debug(True);
+      --kv.apg.fa.dfa.Set_Debug(True);
       Ingest_All(T, "abcabbbbcbcdddd");
       T.Assert(T.Uut.Is_Accepting, "Should be accepting");
       T.Assert(not T.Uut.Is_Terminal, "Should not be terminal");
       T.Assert(not T.Uut.Is_Failed, "Should not be failed");
-      --kv.apg.dfa.Set_Debug(False);
+      --kv.apg.fa.dfa.Set_Debug(False);
    end Run;
 
 

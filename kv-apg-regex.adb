@@ -199,8 +199,8 @@ package body kv.apg.regex is
 
 
    -------------------------------------------------------------------------
-   function To_Nfa(Tree : Regular_Expression_Tree_Type; Key : Key_Type) return kv.apg.nfa.Nfa_Class is
-      RegEx_NFA : kv.apg.nfa.Nfa_Class;
+   function To_Nfa(Tree : Regular_Expression_Tree_Type; Key : Key_Type) return kv.apg.fa.nfa.Nfa_Class is
+      RegEx_NFA : kv.apg.fa.nfa.Nfa_Class;
       States : Natural;
       Start_State : State_Id_Type := 1;
    begin
@@ -249,7 +249,7 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    overriding procedure Set_Nfa_Transitions
       (Self  : in out Match_Node_Class;
-       NFA   : in out kv.apg.nfa.Nfa_Class;
+       NFA   : in out kv.apg.fa.nfa.Nfa_Class;
        Start : in out State_Id_Type) is
       Transition : Transition_Type;
       First_And_Only_Transition : constant := 1;
@@ -295,7 +295,7 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    overriding procedure Set_Nfa_Transitions
       (Self  : in out Match_Any_Node_Class;
-       NFA   : in out kv.apg.nfa.Nfa_Class;
+       NFA   : in out kv.apg.fa.nfa.Nfa_Class;
        Start : in out State_Id_Type) is
       Transition : Transition_Type;
       Destination : State_Id_Type;
@@ -382,7 +382,7 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    overriding procedure Set_Nfa_Transitions
       (Self  : in out Or_Node_Class;
-       NFA   : in out kv.apg.nfa.Nfa_Class;
+       NFA   : in out kv.apg.fa.nfa.Nfa_Class;
        Start : in out State_Id_Type) is
       Start_A : State_Id_Type;
       End_A : State_Id_Type;
@@ -468,7 +468,7 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    overriding procedure Set_Nfa_Transitions
       (Self  : in out Star_Node_Class;
-       NFA   : in out kv.apg.nfa.Nfa_Class;
+       NFA   : in out kv.apg.fa.nfa.Nfa_Class;
        Start : in out State_Id_Type) is
 
        Sub_Start : State_Id_Type;
@@ -537,7 +537,7 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    overriding procedure Set_Nfa_Transitions
       (Self  : in out Plus_Node_Class;
-       NFA   : in out kv.apg.nfa.Nfa_Class;
+       NFA   : in out kv.apg.fa.nfa.Nfa_Class;
        Start : in out State_Id_Type) is
 
        Sub_Start : State_Id_Type;
@@ -650,7 +650,7 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    overriding procedure Set_Nfa_Transitions
       (Self  : in out Subsequence_Node_Class;
-       NFA   : in out kv.apg.nfa.Nfa_Class;
+       NFA   : in out kv.apg.fa.nfa.Nfa_Class;
        Start : in out State_Id_Type) is
    begin
       if Debug then Put_Line("Subsequence_Node_Class.Set_Nfa_Transitions starting at " & State_Id_Type'IMAGE(Start)); end if;

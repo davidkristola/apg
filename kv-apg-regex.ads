@@ -3,7 +3,7 @@ with Ada.Finalization;
 with kv.core.wwstr; use kv.core.wwstr;
 
 with kv.apg.tokens;
-with kv.apg.nfa;
+with kv.apg.fa.nfa;
 with kv.apg.fast; use kv.apg.fast;
 
 package kv.apg.regex is
@@ -39,7 +39,7 @@ package kv.apg.regex is
    function Count_Nfa_Transition_Sets(Self : Node_Class) return Natural is abstract;
    procedure Set_Nfa_Transitions
       (Self  : in out Node_Class;
-       NFA   : in out kv.apg.nfa.Nfa_Class;
+       NFA   : in out kv.apg.fa.nfa.Nfa_Class;
        Start : in out State_Id_Type) is abstract;
 
 
@@ -66,7 +66,7 @@ package kv.apg.regex is
        Token : in     kv.apg.tokens.Token_Class);
 
 
-   function To_Nfa(Tree : Regular_Expression_Tree_Type; Key : Key_Type) return kv.apg.nfa.Nfa_Class;
+   function To_Nfa(Tree : Regular_Expression_Tree_Type; Key : Key_Type) return kv.apg.fa.nfa.Nfa_Class;
 
 
    -- Control debug output of package
@@ -97,7 +97,7 @@ private
    overriding function Count_Nfa_Transition_Sets(Self : Match_Node_Class) return Natural;
    overriding procedure Set_Nfa_Transitions
       (Self  : in out Match_Node_Class;
-       NFA   : in out kv.apg.nfa.Nfa_Class;
+       NFA   : in out kv.apg.fa.nfa.Nfa_Class;
        Start : in out State_Id_Type);
 
 
@@ -108,7 +108,7 @@ private
    overriding function Count_Nfa_Transition_Sets(Self : Match_Any_Node_Class) return Natural;
    overriding procedure Set_Nfa_Transitions
       (Self  : in out Match_Any_Node_Class;
-       NFA   : in out kv.apg.nfa.Nfa_Class;
+       NFA   : in out kv.apg.fa.nfa.Nfa_Class;
        Start : in out State_Id_Type);
 
 
@@ -130,7 +130,7 @@ private
    overriding function Count_Nfa_Transition_Sets(Self : Or_Node_Class) return Natural;
    overriding procedure Set_Nfa_Transitions
       (Self  : in out Or_Node_Class;
-       NFA   : in out kv.apg.nfa.Nfa_Class;
+       NFA   : in out kv.apg.fa.nfa.Nfa_Class;
        Start : in out State_Id_Type);
 
 
@@ -148,7 +148,7 @@ private
    overriding function Count_Nfa_Transition_Sets(Self : Star_Node_Class) return Natural;
    overriding procedure Set_Nfa_Transitions
       (Self  : in out Star_Node_Class;
-       NFA   : in out kv.apg.nfa.Nfa_Class;
+       NFA   : in out kv.apg.fa.nfa.Nfa_Class;
        Start : in out State_Id_Type);
 
 
@@ -166,7 +166,7 @@ private
    overriding function Count_Nfa_Transition_Sets(Self : Plus_Node_Class) return Natural;
    overriding procedure Set_Nfa_Transitions
       (Self  : in out Plus_Node_Class;
-       NFA   : in out kv.apg.nfa.Nfa_Class;
+       NFA   : in out kv.apg.fa.nfa.Nfa_Class;
        Start : in out State_Id_Type);
 
 
@@ -188,7 +188,7 @@ private
    overriding function Count_Nfa_Transition_Sets(Self : Subsequence_Node_Class) return Natural;
    overriding procedure Set_Nfa_Transitions
       (Self  : in out Subsequence_Node_Class;
-       NFA   : in out kv.apg.nfa.Nfa_Class;
+       NFA   : in out kv.apg.fa.nfa.Nfa_Class;
        Start : in out State_Id_Type);
 
 end kv.apg.regex;
