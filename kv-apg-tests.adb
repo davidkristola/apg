@@ -13,6 +13,7 @@ with kv.apg.directives;
 with kv.apg.regex;
 with kv.apg.nfa;
 with kv.apg.fast;
+with kv.apg.dfa;
 
 with kv.core.wwstr;
 
@@ -980,6 +981,15 @@ package body kv.apg.tests is
       end record;
 
    ----------------------------------------------------------------------------
+   procedure Ingest_All(T : in out Base_Nfa_State_Test_Class'CLASS; S : in String) is
+      WS : constant Wide_Wide_String := To_Wide_Wide_String(S);
+   begin
+      for WC of WS loop
+         T.Uut.Ingest(WC);
+      end loop;
+   end Ingest_All;
+
+   ----------------------------------------------------------------------------
    type Nfa_State_Test_Class is abstract new Base_Nfa_State_Test_Class with null record;
 
    ----------------------------------------------------------------------------
@@ -1021,15 +1031,6 @@ package body kv.apg.tests is
       T.Nfa.Set_State_Accepting(3, 13); -- Payload 13 (and no transitions)
    end Set_Up;
 
-
-   ----------------------------------------------------------------------------
-   procedure Ingest_All(T : in out Base_Nfa_State_Test_Class'CLASS; S : in String) is
-      WS : constant Wide_Wide_String := To_Wide_Wide_String(S);
-   begin
-      for WC of WS loop
-         T.Uut.Ingest(WC);
-      end loop;
-   end Ingest_All;
 
 
 
@@ -1371,6 +1372,88 @@ package body kv.apg.tests is
    end Run;
 
 
+   ----------------------------------------------------------------------------
+   type Base_Dfa_State_Test_Class is abstract new kv.core.ut.Test_Class with
+      record
+         Dfa : aliased kv.apg.dfa.Dfa_Class;
+         Uut : aliased kv.apg.Dfa.Dfa_State_Class;
+      end record;
+
+   ----------------------------------------------------------------------------
+   procedure Ingest_All(T : in out Base_Dfa_State_Test_Class'CLASS; S : in String) is
+      WS : constant Wide_Wide_String := To_Wide_Wide_String(S);
+   begin
+      for WC of WS loop
+         T.Uut.Ingest(WC);
+      end loop;
+   end Ingest_All;
+
+   package Static_Dfa_Definition is
+      A : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('a'));
+      B : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('b'));
+      C : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('c'));
+      D : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('d'));
+      E : constant Wide_Wide_Character := To_Wide_Wide_Character(Character'('e'));
+      T1 : aliased Transition_List_Type := (1 => (Match, 2, A));
+      T2 : aliased Transition_List_Type := (1 => (Match, 3, B), 2 => (Match, 2, A));
+      T3 : aliased Transition_List_Type := (1 => (Match, 4, C), 2 => (Match, 2, A), 3 => (Match, 3, B));
+      T4 : aliased Transition_List_Type := (1 => (Match, 5, D), 2 => (Match, 2, A), 3 => (Match, 3, B), 4 => (Match, 4, C));
+      T5 : aliased Transition_List_Type := (1 => (Match, 5, D));
+      State_List : aliased State_List_Type :=
+         (1 => (1, False, 0, T1'ACCESS),
+          2 => (2, False, 0, T2'ACCESS),
+          3 => (3, False, 0, T3'ACCESS),
+          4 => (4, False, 0, T4'ACCESS),
+          5 => (5, True, 1, T5'ACCESS)
+          );
+   end Static_Dfa_Definition;
+
+   ----------------------------------------------------------------------------
+   type Dfa_State_Test_Class is abstract new Base_Dfa_State_Test_Class with null record;
+
+   ----------------------------------------------------------------------------
+   overriding procedure Set_Up(T : in out Dfa_State_Test_Class) is
+   begin
+      --kv.apg.dfa.Set_Debug(True);
+      T.Dfa.Initialize(Static_Dfa_Definition.State_List'ACCESS);
+      T.Uut.Initialize(T.Dfa'UNCHECKED_ACCESS);
+      kv.apg.dfa.Set_Debug(False);
+   end Set_Up;
+
+   ----------------------------------------------------------------------------
+   type Dfa_1_State_Test is new Dfa_State_Test_Class with null record;
+   procedure Run(T : in out Dfa_1_State_Test) is
+   begin
+      --kv.apg.dfa.Set_Debug(True);
+      Ingest_All(T, "abcd");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(not T.Uut.Is_Terminal, "Should not be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+      --kv.apg.dfa.Set_Debug(False);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Dfa_2_State_Test is new Dfa_State_Test_Class with null record;
+   procedure Run(T : in out Dfa_2_State_Test) is
+   begin
+      --kv.apg.dfa.Set_Debug(True);
+      Ingest_All(T, "abcde");
+      T.Assert(not T.Uut.Is_Accepting, "Should not be accepting");
+      T.Assert(T.Uut.Is_Failed, "Should be failed");
+      --kv.apg.dfa.Set_Debug(False);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Dfa_3_State_Test is new Dfa_State_Test_Class with null record;
+   procedure Run(T : in out Dfa_3_State_Test) is
+   begin
+      --kv.apg.dfa.Set_Debug(True);
+      Ingest_All(T, "abcabbbbcbcdddd");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(not T.Uut.Is_Terminal, "Should not be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+      --kv.apg.dfa.Set_Debug(False);
+   end Run;
 
 
    ----------------------------------------------------------------------------
@@ -1457,6 +1540,12 @@ package body kv.apg.tests is
       suite.register(new RegEx_To_Nfa_2_Test, "RegEx_To_Nfa_2_Test");
       suite.register(new RegEx_To_Nfa_3_Test, "RegEx_To_Nfa_3_Test");
       suite.register(new RegEx_To_Nfa_4_Test, "RegEx_To_Nfa_4_Test");
+
+      suite.register(new Dfa_1_State_Test, "Dfa_1_State_Test");
+      suite.register(new Dfa_2_State_Test, "Dfa_2_State_Test");
+      suite.register(new Dfa_3_State_Test, "Dfa_3_State_Test");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;

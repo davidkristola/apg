@@ -297,6 +297,24 @@ package body kv.apg.fast is
    end Image;
 
    ----------------------------------------------------------------------------
+   function Compute_Transitions
+      (Self  : in     State_Type;
+       Value : in     Wide_Wide_Character) return State_Universe_Type is
+      Destination : State_Universe_Type;
+   begin
+      if Self.Transitions = null then
+         return Invalid_State;
+      end if;
+      for I in Self.Transitions'RANGE loop
+         Destination := Move(Self.Transitions(I), Value);
+         if Destination /= Invalid_State then
+            return Destination;
+         end if;
+      end loop;
+      return Invalid_State;
+   end Compute_Transitions;
+
+   ----------------------------------------------------------------------------
    procedure Mark_Transitions
       (Self  : in     State_Type;
        Value : in     Wide_Wide_Character;

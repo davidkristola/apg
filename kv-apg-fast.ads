@@ -87,6 +87,9 @@ package kv.apg.fast is
    function Get_Transition(Self : State_Type; Index : Positive) return Transition_Type;
    function Image(Self : State_Type) return String;
 
+   function Compute_Transitions
+      (Self  : in     State_Type;
+       Value : in     Wide_Wide_Character) return State_Universe_Type;
    procedure Mark_Transitions
       (Self  : in     State_Type;
        Value : in     Wide_Wide_Character;
