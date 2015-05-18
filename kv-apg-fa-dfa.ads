@@ -7,17 +7,13 @@ package kv.apg.fa.dfa is
    type Dfa_Class is new Finite_Automata_Class with null record;
    type Dfa_Pointer_Type is access all Dfa_Class;
 
-   procedure Initialize
-      (Self     : in out Dfa_Class;
-       Existing : in     State_List_Pointer_Type);
-
-   function Compute_Transitions
+   not overriding function Compute_Transitions
       (Self  : in     Dfa_Class;
        State : in     State_Id_Type;
        Value : in     Wide_Wide_Character) return State_Universe_Type;
 
 
-   type Dfa_State_Class is tagged private;
+   type Dfa_State_Class is new Finite_Automata_State_Class with private;
    type Dfa_State_Pointer_Type is access all Dfa_State_Class;
 
    procedure Initialize
@@ -43,7 +39,7 @@ package kv.apg.fa.dfa is
 
 private
 
-   type Dfa_State_Class is tagged
+   type Dfa_State_Class is new Finite_Automata_State_Class with
       record
          Dfa   : Dfa_Pointer_Type;
          State : State_Universe_Type;

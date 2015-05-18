@@ -12,14 +12,6 @@ package body kv.apg.fa.nfa is
    end Set_Debug;
 
    ----------------------------------------------------------------------------
-   function Img(Char : Wide_Wide_Character) return String is
-      Decimal_Image : constant String := Interfaces.Unsigned_32'IMAGE(Interfaces.Unsigned_32(Wide_Wide_Character'POS(Char)));
-   begin
-      return Decimal_Image(2..Decimal_Image'LAST);
-   end Img;
-
-
-   ----------------------------------------------------------------------------
    procedure Initialize
       (Self   : in out Nfa_Class;
        Alloc  : in     Positive;
@@ -35,14 +27,6 @@ package body kv.apg.fa.nfa is
          end loop;
          Set_Accepting(Self.States(Last), Last, Key);
       end if;
-   end Initialize;
-
-   ----------------------------------------------------------------------------
-   procedure Initialize
-      (Self     : in out Nfa_Class;
-       Existing : in     State_List_Pointer_Type) is
-   begin
-      Self.States := Existing;
    end Initialize;
 
    ----------------------------------------------------------------------------
@@ -88,17 +72,6 @@ package body kv.apg.fa.nfa is
    end Initialize;
 
    ----------------------------------------------------------------------------
-   function Get_State_Count
-      (Self : in     Nfa_Class) return Natural is
-   begin
-      if Self.States = null then
-         return 0;
-      else
-         return Self.States'LENGTH;
-      end if;
-   end Get_State_Count;
-
-   ----------------------------------------------------------------------------
    procedure Set_State_Accepting
       (Self  : in out Nfa_Class;
        State : in     State_Id_Type;
@@ -135,38 +108,6 @@ package body kv.apg.fa.nfa is
    begin
       Append_Transition(Self.States(State), Trans);
    end Append_State_Transition;
-
-   ----------------------------------------------------------------------------
-   function Recursive_Image(Self : Nfa_Class; Index : Natural) return String is
-   begin
-      if Index = 1 then
-         return Image(Self.States(1));
-      else
-         return Recursive_Image(Self, Index-1) & "/" & Image(Self.States(State_Id_Type(Index)));
-      end if;
-   end Recursive_Image;
-
-   ----------------------------------------------------------------------------
-   function Transition_Count(Self : Nfa_Class; State : State_Id_Type) return Natural is
-   begin
---      Put_Line("Transition_Count checking " & State_Id_Type'IMAGE(State) & ", transitions = " & Natural'IMAGE(Get_Transition_Count(Self.States(State))));
-      return Get_Transition_Count(Self.States(State));
-   end Transition_Count;
-
-   ----------------------------------------------------------------------------
-   function Image(Self : Nfa_Class) return String is
-   begin
-      if Self.States = null then
-         return "[null]";
-      end if;
-      return "[" & Recursive_Image(Self, Self.States'LENGTH) & "]";
-   end Image;
-
-   ----------------------------------------------------------------------------
-   function Get_Transition(Self : Nfa_Class; State : State_Id_Type; Index : Positive) return Transition_Type is
-   begin
-      return Get_Transition(Self.States(State), Index);
-   end Get_Transition;
 
    ----------------------------------------------------------------------------
    procedure Mark_Transitions

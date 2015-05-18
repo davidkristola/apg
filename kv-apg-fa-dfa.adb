@@ -15,15 +15,6 @@ package body kv.apg.fa.dfa is
 
 
    ----------------------------------------------------------------------------
-   procedure Initialize
-      (Self     : in out Dfa_Class;
-       Existing : in     State_List_Pointer_Type) is
-   begin
-      Self.States := Existing;
-   end Initialize;
-
-
-   ----------------------------------------------------------------------------
    function Compute_Transitions
       (Self  : in     Dfa_Class;
        State : in     State_Id_Type;
