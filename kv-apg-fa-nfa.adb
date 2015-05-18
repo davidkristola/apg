@@ -147,24 +147,6 @@ package body kv.apg.fa.nfa is
    end Recursive_Image;
 
    ----------------------------------------------------------------------------
-   function Get_Start_State(Self : Nfa_Class) return State_Id_Type is
-   begin
-      return Self.Start;
-   end Get_Start_State;
-
-   ----------------------------------------------------------------------------
-   function Is_Accepting(Self : Nfa_Class; State : State_Id_Type) return Boolean is
-   begin
-      return Is_Accepting(Self.States(State));
-   end Is_Accepting;
-
-   ----------------------------------------------------------------------------
-   function Is_Terminal(Self : Nfa_Class; State : State_Id_Type) return Boolean is
-   begin
-      return Get_Transition_Count(Self.States(State)) = 0; -- Has no exit transitions
-   end Is_Terminal;
-
-   ----------------------------------------------------------------------------
    function Transition_Count(Self : Nfa_Class; State : State_Id_Type) return Natural is
    begin
 --      Put_Line("Transition_Count checking " & State_Id_Type'IMAGE(State) & ", transitions = " & Natural'IMAGE(Get_Transition_Count(Self.States(State))));
@@ -185,12 +167,6 @@ package body kv.apg.fa.nfa is
    begin
       return Get_Transition(Self.States(State), Index);
    end Get_Transition;
-
-   ----------------------------------------------------------------------------
-   function Get_Key(Self : Nfa_Class; State : State_Id_Type) return Key_Type is
-   begin
-      return Get_Key(Self.States(State));
-   end Get_Key;
 
    ----------------------------------------------------------------------------
    procedure Mark_Transitions

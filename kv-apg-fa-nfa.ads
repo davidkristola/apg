@@ -5,7 +5,7 @@ with kv.apg.fast; use kv.apg.fast;
 
 package kv.apg.fa.nfa is
 
-   type Nfa_Class is tagged private;
+   type Nfa_Class is new Finite_Automata_Class with null record;
    type Nfa_Pointer_Type is access all Nfa_Class;
    type Nfa_Array_Type is array (Positive range <>) of aliased Nfa_Class;
 
@@ -46,12 +46,8 @@ package kv.apg.fa.nfa is
        Trans : in     Transition_Type);
 
    function Image(Self : Nfa_Class) return String;
-   function Get_Start_State(Self : Nfa_Class) return State_Id_Type;
-   function Is_Accepting(Self : Nfa_Class; State : State_Id_Type) return Boolean;
-   function Is_Terminal(Self : Nfa_Class; State : State_Id_Type) return Boolean;
    function Transition_Count(Self : Nfa_Class; State : State_Id_Type) return Natural;
    function Get_Transition(Self : Nfa_Class; State : State_Id_Type; Index : Positive) return Transition_Type;
-   function Get_Key(Self : Nfa_Class; State : State_Id_Type) return Key_Type;
 
    procedure Mark_Transitions
       (Self  : in     Nfa_Class;
@@ -90,12 +86,6 @@ package kv.apg.fa.nfa is
    procedure Set_Debug(Value : in Boolean);
 
 private
-
-   type Nfa_Class is tagged
-      record
-         Start   : State_Id_Type := State_Id_Type'FIRST;
-         States  : State_List_Pointer_Type;
-      end record;
 
    type Nfa_State_Class is tagged
       record
