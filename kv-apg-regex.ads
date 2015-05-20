@@ -191,4 +191,23 @@ private
        NFA   : in out kv.apg.fa.nfa.Nfa_Class;
        Start : in out State_Id_Type);
 
+
+   -- Zero or one ("+")
+   type Zoro_Node_Class is new Node_Class with
+      record
+         A : Node_Pointer_Type;
+      end record;
+   type Zoro_Node_Pointer_Type is access all Zoro_Node_Class;
+   overriding procedure Process_This(Self : in out Zoro_Node_Class);
+   overriding function Image_This(Self : in out Zoro_Node_Class) return String_Type;
+   overriding procedure Prepare_For_Graft
+      (Self  : in out Zoro_Node_Class;
+       Box   : in out Reg_Ex_Container_Class'CLASS);
+   overriding function Count_Nfa_Transition_Sets(Self : Zoro_Node_Class) return Natural;
+   overriding procedure Set_Nfa_Transitions
+      (Self  : in out Zoro_Node_Class;
+       NFA   : in out kv.apg.fa.nfa.Nfa_Class;
+       Start : in out State_Id_Type);
+
+
 end kv.apg.regex;

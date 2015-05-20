@@ -34,6 +34,7 @@ package body kv.apg.regex is
       Plus_Node : Plus_Node_Pointer_Type;
       Sub_Node : Subsequence_Node_Pointer_Type;
       Or_Node : Or_Node_Pointer_Type;
+      Zoro_Node : Zoro_Node_Pointer_Type;
 
    begin
       if Debug then Put_Line("(reg ex) Allocate_Node called with <" & Token.Get_Data_As_String & ">"); end if;
@@ -57,6 +58,9 @@ package body kv.apg.regex is
          elsif Token.Get_Data_As_String = "|" then
             Or_Node := new Or_Node_Class;
             return Node_Pointer_Type(Or_Node);
+         elsif Token.Get_Data_As_String = "?" then
+            Zoro_Node := new Zoro_Node_Class;
+            return Node_Pointer_Type(Zoro_Node);
          end if;
       end if;
       if Debug then Put_Line("Allocate_Node returning null"); end if;
@@ -659,5 +663,68 @@ package body kv.apg.regex is
       end if;
       Self.A.Set_Nfa_Transitions(NFA, Start);
    end Set_Nfa_Transitions;
+
+
+
+
+   -------------------------------------------------------------------------
+   overriding procedure Process_This(Self : in out Zoro_Node_Class) is
+   begin
+      if Debug then Put_Line("Zoro_Node_Class.Process_This"); end if;
+   end Process_This;
+
+   -------------------------------------------------------------------------
+   overriding function Image_This(Self : in out Zoro_Node_Class) return String_Type is
+   begin
+      return To_String_Type("(") & Self.A.Image_This & To_String_Type(")") & To_String_Type("?");
+   end Image_This;
+
+   -------------------------------------------------------------------------
+   overriding procedure Prepare_For_Graft
+      (Self  : in out Zoro_Node_Class;
+       Box   : in out Reg_Ex_Container_Class'CLASS) is
+
+      Left : Node_Pointer_Type;
+
+   begin
+      if Debug then Put_Line("Zoro_Node_Class.Prepare_For_Graft"); end if;
+      Box.Linear_Detach(Left);
+      if Debug then Put_Line("Zoro_Node_Class.Prepare_For_Graft, detached and setting A with " & To_String(+Left.Image_Tree)); end if;
+      Self.A := Left;
+      if Debug then Put_Line("result: " & To_String(+Self.Image_Tree)); end if;
+   end Prepare_For_Graft;
+
+   -------------------------------------------------------------------------
+   overriding function Count_Nfa_Transition_Sets(Self : Zoro_Node_Class) return Natural is
+   begin
+      return (Self.A.Count_Nfa_Transition_Sets) + (if Self.Previous = null then 0 else Self.Previous.Count_Nfa_Transition_Sets);
+   end Count_Nfa_Transition_Sets;
+
+   -------------------------------------------------------------------------
+   overriding procedure Set_Nfa_Transitions
+      (Self  : in out Zoro_Node_Class;
+       NFA   : in out kv.apg.fa.nfa.Nfa_Class;
+       Start : in out State_Id_Type) is
+
+       Sub_Start : State_Id_Type;
+       Sub_End : State_Id_Type;
+       Transition_Over : Transition_Type;
+
+   begin
+      if Debug then Put_Line("Zoro_Node_Class.Set_Nfa_Transitions starting at " & State_Id_Type'IMAGE(Start)); end if;
+      if Self.Previous /= null then
+         Self.Previous.Set_Nfa_Transitions(NFA, Start);
+      end if;
+
+      Sub_Start := Start;
+      Sub_End := Sub_Start + State_Id_Type(Self.A.Count_Nfa_Transition_Sets);
+
+      Set_Epsilon(Transition_Over, Sub_End);
+
+      Self.A.Set_Nfa_Transitions(NFA, Start);
+
+      NFA.Append_State_Transition(Sub_Start, Transition_Over);
+   end Set_Nfa_Transitions;
+
 
 end kv.apg.regex;

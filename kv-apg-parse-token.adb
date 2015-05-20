@@ -51,10 +51,11 @@ package body kv.apg.parse.token is
       if Token.Get_Kind = A_Char or else Token.Get_Kind = A_String or else Token.Get_Kind = A_Block then
          return True; -- This is a constant
       end if;
-      if Token.Get_Data_As_String = "|" or else
+      if Token.Get_Data_As_String = "|" or else -- TODO: this list is an oblique duplicate of regex
          Token.Get_Data_As_String = "." or else
          Token.Get_Data_As_String = "*" or else
          Token.Get_Data_As_String = "+" or else
+         Token.Get_Data_As_String = "?" or else
          Token.Get_Data_As_String = "(" or else
          Token.Get_Data_As_String = ")"
       then

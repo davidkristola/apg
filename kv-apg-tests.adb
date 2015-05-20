@@ -561,6 +561,13 @@ package body kv.apg.tests is
       Run_Token_Test(T, "ab", "'a' 'b' + ;", """a"" (""b"")+");
    end Run;
 
+   ----------------------------------------------------------------------------
+   type Parse_Zoro_Token_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Zoro_Token_Test) is
+   begin
+      Run_Token_Test(T, "a_and_maybe_b", "'a' 'b' ? ;", """a"" (""b"")?");
+   end Run;
+
 
 
    ----------------------------------------------------------------------------
@@ -1371,6 +1378,49 @@ package body kv.apg.tests is
       --kv.apg.regex.Set_Debug(False);
    end Run;
 
+   ----------------------------------------------------------------------------
+   type RegEx_To_Nfa_5_Test is new RegEx_Nfa_Test_Class with null record;
+   procedure Run(T : in out RegEx_To_Nfa_5_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      Expected_Image : constant String := "[1{97=>2}/2{98=>3,ɛ=>3}/3{99=>4}/(4:7){}]";
+   begin
+      Parse_Line(T, "token foo = 'a' ('b' ?) 'c';");
+      Directive := T.Parser.Next_Directive;
+
+      --kv.apg.regex.Set_Debug(True);
+      T.Nfa := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.To_Nfa(7);
+      --kv.apg.regex.Set_Debug(False);
+
+      T.Assert(T.Nfa.Image = Expected_Image, "Wrong image! Expected <"&Expected_Image&">, got <" & T.Nfa.Image & ">");
+
+      T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
+
+      --kv.apg.fast.Set_Debug(True);
+      --kv.apg.fa.nfa.Set_Debug(True);
+
+      Ingest_All(T, "abc");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+
+      T.Uut.Reset;
+      Ingest_All(T, "ac");
+      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
+      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+
+      T.Uut.Reset;
+      Ingest_All(T, "abbc");
+      T.Assert(not T.Uut.Is_Accepting, "Should not be accepting");
+      T.Assert(T.Uut.Is_Failed, "Should be failed");
+
+      --kv.apg.fast.Set_Debug(False);
+      --kv.apg.fa.nfa.Set_Debug(False);
+
+      kv.apg.directives.Free(Directive);
+   end Run;
+
+
 
    ----------------------------------------------------------------------------
    type Base_Dfa_State_Test_Class is abstract new kv.core.ut.Test_Class with
@@ -1499,6 +1549,7 @@ package body kv.apg.tests is
       suite.register(new Parse_Sub_Sub_Star_Token_Test, "Parse_Sub_Sub_Star_Token_Test");
       suite.register(new Parse_Or_Sub_Sub_Star_Token_Test, "Parse_Or_Sub_Sub_Star_Token_Test");
       suite.register(new Parse_Plus_Token_Test, "Parse_Plus_Token_Test");
+      suite.register(new Parse_Zoro_Token_Test, "Parse_Zoro_Token_Test");
 
       suite.register(new Fast_Uninit_Test, "Fast_Uninit_Test");
       suite.register(new Fast_Any_Test, "Fast_Any_Test");
@@ -1540,6 +1591,7 @@ package body kv.apg.tests is
       suite.register(new RegEx_To_Nfa_2_Test, "RegEx_To_Nfa_2_Test");
       suite.register(new RegEx_To_Nfa_3_Test, "RegEx_To_Nfa_3_Test");
       suite.register(new RegEx_To_Nfa_4_Test, "RegEx_To_Nfa_4_Test");
+      suite.register(new RegEx_To_Nfa_5_Test, "RegEx_To_Nfa_5_Test");
 
       suite.register(new Dfa_1_State_Test, "Dfa_1_State_Test");
       suite.register(new Dfa_2_State_Test, "Dfa_2_State_Test");
