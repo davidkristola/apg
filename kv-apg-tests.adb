@@ -1253,6 +1253,29 @@ package body kv.apg.tests is
    end Parse_Line;
 
    ----------------------------------------------------------------------------
+   procedure Recognize_Pattern
+      (T         : in out Base_Nfa_State_Test_Class'CLASS;
+       Pattern   : in     String;
+       Accepting : in     Boolean;
+       Failed    : in     Boolean := True) is
+   begin
+      T.Uut.Reset;
+      Ingest_All(T, Pattern);
+      if Accepting then
+         T.Assert(T.Uut.Is_Accepting, "Pattern <"&Pattern&"> should be accepting");
+         T.Assert(T.Uut.Is_Terminal, "Pattern <"&Pattern&"> should be terminal");
+         T.Assert(not T.Uut.Is_Failed, "Pattern <"&Pattern&"> should not be failed");
+      else
+         T.Assert(not T.Uut.Is_Accepting, "Pattern <"&Pattern&"> should not be accepting");
+         if Failed then
+            T.Assert(T.Uut.Is_Failed, "Pattern <"&Pattern&"> should be failed");
+         else
+            T.Assert(not T.Uut.Is_Failed, "Pattern <"&Pattern&"> should not be failed");
+         end if;
+      end if;
+   end Recognize_Pattern;
+
+   ----------------------------------------------------------------------------
    type RegEx_To_Nfa_1_Test is new RegEx_Nfa_Test_Class with null record;
    procedure Run(T : in out RegEx_To_Nfa_1_Test) is
       Directive : kv.apg.directives.Directive_Pointer_Type;
@@ -1271,16 +1294,13 @@ package body kv.apg.tests is
 
       --kv.apg.fast.Set_Debug(True);
       --kv.apg.fa.nfa.Set_Debug(True);
-      Ingest_All(T, "d");
-      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
-      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
-      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
 
-      T.Uut.Reset;
-      Ingest_All(T, "abcabcabcd");
-      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
-      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
-      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+      Recognize_Pattern(T, "w", False);
+      Recognize_Pattern(T, "d", True); -- 0
+      Recognize_Pattern(T, "abcd", True); -- 1
+      Recognize_Pattern(T, "abcabcabcd", True); -- 3
+      Recognize_Pattern(T, "abcabcabcdd", False);
+
       --kv.apg.fast.Set_Debug(False);
       --kv.apg.fa.nfa.Set_Debug(False);
 
@@ -1303,15 +1323,9 @@ package body kv.apg.tests is
 
       T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
 
-      Ingest_All(T, "d");
-      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
-      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
-      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
-      T.Uut.Reset;
-      Ingest_All(T, "KSDFKJASDFKJFDGKJFd");
-      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
-      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
-      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+      Recognize_Pattern(T, "d", True);
+      Recognize_Pattern(T, "KSDFKJASDFKJFDGKJFd", True);
+      Recognize_Pattern(T, "dw", False, False); -- not failed because we haven't run off the end of a pattern
 
       kv.apg.directives.Free(Directive);
       --kv.apg.regex.Set_Debug(False);
@@ -1334,15 +1348,9 @@ package body kv.apg.tests is
 
       T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
 
-      Ingest_All(T, "abc");
-      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
-      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
-      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
-      T.Uut.Reset;
-      Ingest_All(T, "def");
-      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
-      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
-      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+      Recognize_Pattern(T, "abc", True);
+      Recognize_Pattern(T, "def", True);
+      Recognize_Pattern(T, "bar", False);
 
       kv.apg.directives.Free(Directive);
       kv.apg.regex.Set_Debug(False);
@@ -1364,15 +1372,9 @@ package body kv.apg.tests is
 
       T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
 
-      Ingest_All(T, "abc");
-      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
-      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
-      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
-      T.Uut.Reset;
-      Ingest_All(T, "aaaaaaaaaaabcc");
-      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
-      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
-      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
+      Recognize_Pattern(T, "abc", True);
+      Recognize_Pattern(T, "aaaaaaaaaaabcc", True);
+      Recognize_Pattern(T, "bc", False);
 
       kv.apg.directives.Free(Directive);
       --kv.apg.regex.Set_Debug(False);
@@ -1398,21 +1400,9 @@ package body kv.apg.tests is
       --kv.apg.fast.Set_Debug(True);
       --kv.apg.fa.nfa.Set_Debug(True);
 
-      Ingest_All(T, "abc");
-      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
-      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
-      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
-
-      T.Uut.Reset;
-      Ingest_All(T, "ac");
-      T.Assert(T.Uut.Is_Accepting, "Should be accepting");
-      T.Assert(T.Uut.Is_Terminal, "Should be terminal");
-      T.Assert(not T.Uut.Is_Failed, "Should not be failed");
-
-      T.Uut.Reset;
-      Ingest_All(T, "abbc");
-      T.Assert(not T.Uut.Is_Accepting, "Should not be accepting");
-      T.Assert(T.Uut.Is_Failed, "Should be failed");
+      Recognize_Pattern(T, "abc", True);
+      Recognize_Pattern(T, "ac", True);
+      Recognize_Pattern(T, "abbc", False);
 
       --kv.apg.fast.Set_Debug(False);
       --kv.apg.fa.nfa.Set_Debug(False);
