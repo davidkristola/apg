@@ -1254,26 +1254,31 @@ package body kv.apg.tests is
 
    ----------------------------------------------------------------------------
    procedure Recognize_Pattern
-      (T         : in out Base_Nfa_State_Test_Class'CLASS;
-       Pattern   : in     String;
-       Accepting : in     Boolean;
-       Failed    : in     Boolean := True) is
+      (T       : in out Base_Nfa_State_Test_Class'CLASS;
+       Pattern : in     String) is
    begin
       T.Uut.Reset;
       Ingest_All(T, Pattern);
-      if Accepting then
-         T.Assert(T.Uut.Is_Accepting, "Pattern <"&Pattern&"> should be accepting");
-         T.Assert(T.Uut.Is_Terminal, "Pattern <"&Pattern&"> should be terminal");
-         T.Assert(not T.Uut.Is_Failed, "Pattern <"&Pattern&"> should not be failed");
-      else
-         T.Assert(not T.Uut.Is_Accepting, "Pattern <"&Pattern&"> should not be accepting");
-         if Failed then
-            T.Assert(T.Uut.Is_Failed, "Pattern <"&Pattern&"> should be failed");
-         else
-            T.Assert(not T.Uut.Is_Failed, "Pattern <"&Pattern&"> should not be failed");
-         end if;
-      end if;
+      T.Assert(T.Uut.Is_Accepting, "Pattern <"&Pattern&"> should be accepting");
+      T.Assert(T.Uut.Is_Terminal, "Pattern <"&Pattern&"> should be terminal");
+      T.Assert(not T.Uut.Is_Failed, "Pattern <"&Pattern&"> should not be failed");
    end Recognize_Pattern;
+
+   ----------------------------------------------------------------------------
+   procedure Reject_Pattern
+      (T       : in out Base_Nfa_State_Test_Class'CLASS;
+       Pattern : in     String;
+       Failed  : in     Boolean := True) is
+   begin
+      T.Uut.Reset;
+      Ingest_All(T, Pattern);
+      T.Assert(not T.Uut.Is_Accepting, "Pattern <"&Pattern&"> should not be accepting");
+      if Failed then
+         T.Assert(T.Uut.Is_Failed, "Pattern <"&Pattern&"> should be failed");
+      else
+         T.Assert(not T.Uut.Is_Failed, "Pattern <"&Pattern&"> should not be failed");
+      end if;
+   end Reject_Pattern;
 
    ----------------------------------------------------------------------------
    type RegEx_To_Nfa_1_Test is new RegEx_Nfa_Test_Class with null record;
@@ -1295,11 +1300,11 @@ package body kv.apg.tests is
       --kv.apg.fast.Set_Debug(True);
       --kv.apg.fa.nfa.Set_Debug(True);
 
-      Recognize_Pattern(T, "w", False);
-      Recognize_Pattern(T, "d", True); -- 0
-      Recognize_Pattern(T, "abcd", True); -- 1
-      Recognize_Pattern(T, "abcabcabcd", True); -- 3
-      Recognize_Pattern(T, "abcabcabcdd", False);
+      Reject_Pattern(T, "w");
+      Recognize_Pattern(T, "d"); -- 0
+      Recognize_Pattern(T, "abcd"); -- 1
+      Recognize_Pattern(T, "abcabcabcd"); -- 3
+      Reject_Pattern(T, "abcabcabcdd");
 
       --kv.apg.fast.Set_Debug(False);
       --kv.apg.fa.nfa.Set_Debug(False);
@@ -1323,9 +1328,9 @@ package body kv.apg.tests is
 
       T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
 
-      Recognize_Pattern(T, "d", True);
-      Recognize_Pattern(T, "KSDFKJASDFKJFDGKJFd", True);
-      Recognize_Pattern(T, "dw", False, False); -- not failed because we haven't run off the end of a pattern
+      Recognize_Pattern(T, "d");
+      Recognize_Pattern(T, "KSDFKJASDFKJFDGKJFd");
+      Reject_Pattern(T, "dw", False); -- not failed because we haven't run off the end of a pattern
 
       kv.apg.directives.Free(Directive);
       --kv.apg.regex.Set_Debug(False);
@@ -1348,9 +1353,9 @@ package body kv.apg.tests is
 
       T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
 
-      Recognize_Pattern(T, "abc", True);
-      Recognize_Pattern(T, "def", True);
-      Recognize_Pattern(T, "bar", False);
+      Recognize_Pattern(T, "abc");
+      Recognize_Pattern(T, "def");
+      Reject_Pattern(T, "bar");
 
       kv.apg.directives.Free(Directive);
       kv.apg.regex.Set_Debug(False);
@@ -1372,9 +1377,9 @@ package body kv.apg.tests is
 
       T.Uut.Initialize(T.Nfa'UNCHECKED_ACCESS);
 
-      Recognize_Pattern(T, "abc", True);
-      Recognize_Pattern(T, "aaaaaaaaaaabcc", True);
-      Recognize_Pattern(T, "bc", False);
+      Recognize_Pattern(T, "abc");
+      Recognize_Pattern(T, "aaaaaaaaaaabcc");
+      Reject_Pattern(T, "bc");
 
       kv.apg.directives.Free(Directive);
       --kv.apg.regex.Set_Debug(False);
@@ -1400,9 +1405,9 @@ package body kv.apg.tests is
       --kv.apg.fast.Set_Debug(True);
       --kv.apg.fa.nfa.Set_Debug(True);
 
-      Recognize_Pattern(T, "abc", True);
-      Recognize_Pattern(T, "ac", True);
-      Recognize_Pattern(T, "abbc", False);
+      Recognize_Pattern(T, "abc");
+      Recognize_Pattern(T, "ac");
+      Reject_Pattern(T, "abbc");
 
       --kv.apg.fast.Set_Debug(False);
       --kv.apg.fa.nfa.Set_Debug(False);
