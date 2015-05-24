@@ -14,6 +14,7 @@ with kv.apg.regex;
 with kv.apg.fast;
 with kv.apg.fa.nfa;
 with kv.apg.fa.dfa;
+with kv.apg.fa.nfa.to_dfa;
 
 with kv.core.wwstr;
 
@@ -1502,6 +1503,65 @@ package body kv.apg.tests is
 
 
    ----------------------------------------------------------------------------
+   type Base_Nfa_To_Dfa_Test_Class is abstract new kv.core.ut.Test_Class with
+      record
+         Lexer : kv.apg.lex.Lexer_Class;
+         Parser : kv.apg.parse.Parser_Class;
+         Directive : kv.apg.directives.Directive_Pointer_Type;
+         Nfa : aliased kv.apg.fa.nfa.Nfa_Class;
+         Dfa : aliased kv.apg.fa.dfa.Dfa_Class;
+         Uut : aliased kv.apg.fa.nfa.to_dfa.Converter_Class;
+      end record;
+
+   ----------------------------------------------------------------------------
+   overriding procedure Tear_Down(T : in out Base_Nfa_To_Dfa_Test_Class) is
+      use kv.apg.directives;
+   begin
+      if T.Directive /= null then
+         kv.apg.directives.Free(T.Directive);
+      end if;
+   end Tear_Down;
+
+   ----------------------------------------------------------------------------
+   procedure Parse_Line(T : in out Base_Nfa_To_Dfa_Test_Class'CLASS; S : in String) is
+      WS : constant Wide_Wide_String := To_Wide_Wide_String(S & Ada.Characters.Latin_1.LF);
+      Token : kv.apg.tokens.Token_Class;
+   begin
+      T.Log("Ingesting <"&S&">");
+      for WC of WS loop
+         T.Lexer.Ingest_Character(WC);
+      end loop;
+      while T.Lexer.Tokens_Available > 0 loop
+         Token := T.Lexer.Get_Next_Token;
+         T.Parser.Ingest_Token(Token);
+      end loop;
+      T.Log("Done parsing. Directive count = " & Natural'IMAGE(T.Parser.Directive_Count));
+   end Parse_Line;
+
+   ----------------------------------------------------------------------------
+   procedure Prepare_Nfa
+      (T     : in out Base_Nfa_To_Dfa_Test_Class'CLASS;
+       RegEx : in     String) is
+   begin
+      Parse_Line(T, "token foo = "&RegEx&";");
+      T.Directive := T.Parser.Next_Directive;
+      T.Nfa := kv.apg.directives.Token_Class'CLASS(T.Directive.all).Get_Tree.To_Nfa(96);
+   end Prepare_Nfa;
+
+   ----------------------------------------------------------------------------
+   type Nfa_To_Dfa_1_Test is new Base_Nfa_To_Dfa_Test_Class with null record;
+   procedure Run(T : in out Nfa_To_Dfa_1_Test) is
+      Expected_Image : constant String := "[1{100=>2}/(2:96){}]";
+   begin
+      Prepare_Nfa(T, " 'd' ");
+      T.Assert(T.Nfa.Image = Expected_Image, "Wrong NFA image! Expected <"&Expected_Image&">, got <" & T.Nfa.Image & ">");
+      T.Uut.Set_Nfa(T.Nfa);
+      T.Dfa := T.Uut.Get_Dfa;
+      T.Assert(T.Dfa.Image = Expected_Image, "Wrong DFA image! Expected <"&Expected_Image&">, got <" & T.Dfa.Image & ">");
+   end Run;
+
+
+   ----------------------------------------------------------------------------
    procedure register(suite : in kv.core.ut.Suite_Pointer_Type) is
    begin
       suite.register(new Initial_State_Test, "Initial_State_Test");
@@ -1591,7 +1651,8 @@ package body kv.apg.tests is
       suite.register(new Dfa_1_State_Test, "Dfa_1_State_Test");
       suite.register(new Dfa_2_State_Test, "Dfa_2_State_Test");
       suite.register(new Dfa_3_State_Test, "Dfa_3_State_Test");
---      suite.register(new XXX, "XXX");
+
+      suite.register(new Nfa_To_Dfa_1_Test, "Nfa_To_Dfa_1_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
