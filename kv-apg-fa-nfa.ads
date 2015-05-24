@@ -76,6 +76,8 @@ package kv.apg.fa.nfa is
 
 private
 
+   not overriding function Get_States(Self : Nfa_Class) return State_List_Pointer_Type;
+
    type Nfa_State_Class is new Finite_Automata_State_Class with
       record
          Nfa      : Nfa_Pointer_Type;

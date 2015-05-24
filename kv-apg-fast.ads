@@ -102,6 +102,11 @@ package kv.apg.fast is
    type State_List_Type is array (State_Id_Type range <>) of State_Type;
    type State_List_Pointer_Type is access all State_List_Type;
 
+   -- Useful helper functions
+   function Img(ID : State_Universe_Type) return String;
+   function Img(Char : Wide_Wide_Character) return String;
+   function Img(Key : Key_Type) return String;
+
    -- Control debug output of package
    procedure Set_Debug(Value : in Boolean);
 

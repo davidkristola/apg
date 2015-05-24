@@ -144,6 +144,12 @@ package body kv.apg.fa.nfa is
       end loop;
    end Epsilon_Transitions;
 
+   ----------------------------------------------------------------------------
+   not overriding function Get_States(Self : Nfa_Class) return State_List_Pointer_Type is
+   begin
+      return Self.States;
+   end Get_States;
+
 
 
 
