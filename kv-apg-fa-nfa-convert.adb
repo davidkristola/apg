@@ -1,6 +1,6 @@
 with Ada.Text_IO; use Ada.Text_IO;
 
-package body kv.apg.fa.nfa.to_dfa is
+package body kv.apg.fa.nfa.convert is
 
    use kv.apg.fast;
 
@@ -255,4 +255,4 @@ package body kv.apg.fa.nfa.to_dfa is
       null;
    end Finalize;
 
-end kv.apg.fa.nfa.to_dfa;
+end kv.apg.fa.nfa.convert;

@@ -4,7 +4,7 @@ with Ada.Containers.Vectors;
 with kv.apg.fa.dfa;
 with kv.apg.fast;
 
-package kv.apg.fa.nfa.to_dfa is
+package kv.apg.fa.nfa.convert is
 
    type Converter_Class is tagged private;
 
@@ -67,4 +67,4 @@ private
          Working_States : State_Vector.Vector;
       end record;
 
-end kv.apg.fa.nfa.to_dfa;
+end kv.apg.fa.nfa.convert;

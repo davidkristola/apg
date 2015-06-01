@@ -14,7 +14,7 @@ with kv.apg.regex;
 with kv.apg.fast;
 with kv.apg.fa.nfa;
 with kv.apg.fa.dfa;
-with kv.apg.fa.nfa.to_dfa;
+with kv.apg.fa.nfa.convert;
 
 with kv.core.wwstr;
 
@@ -1510,7 +1510,7 @@ package body kv.apg.tests is
          Directive : kv.apg.directives.Directive_Pointer_Type;
          Nfa : aliased kv.apg.fa.nfa.Nfa_Class;
          Dfa : aliased kv.apg.fa.dfa.Dfa_Class;
-         Uut : aliased kv.apg.fa.nfa.to_dfa.Converter_Class;
+         Uut : aliased kv.apg.fa.nfa.convert.Converter_Class;
       end record;
 
    ----------------------------------------------------------------------------
