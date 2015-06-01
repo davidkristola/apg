@@ -1503,18 +1503,28 @@ package body kv.apg.tests is
 
 
    ----------------------------------------------------------------------------
-   type Base_Nfa_To_Dfa_Test_Class is abstract new kv.core.ut.Test_Class with
+   type Base_Nfa_Convert_Test_Class is abstract new kv.core.ut.Test_Class with
       record
          Lexer : kv.apg.lex.Lexer_Class;
          Parser : kv.apg.parse.Parser_Class;
          Directive : kv.apg.directives.Directive_Pointer_Type;
          Nfa : aliased kv.apg.fa.nfa.Nfa_Class;
          Dfa : aliased kv.apg.fa.dfa.Dfa_Class;
-         Uut : aliased kv.apg.fa.nfa.convert.Converter_Class;
       end record;
 
    ----------------------------------------------------------------------------
-   overriding procedure Tear_Down(T : in out Base_Nfa_To_Dfa_Test_Class) is
+   type Base_Nfa_To_Dfa_Test_Class is abstract new Base_Nfa_Convert_Test_Class with
+      record
+         Uut : aliased kv.apg.fa.nfa.convert.To_Dfa_Class;
+      end record;
+   ----------------------------------------------------------------------------
+   type Base_Nfa_To_Cnfa_Test_Class is abstract new Base_Nfa_Convert_Test_Class with
+      record
+         Uut : aliased kv.apg.fa.nfa.convert.To_Cnfa_Class;
+      end record;
+
+   ----------------------------------------------------------------------------
+   overriding procedure Tear_Down(T : in out Base_Nfa_Convert_Test_Class) is
       use kv.apg.directives;
    begin
       if T.Directive /= null then
@@ -1523,7 +1533,7 @@ package body kv.apg.tests is
    end Tear_Down;
 
    ----------------------------------------------------------------------------
-   procedure Parse_Line(T : in out Base_Nfa_To_Dfa_Test_Class'CLASS; S : in String) is
+   procedure Parse_Line(T : in out Base_Nfa_Convert_Test_Class'CLASS; S : in String) is
       WS : constant Wide_Wide_String := To_Wide_Wide_String(S & Ada.Characters.Latin_1.LF);
       Token : kv.apg.tokens.Token_Class;
    begin
@@ -1540,7 +1550,7 @@ package body kv.apg.tests is
 
    ----------------------------------------------------------------------------
    procedure Prepare_Nfa
-      (T     : in out Base_Nfa_To_Dfa_Test_Class'CLASS;
+      (T     : in out Base_Nfa_Convert_Test_Class'CLASS;
        RegEx : in     String) is
    begin
       Parse_Line(T, "token foo = "&RegEx&";");
@@ -1560,8 +1570,8 @@ package body kv.apg.tests is
    end Run;
 
    ----------------------------------------------------------------------------
-   type Nfa_To_Dfa_2_Test is new Base_Nfa_To_Dfa_Test_Class with null record;
-   procedure Run(T : in out Nfa_To_Dfa_2_Test) is
+   type Nfa_To_Cnfa_1_Test is new Base_Nfa_To_Cnfa_Test_Class with null record;
+   procedure Run(T : in out Nfa_To_Cnfa_1_Test) is
       Nfa_Image : constant String := "[1{97=>2}/2{98=>3,ɛ=>3}/3{99=>4}/(4:96){}]";
       Uut_Image : constant String := "[1{97=>2}/2{ɛ=>5,ɛ=>3}/3{99=>4}/(4:96){}/5{98=>3}]";
    begin
@@ -1669,7 +1679,7 @@ package body kv.apg.tests is
       suite.register(new Dfa_3_State_Test, "Dfa_3_State_Test");
 
       suite.register(new Nfa_To_Dfa_1_Test, "Nfa_To_Dfa_1_Test");
-      suite.register(new Nfa_To_Dfa_2_Test, "Nfa_To_Dfa_2_Test");
+      suite.register(new Nfa_To_Cnfa_1_Test, "Nfa_To_Cnfa_1_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;

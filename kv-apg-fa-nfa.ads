@@ -1,3 +1,5 @@
+with Ada.Finalization;
+with Ada.Containers.Vectors;
 
 with kv.core.wwstr; use kv.core.wwstr;
 
@@ -71,6 +73,19 @@ package kv.apg.fa.nfa is
    function Move_Count(Self : Nfa_State_Class) return Natural;
    function Get_Key(Self : Nfa_State_Class) return Key_Type;
 
+
+
+
+
+   type Working_Nfa_Class is tagged private;
+
+   function Image(Self : Working_Nfa_Class) return String;
+   procedure Internal_Set_Nfa
+      (Self : in out Working_Nfa_Class;
+       Nfa  : in     Nfa_Class'CLASS);
+
+
+
    -- Control debug output of package
    procedure Set_Debug(Value : in Boolean);
 
@@ -88,5 +103,52 @@ private
 
    function Active_Count
       (List : in     Active_State_List_Pointer_Type) return Natural;
+
+
+
+   package Transition_Vector is new Ada.Containers.Vectors
+      (Index_Type => Positive,
+       Element_Type => Transition_Type,
+       "=" => "=");
+
+   type Working_State_Type is
+      record
+         State : State_Type;
+         Trans : Transition_Vector.Vector;
+      end record;
+
+   function Image(Self : Working_State_Type) return String;
+   function Equals(L, R : Working_State_Type) return Boolean;
+
+   package State_Vector is new Ada.Containers.Vectors
+      (Index_Type => Positive,
+       Element_Type => Working_State_Type,
+       "=" => Equals);
+
+   procedure Append_State
+      (List  : in out State_Vector.Vector;
+       State : in     State_Type);
+   function Convert_To_Vector_Form
+      (Nfa_States : State_List_Pointer_Type) return State_Vector.Vector;
+   procedure Copy_State
+      (List  : in     State_List_Pointer_Type;
+       Index : in     State_Universe_Type;
+       State : in     Working_State_Type);
+   function Convert_To_Array_Form
+      (Working_States : State_Vector.Vector) return State_List_Pointer_Type;
+
+
+   procedure Initialize
+      (Self : in out Working_Nfa_Class);
+   procedure Adjust
+      (Self : in out Working_Nfa_Class);
+   procedure Finalize
+      (Self : in out Working_Nfa_Class);
+
+   type Working_Nfa_Class is new Ada.Finalization.Controlled with
+      record
+         Working_States : State_Vector.Vector;
+      end record;
+
 
 end kv.apg.fa.nfa;

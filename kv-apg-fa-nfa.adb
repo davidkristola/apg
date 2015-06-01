@@ -332,4 +332,173 @@ package body kv.apg.fa.nfa is
    end Get_Key;
 
 
+
+
+
+
+
+   ----------------------------------------------------------------------------
+   procedure Append_State
+      (List  : in out State_Vector.Vector;
+       State : in     State_Type) is
+
+      Working_State : Working_State_Type;
+
+   begin
+      if Debug then Put_Line("Processing in state " & Image(State)); end if;
+      Working_State.State := State;
+      if State.Transitions /= null then
+         for Transition of State.Transitions.all loop
+            Working_State.Trans.Append(Transition);
+         end loop;
+      end if;
+      List.Append(Working_State);
+   end Append_State;
+
+   ----------------------------------------------------------------------------
+   function Convert_To_Vector_Form
+      (Nfa_States : State_List_Pointer_Type) return State_Vector.Vector is
+
+      Working_States : State_Vector.Vector;
+
+   begin
+      pragma Assert(Nfa_States /= null, "NFA must not be empty!");
+      for State of Nfa_States.all loop
+         Append_State(Working_States, State);
+      end loop;
+      return Working_States;
+   end Convert_To_Vector_Form;
+
+
+   ----------------------------------------------------------------------------
+   procedure Copy_State
+      (List  : in     State_List_Pointer_Type;
+       Index : in     State_Universe_Type;
+       State : in     Working_State_Type) is
+
+      Trans_Index : Positive;
+
+   begin
+      List(Index) := State.State;
+      pragma Assert(List(Index).Id = Index, "State ID does not match it's index!");
+      if not State.Trans.Is_Empty then
+         List(Index).Transitions := new Transition_List_Type(1..Positive(State.Trans.Length));
+         Trans_Index := 1;
+         for T of State.Trans loop
+            List(Index).Transitions(Trans_Index) := T;
+            Trans_Index := Trans_Index + 1;
+         end loop;
+      end if;
+   end Copy_State;
+
+   ----------------------------------------------------------------------------
+   function Convert_To_Array_Form
+      (Working_States : State_Vector.Vector) return State_List_Pointer_Type is
+
+      List : State_List_Pointer_Type := new State_List_Type(1..State_Universe_Type(Working_States.Length));
+      State_Index : State_Universe_Type := 1;
+
+   begin
+      for State of Working_States loop
+         Copy_State(List, State_Index, State);
+         State_Index := State_Index + 1;
+      end loop;
+      return List;
+   end Convert_To_Array_Form;
+
+
+
+
+
+   ----------------------------------------------------------------------------
+   function Equals(L, R : Working_State_Type) return Boolean is
+   begin
+      -- TODO: Trust that the IDs are unique?
+      return L.State.Id = R.State.Id;
+   end Equals;
+
+   ----------------------------------------------------------------------------
+   function Trans_Img(Transitions : Transition_Vector.Vector; Index : Natural) return String is
+   begin
+      if Index = 1 then
+         return Image(Transitions(1));
+      else
+         return Trans_Img(Transitions, Index-1) & "," & Image(Transitions(Index));
+      end if;
+   end Trans_Img;
+
+   ----------------------------------------------------------------------------
+   function Image(Self : Working_State_Type) return String is
+      function State_Part return String is
+      begin
+         if Self.State.Accepting then
+            return "(" & Img(Self.State.Id) & ":" & Img(Self.State.Accepted_Key) & ")";
+         else
+            return Img(Self.State.Id);
+         end if;
+      end State_Part;
+      function Transition_Part return String is
+      begin
+         if Self.Trans.Is_Empty then
+            return "";
+         else
+            return Trans_Img(Self.Trans, Natural(Self.Trans.Length));
+         end if;
+      end Transition_Part;
+   begin
+      return State_Part & "{" & Transition_Part & "}";
+   end Image;
+
+   ----------------------------------------------------------------------------
+   function Recursive_Image(Self : Working_Nfa_Class; Index : Natural) return String is
+   begin
+      if Index = 1 then
+         return Image(Self.Working_States(1));
+      else
+         return Recursive_Image(Self, Index-1) & "/" & Image(Self.Working_States(Index));
+      end if;
+   end Recursive_Image;
+
+
+   ----------------------------------------------------------------------------
+   function Image(Self : Working_Nfa_Class) return String is
+   begin
+      if Self.Working_States.Is_Empty then
+         return "[null]";
+      end if;
+      return "[" & Recursive_Image(Self, Natural(Self.Working_States.Length)) & "]";
+   end Image;
+
+   ----------------------------------------------------------------------------
+   procedure Internal_Set_Nfa
+      (Self : in out Working_Nfa_Class;
+       Nfa  : in     Nfa_Class'CLASS) is
+   begin
+      Self.Working_States := Convert_To_Vector_Form(Nfa.Get_States);
+   end Internal_Set_Nfa;
+
+
+   ----------------------------------------------------------------------------
+   procedure Initialize
+      (Self : in out Working_Nfa_Class) is
+   begin
+--      Self.Dfa := null;
+      null;
+   end Initialize;
+
+   ----------------------------------------------------------------------------
+   procedure Adjust
+      (Self : in out Working_Nfa_Class) is
+   begin
+      null;
+   end Adjust;
+
+   ----------------------------------------------------------------------------
+   procedure Finalize
+      (Self : in out Working_Nfa_Class) is
+   begin
+      null;
+   end Finalize;
+
+
 end kv.apg.fa.nfa;
