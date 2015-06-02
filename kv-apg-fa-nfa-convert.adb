@@ -118,6 +118,12 @@ package body kv.apg.fa.nfa.convert is
       Self.Working_States(Index).Trans.Replace_Element(Non_Epsilon_Index, New_Transition);
    end Internal_Bump_Non_Epsilon_At;
 
+   ----------------------------------------------------------------------------
+   procedure Internal_Unchain_Epsilon_Transitions
+      (Self : in out To_Cnfa_Class) is
+   begin
+      null; -- TODO
+   end Internal_Unchain_Epsilon_Transitions;
 
    ----------------------------------------------------------------------------
    function Internal_Get_Cnfa

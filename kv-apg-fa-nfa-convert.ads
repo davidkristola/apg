@@ -44,6 +44,9 @@ package kv.apg.fa.nfa.convert is
       (Self  : in out To_Cnfa_Class;
        Index : in     Positive);
 
+   procedure Internal_Unchain_Epsilon_Transitions
+      (Self : in out To_Cnfa_Class);
+
    function Internal_Get_Cnfa
       (Self : To_Cnfa_Class) return kv.apg.fa.nfa.Nfa_Class;
 

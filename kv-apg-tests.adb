@@ -1583,6 +1583,18 @@ package body kv.apg.tests is
    end Run;
 
 
+   ----------------------------------------------------------------------------
+   type Nfa_To_Cnfa_2_Test is new Base_Nfa_To_Cnfa_Test_Class with null record;
+   procedure Run(T : in out Nfa_To_Cnfa_2_Test) is
+      Nfa_Image : constant String := "[1{ɛ=>2,ɛ=>4}/2{97=>3}/3{ɛ=>10}/4{ɛ=>5,ɛ=>7}/5{98=>6}/6{ɛ=>9}/7{99=>8}/8{ɛ=>9}/9{ɛ=>10}/(10:96){}]";
+      Uut_Image : constant String := "[1{ɛ=>2,ɛ=>5,ɛ=>7}/2{97=>3}/3{ɛ=>10}/4{}/5{98=>6}/6{ɛ=>10}/7{99=>8}/8{ɛ=>10}/9{}/(10:96){}]";
+   begin
+      Prepare_Nfa(T, " 'a' | ('b' | 'c') ");
+      T.Assert(T.Nfa.Image = Nfa_Image, "Wrong NFA image! Expected <"&Nfa_Image&">, got <" & T.Nfa.Image & ">");
+      T.Uut.Internal_Set_Nfa(T.Nfa);
+      T.Uut.Internal_Unchain_Epsilon_Transitions;
+      T.Assert(T.Uut.Image = Uut_Image, "Wrong UUT image! Expected <"&Uut_Image&">, got <" & T.Uut.Image & ">");
+   end Run;
 
 
 
@@ -1679,7 +1691,11 @@ package body kv.apg.tests is
       suite.register(new Dfa_3_State_Test, "Dfa_3_State_Test");
 
       suite.register(new Nfa_To_Dfa_1_Test, "Nfa_To_Dfa_1_Test");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
+
       suite.register(new Nfa_To_Cnfa_1_Test, "Nfa_To_Cnfa_1_Test");
+      suite.register(new Nfa_To_Cnfa_2_Test, "Nfa_To_Cnfa_2_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;
