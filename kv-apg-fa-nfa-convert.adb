@@ -119,10 +119,60 @@ package body kv.apg.fa.nfa.convert is
    end Internal_Bump_Non_Epsilon_At;
 
    ----------------------------------------------------------------------------
+   type State_And_Transition_Tuple is
+      record
+         State : Natural;
+         Transition : Natural;
+         Next : Natural;
+      end record;
+
+   ----------------------------------------------------------------------------
+   function Find_Next_Chained_Epsilon
+      (Working_States : State_Vector.Vector) return State_And_Transition_Tuple is
+      Next_Index : Positive;
+      Ti : Natural;
+      use Ada.Containers;
+   begin
+      for S of Working_States loop
+         Ti := 0;
+         for T of S.Trans loop
+            Ti := Ti + 1;
+            if T.Criteria = Epsilon then
+               Put_Line("Checking "&Image(T)&"...");
+               Next_Index := Positive(T.To_State);
+               if (Working_States.Element(Next_Index).Trans.Length > 0) and then (Working_States.Element(Next_Index).Trans.Element(1).Criteria = Epsilon) then
+                  Put_Line("Found ɛ=>ɛ transition from state "&State_Universe_Type'IMAGE(S.State.Id)&" to "&Positive'IMAGE(Next_Index));
+                  return State_And_Transition_Tuple'(State => Natural(S.State.Id), Transition => Ti, Next => Next_Index);
+               end if;
+            end if;
+         end loop;
+      end loop;
+      return State_And_Transition_Tuple'(State => 0, Transition => 0, Next => 0);
+   end Find_Next_Chained_Epsilon;
+
+   ----------------------------------------------------------------------------
+   procedure Internal_Collapse_Chain_At
+      (Working_States : in out State_Vector.Vector;
+       Where          : in     State_And_Transition_Tuple) is
+   begin
+      for T of Working_States.Reference(Positive(Where.Next)).Trans loop
+         Working_States.Reference(Positive(Where.State)).Trans.Append(T);
+      end loop;
+      Working_States.Reference(Positive(Where.State)).Trans.Delete(Where.Transition);
+   end Internal_Collapse_Chain_At;
+
+   ----------------------------------------------------------------------------
    procedure Internal_Unchain_Epsilon_Transitions
       (Self : in out To_Cnfa_Class) is
+      Where : State_And_Transition_Tuple;
    begin
+      pragma Assert(Find_Next_Mixed_Epsilon(Self.Working_States) = Invalid_State);
       null; -- TODO
+      loop
+         Where := Find_Next_Chained_Epsilon(Self.Working_States);
+         exit when Where.State = 0;
+         Internal_Collapse_Chain_At(Self.Working_States, Where);
+      end loop;
    end Internal_Unchain_Epsilon_Transitions;
 
    ----------------------------------------------------------------------------
