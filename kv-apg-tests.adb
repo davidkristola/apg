@@ -1582,7 +1582,6 @@ package body kv.apg.tests is
       T.Assert(T.Uut.Image = Uut_Image, "Wrong UUT image! Expected <"&Uut_Image&">, got <" & T.Uut.Image & ">");
    end Run;
 
-
    ----------------------------------------------------------------------------
    type Nfa_To_Cnfa_2_Test is new Base_Nfa_To_Cnfa_Test_Class with null record;
    procedure Run(T : in out Nfa_To_Cnfa_2_Test) is
@@ -1594,6 +1593,109 @@ package body kv.apg.tests is
       T.Uut.Internal_Set_Nfa(T.Nfa);
       T.Uut.Internal_Unchain_Epsilon_Transitions;
       T.Assert(T.Uut.Image = Uut_Image, "Wrong UUT image! Expected <"&Uut_Image&">, got <" & T.Uut.Image & ">");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Nfa_To_Cnfa_3_Test is new Base_Nfa_To_Cnfa_Test_Class with null record;
+   procedure Run(T : in out Nfa_To_Cnfa_3_Test) is
+      Nfa_Image : constant String := "[1{ɛ=>2,ɛ=>4}/2{97=>3}/3{ɛ=>6}/4{98=>5}/5{ɛ=>6}/(6:96){}]";
+      Uut_Image : constant String := "[1{97=>3,98=>5}/2{97=>3}/(3:96){}/4{98=>5}/(5:96){}/(6:96){}]";
+   begin
+      Prepare_Nfa(T, " 'a' | 'b' ");
+      T.Assert(T.Nfa.Image = Nfa_Image, "Wrong NFA image! Expected <"&Nfa_Image&">, got <" & T.Nfa.Image & ">");
+      T.Uut.Internal_Set_Nfa(T.Nfa);
+      T.Uut.Internal_Collapse_Epsilon_Transitions;
+      T.Assert(T.Uut.Image = Uut_Image, "Wrong UUT image! Expected <"&Uut_Image&">, got <" & T.Uut.Image & ">");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Nfa_To_Cnfa_4_Test is new Base_Nfa_To_Cnfa_Test_Class with null record;
+   procedure Run(T : in out Nfa_To_Cnfa_4_Test) is
+      Nfa_Image : constant String := "[1{ɛ=>2,ɛ=>4}/2{97=>3}/3{ɛ=>10}/4{ɛ=>5,ɛ=>7}/5{98=>6}/6{ɛ=>9}/7{99=>8}/8{ɛ=>9}/9{ɛ=>10}/(10:96){}]";
+      Uut_Image : constant String := "[1{97=>3,98=>6,99=>8}/2{97=>3}/(3:96){}/4{98=>6,99=>8}/5{98=>6}/(6:96){}/7{99=>8}/(8:96){}/(9:96){}/(10:96){}]";
+   begin
+      Prepare_Nfa(T, " 'a' | ('b' | 'c') ");
+      T.Assert(T.Nfa.Image = Nfa_Image, "Wrong NFA image! Expected <"&Nfa_Image&">, got <" & T.Nfa.Image & ">");
+      T.Uut.Internal_Set_Nfa(T.Nfa);
+      T.Uut.Internal_Banish_Epsilon_Transitions;
+      T.Assert(T.Uut.Image = Uut_Image, "Wrong UUT image! Expected <"&Uut_Image&">, got <" & T.Uut.Image & ">");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Nfa_To_Cnfa_5_Test is new Base_Nfa_To_Cnfa_Test_Class with null record;
+   procedure Run(T : in out Nfa_To_Cnfa_5_Test) is
+      Nfa_Image : constant String := "[1{ɛ=>2,ɛ=>4}/2{97=>3}/3{ɛ=>10}/4{ɛ=>5,ɛ=>7}/5{98=>6}/6{ɛ=>9}/7{99=>8}/8{ɛ=>9}/9{ɛ=>10}/(10:96){}]";
+      Uut_Image : constant String := "[1{ɛ=>2,ɛ=>4}/2{97=>10}/3{ɛ=>10}/4{ɛ=>5,ɛ=>7}/5{98=>6}/6{ɛ=>9}/7{99=>8}/8{ɛ=>9}/9{ɛ=>10}/(10:96){}]";
+   begin
+      Prepare_Nfa(T, " 'a' | ('b' | 'c') ");
+      T.Assert(T.Nfa.Image = Nfa_Image, "Wrong NFA image! Expected <"&Nfa_Image&">, got <" & T.Nfa.Image & ">");
+      T.Uut.Internal_Set_Nfa(T.Nfa);
+      T.Uut.Internal_Retarget_Transitions(3, 10);
+      T.Assert(T.Uut.Image = Uut_Image, "Wrong UUT image! Expected <"&Uut_Image&">, got <" & T.Uut.Image & ">");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Nfa_To_Cnfa_6_Test is new Base_Nfa_To_Cnfa_Test_Class with null record;
+   procedure Run(T : in out Nfa_To_Cnfa_6_Test) is
+      Nfa_Image : constant String := "[1{ɛ=>2,ɛ=>4}/2{97=>3}/3{ɛ=>10}/4{ɛ=>5,ɛ=>7}/5{98=>6}/6{ɛ=>9}/7{99=>8}/8{ɛ=>9}/9{ɛ=>10}/(10:96){}]";
+      Uut_Image : constant String := "[1{ɛ=>2,ɛ=>3}/2{97=>9}/3{ɛ=>4,ɛ=>6}/4{98=>5}/5{ɛ=>8}/6{99=>7}/7{ɛ=>8}/8{ɛ=>9}/(9:96){}]";
+   begin
+      Prepare_Nfa(T, " 'a' | ('b' | 'c') ");
+      T.Assert(T.Nfa.Image = Nfa_Image, "Wrong NFA image! Expected <"&Nfa_Image&">, got <" & T.Nfa.Image & ">");
+      T.Uut.Internal_Set_Nfa(T.Nfa);
+      T.Uut.Internal_Retarget_Transitions(3, 10);
+      T.Uut.Internal_Delete(3);
+      T.Assert(T.Uut.Image = Uut_Image, "Wrong UUT image! Expected <"&Uut_Image&">, got <" & T.Uut.Image & ">");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Nfa_To_Cnfa_7_Test is new Base_Nfa_To_Cnfa_Test_Class with null record;
+   procedure Run(T : in out Nfa_To_Cnfa_7_Test) is
+      Nfa_Image : constant String := "[1{ɛ=>2,ɛ=>4}/2{97=>3}/3{ɛ=>10}/4{ɛ=>5,ɛ=>7}/5{98=>6}/6{ɛ=>9}/7{99=>8}/8{ɛ=>9}/9{ɛ=>10}/(10:96){}]";
+      Uut_Image : constant String := "[1{97=>3,98=>6,99=>8}/2{97=>3}/(3:96){}/4{98=>6,99=>8}/5{98=>6}/(6:96){}/7{99=>8}/(8:96){}/(9:96){}/(10:96){}]";
+      Index : Natural;
+   begin
+      Prepare_Nfa(T, " 'a' | ('b' | 'c') ");
+      T.Assert(T.Nfa.Image = Nfa_Image, "Wrong NFA image! Expected <"&Nfa_Image&">, got <" & T.Nfa.Image & ">");
+      T.Uut.Internal_Set_Nfa(T.Nfa);
+      T.Uut.Internal_Banish_Epsilon_Transitions;
+      T.Assert(T.Uut.Image = Uut_Image, "Wrong UUT image! Expected <"&Uut_Image&">, got <" & T.Uut.Image & ">");
+      Index := T.Uut.Internal_Duplicate_Of(3);
+      T.Assert(Index = 6, "Duplicate of 3 should be 6, was " & Natural'IMAGE(Index));
+      Index := T.Uut.Internal_Duplicate_Of(10);
+      T.Assert(Index = 3, "Duplicate of 10 should be 3, was " & Natural'IMAGE(Index));
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Nfa_To_Cnfa_8_Test is new Base_Nfa_To_Cnfa_Test_Class with null record;
+   procedure Run(T : in out Nfa_To_Cnfa_8_Test) is
+      Nfa_Image : constant String := "[1{ɛ=>2,ɛ=>4}/2{97=>3}/3{ɛ=>10}/4{ɛ=>5,ɛ=>7}/5{98=>6}/6{ɛ=>9}/7{99=>8}/8{ɛ=>9}/9{ɛ=>10}/(10:96){}]";
+      Uut_Image : constant String := "[1{97=>3,98=>6,99=>8}/2{97=>3}/(3:96){}/4{98=>6,99=>8}/5{98=>6}/(6:96){}/7{99=>8}/(8:96){}/(9:96){}/(10:96){}]";
+      Fin_Image : constant String := "[1{97=>3,98=>3,99=>3}/2{97=>3}/(3:96){}/4{98=>3,99=>3}/5{98=>3}/6{99=>3}]";
+   begin
+      Prepare_Nfa(T, " 'a' | ('b' | 'c') ");
+      T.Assert(T.Nfa.Image = Nfa_Image, "Wrong NFA image! Expected <"&Nfa_Image&">, got <" & T.Nfa.Image & ">");
+      T.Uut.Internal_Set_Nfa(T.Nfa);
+      T.Uut.Internal_Banish_Epsilon_Transitions;
+      T.Assert(T.Uut.Image = Uut_Image, "Wrong UUT image! Expected <"&Uut_Image&">, got <" & T.Uut.Image & ">");
+      T.Uut.Internal_Remove_Duplicates;
+      T.Assert(T.Uut.Image = Fin_Image, "Wrong Fin image! Expected <"&Fin_Image&">, got <" & T.Uut.Image & ">");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Nfa_To_Cnfa_9_Test is new Base_Nfa_To_Cnfa_Test_Class with null record;
+   procedure Run(T : in out Nfa_To_Cnfa_9_Test) is
+      Nfa_Image : constant String := "[1{ɛ=>2,ɛ=>4}/2{97=>3}/3{ɛ=>10}/4{ɛ=>5,ɛ=>7}/5{98=>6}/6{ɛ=>9}/7{99=>8}/8{ɛ=>9}/9{ɛ=>10}/(10:96){}]";
+      Uut_Image : constant String := "[1{97=>3,98=>6,99=>8}/2{97=>3}/(3:96){}/4{98=>6,99=>8}/5{98=>6}/(6:96){}/7{99=>8}/(8:96){}/(9:96){}/(10:96){}]";
+      Fin_Image : constant String := "[1{97=>3,98=>6,99=>8}/2{97=>3}/(3:96){}/4{98=>6,99=>8}/5{98=>6}/(6:96){}/7{99=>8}/(8:96){}]";
+   begin
+      Prepare_Nfa(T, " 'a' | ('b' | 'c') ");
+      T.Assert(T.Nfa.Image = Nfa_Image, "Wrong NFA image! Expected <"&Nfa_Image&">, got <" & T.Nfa.Image & ">");
+      T.Uut.Internal_Set_Nfa(T.Nfa);
+      T.Uut.Internal_Banish_Epsilon_Transitions;
+      T.Assert(T.Uut.Image = Uut_Image, "Wrong UUT image! Expected <"&Uut_Image&">, got <" & T.Uut.Image & ">");
+      T.Uut.Internal_Remove_Unreachables;
+      T.Assert(T.Uut.Image = Fin_Image, "Wrong Fin image! Expected <"&Fin_Image&">, got <" & T.Uut.Image & ">");
    end Run;
 
 
@@ -1696,6 +1798,14 @@ package body kv.apg.tests is
 
       suite.register(new Nfa_To_Cnfa_1_Test, "Nfa_To_Cnfa_1_Test");
       suite.register(new Nfa_To_Cnfa_2_Test, "Nfa_To_Cnfa_2_Test");
+      suite.register(new Nfa_To_Cnfa_3_Test, "Nfa_To_Cnfa_3_Test");
+      suite.register(new Nfa_To_Cnfa_4_Test, "Nfa_To_Cnfa_4_Test");
+      suite.register(new Nfa_To_Cnfa_5_Test, "Nfa_To_Cnfa_5_Test");
+      suite.register(new Nfa_To_Cnfa_6_Test, "Nfa_To_Cnfa_6_Test");
+      suite.register(new Nfa_To_Cnfa_7_Test, "Nfa_To_Cnfa_7_Test");
+      suite.register(new Nfa_To_Cnfa_8_Test, "Nfa_To_Cnfa_8_Test");
+      suite.register(new Nfa_To_Cnfa_9_Test, "Nfa_To_Cnfa_9_Test");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;

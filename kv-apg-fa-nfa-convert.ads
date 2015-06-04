@@ -47,6 +47,31 @@ package kv.apg.fa.nfa.convert is
    procedure Internal_Unchain_Epsilon_Transitions
       (Self : in out To_Cnfa_Class);
 
+   procedure Internal_Collapse_Epsilon_Transitions
+      (Self : in out To_Cnfa_Class);
+
+   procedure Internal_Banish_Epsilon_Transitions
+      (Self : in out To_Cnfa_Class);
+
+   procedure Internal_Retarget_Transitions
+      (Self       : in out To_Cnfa_Class;
+       Old_Target : in     State_Id_Type;
+       New_Target : in     State_Id_Type);
+
+   procedure Internal_Delete
+      (Self   : in out To_Cnfa_Class;
+       Remove : in     State_Id_Type);
+
+   function Internal_Duplicate_Of
+      (Self  : To_Cnfa_Class;
+       Index : Positive) return Natural;
+
+   procedure Internal_Remove_Duplicates
+      (Self : in out To_Cnfa_Class);
+
+   procedure Internal_Remove_Unreachables
+      (Self : in out To_Cnfa_Class);
+
    function Internal_Get_Cnfa
       (Self : To_Cnfa_Class) return kv.apg.fa.nfa.Nfa_Class;
 

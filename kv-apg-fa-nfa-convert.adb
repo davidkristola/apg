@@ -119,6 +119,7 @@ package body kv.apg.fa.nfa.convert is
    end Internal_Bump_Non_Epsilon_At;
 
    ----------------------------------------------------------------------------
+   -- I could use this as a cursor object
    type State_And_Transition_Tuple is
       record
          State : Natural;
@@ -127,21 +128,27 @@ package body kv.apg.fa.nfa.convert is
       end record;
 
    ----------------------------------------------------------------------------
+   function Is_Epsilon_Out(Check : Working_State_Type) return Boolean is
+      use Ada.Containers;
+   begin
+      return (Check.Trans.Length > 0) and then (Check.Trans.Element(1).Criteria = Epsilon);
+   end Is_Epsilon_Out;
+
+   ----------------------------------------------------------------------------
    function Find_Next_Chained_Epsilon
       (Working_States : State_Vector.Vector) return State_And_Transition_Tuple is
       Next_Index : Positive;
       Ti : Natural;
-      use Ada.Containers;
    begin
       for S of Working_States loop
          Ti := 0;
          for T of S.Trans loop
             Ti := Ti + 1;
             if T.Criteria = Epsilon then
-               Put_Line("Checking "&Image(T)&"...");
+               --Put_Line("Checking "&Image(T)&"...");
                Next_Index := Positive(T.To_State);
-               if (Working_States.Element(Next_Index).Trans.Length > 0) and then (Working_States.Element(Next_Index).Trans.Element(1).Criteria = Epsilon) then
-                  Put_Line("Found ɛ=>ɛ transition from state "&State_Universe_Type'IMAGE(S.State.Id)&" to "&Positive'IMAGE(Next_Index));
+               if Is_Epsilon_Out(Working_States.Element(Next_Index)) then
+                  --Put_Line("Found ɛ=>ɛ transition from state "&State_Universe_Type'IMAGE(S.State.Id)&" to "&Positive'IMAGE(Next_Index));
                   return State_And_Transition_Tuple'(State => Natural(S.State.Id), Transition => Ti, Next => Next_Index);
                end if;
             end if;
@@ -167,13 +174,187 @@ package body kv.apg.fa.nfa.convert is
       Where : State_And_Transition_Tuple;
    begin
       pragma Assert(Find_Next_Mixed_Epsilon(Self.Working_States) = Invalid_State);
-      null; -- TODO
       loop
          Where := Find_Next_Chained_Epsilon(Self.Working_States);
          exit when Where.State = 0;
          Internal_Collapse_Chain_At(Self.Working_States, Where);
       end loop;
    end Internal_Unchain_Epsilon_Transitions;
+
+   ----------------------------------------------------------------------------
+   function Find_Next_Epsilon
+      (Working_States : State_Vector.Vector) return State_And_Transition_Tuple is
+      Next_Index : Positive;
+      Ti : Natural;
+   begin
+      for S of Working_States loop
+         Ti := 0;
+         for T of S.Trans loop
+            Ti := Ti + 1;
+            if T.Criteria = Epsilon then
+               Next_Index := Positive(T.To_State);
+               --Put_Line("Found ɛ transition from state "&State_Universe_Type'IMAGE(S.State.Id)&" to "&Positive'IMAGE(Next_Index));
+               return State_And_Transition_Tuple'(State => Natural(S.State.Id), Transition => Ti, Next => Next_Index);
+            end if;
+         end loop;
+      end loop;
+      return State_And_Transition_Tuple'(State => 0, Transition => 0, Next => 0);
+   end Find_Next_Epsilon;
+
+   ----------------------------------------------------------------------------
+   procedure Internal_Replace_Epsilon_At
+      (Working_States : in out State_Vector.Vector;
+       Where          : in     State_And_Transition_Tuple) is
+   begin
+      for T of Working_States.Reference(Positive(Where.Next)).Trans loop
+         Working_States.Reference(Positive(Where.State)).Trans.Append(T);
+      end loop;
+      Working_States.Reference(Positive(Where.State)).Trans.Delete(Where.Transition);
+      if Working_States.Reference(Positive(Where.Next)).State.Accepting then
+         --Put_Line("copy accepting key ="&Key_Type'IMAGE(Working_States.Reference(Positive(Where.Next)).State.Accepted_Key));
+         Working_States.Reference(Positive(Where.State)).State.Accepted_Key := Working_States.Reference(Positive(Where.Next)).State.Accepted_Key;
+         Working_States.Reference(Positive(Where.State)).State.Accepting := True;
+      end if;
+   end Internal_Replace_Epsilon_At;
+
+   ----------------------------------------------------------------------------
+   procedure Internal_Collapse_Epsilon_Transitions
+      (Self : in out To_Cnfa_Class) is
+      Where : State_And_Transition_Tuple;
+   begin
+      Put_Line("------------------------------");
+      pragma Assert(Find_Next_Mixed_Epsilon(Self.Working_States) = Invalid_State);
+      pragma Assert(Find_Next_Chained_Epsilon(Self.Working_States).State = 0);
+      loop
+         Where := Find_Next_Epsilon(Self.Working_States);
+         exit when Where.State = 0;
+         Internal_Replace_Epsilon_At(Self.Working_States, Where);
+      end loop;
+   end Internal_Collapse_Epsilon_Transitions;
+
+   ----------------------------------------------------------------------------
+   procedure Internal_Banish_Epsilon_Transitions
+      (Self : in out To_Cnfa_Class) is
+      Where : State_And_Transition_Tuple;
+   begin
+      Put_Line("-------------Internal_Banish_Epsilon_Transitions-----------------");
+      loop
+         Where := Find_Next_Epsilon(Self.Working_States);
+         exit when Where.State = 0;
+         Internal_Replace_Epsilon_At(Self.Working_States, Where);
+      end loop;
+   end Internal_Banish_Epsilon_Transitions;
+
+   ----------------------------------------------------------------------------
+   procedure Internal_Retarget_Transitions
+      (Self       : in out To_Cnfa_Class;
+       Old_Target : in     State_Id_Type;
+       New_Target : in     State_Id_Type) is
+   begin
+      Put_Line("Retarget from "&Img(Old_Target)&" to "&Img(New_Target));
+
+      for S of Self.Working_States loop
+         for T of S.Trans loop
+            if T.To_State = Old_Target then
+               T.To_State := New_Target;
+            end if;
+         end loop;
+      end loop;
+   end Internal_Retarget_Transitions;
+
+   ----------------------------------------------------------------------------
+   procedure Internal_Delete
+      (Self   : in out To_Cnfa_Class;
+       Remove : in     State_Id_Type) is
+
+   begin
+      Put_Line("Deleting state "&Img(Remove));
+      for Index in 1 .. Positive(Self.Working_States.Length) loop
+         if Index > Positive(Remove) then
+            Self.Internal_Retarget_Transitions(State_Id_Type(Index), State_Id_Type(Index - 1));
+            Self.Working_States.Reference(Index).State.Id := Self.Working_States.Reference(Index).State.Id - 1;
+         end if;
+      end loop;
+      Self.Working_States.Delete(Positive(Remove));
+   end Internal_Delete;
+
+   ----------------------------------------------------------------------------
+   function Are_Effectively_The_Same(A : Working_State_Type; B : Working_State_Type) return Boolean is
+      use Ada.Containers;
+   begin
+      if A.State.Accepting /= B.State.Accepting then
+         return False;
+      end if;
+      if A.State.Accepting and then (A.State.Accepted_Key /= B.State.Accepted_Key) then
+         return False;
+      end if;
+      if A.Trans.Length /= B.Trans.Length then
+         return False;
+      end if;
+      for T of A.Trans loop
+         if not B.Trans.Contains(T) then
+            return False;
+         end if;
+      end loop;
+      -- All the tests pass
+      return True;
+   end Are_Effectively_The_Same;
+
+   ----------------------------------------------------------------------------
+   function Internal_Duplicate_Of
+      (Self  : To_Cnfa_Class;
+       Index : Positive) return Natural is
+   begin
+      for Current in 1 .. Positive(Self.Working_States.Length) loop
+         if Current /= Index then
+            if Are_Effectively_The_Same(Self.Working_States.Constant_Reference(Current), Self.Working_States.Constant_Reference(Index)) then
+               return Current;
+            end if;
+         end if;
+      end loop;
+      return 0; -- No duplicate
+   end Internal_Duplicate_Of;
+
+   ----------------------------------------------------------------------------
+   type Duplicate_Tuple_Type is
+      record
+         First : Natural;
+         Other : Natural;
+      end record;
+
+   ----------------------------------------------------------------------------
+   function Find_Duplicates(Self : To_Cnfa_Class) return Duplicate_Tuple_Type is
+      Other : Natural;
+   begin
+      for First in 1 .. Positive(Self.Working_States.Length) loop
+         Other := Self.Internal_Duplicate_Of(First);
+         if Other /= 0 then
+            return Duplicate_Tuple_Type'(First => First, Other => Other);
+         end if;
+      end loop;
+      return Duplicate_Tuple_Type'(First => 0, Other => 0);
+   end Find_Duplicates;
+
+   ----------------------------------------------------------------------------
+   procedure Internal_Remove_Duplicates
+      (Self : in out To_Cnfa_Class) is
+      Where : Duplicate_Tuple_Type;
+   begin
+      Where := Find_Duplicates(Self);
+      while Where.First /= 0 loop
+         Put_Line("Duplicate pair: "&Natural'IMAGE(Where.First) & Natural'IMAGE(Where.Other));
+         Self.Internal_Retarget_Transitions(State_Id_Type(Where.Other), State_Id_Type(Where.First));
+         Self.Internal_Delete(State_Id_Type(Where.Other));
+         Where := Find_Duplicates(Self);
+      end loop;
+   end Internal_Remove_Duplicates;
+
+   ----------------------------------------------------------------------------
+   procedure Internal_Remove_Unreachables
+      (Self : in out To_Cnfa_Class) is
+   begin
+      null;
+   end Internal_Remove_Unreachables;
 
    ----------------------------------------------------------------------------
    function Internal_Get_Cnfa
