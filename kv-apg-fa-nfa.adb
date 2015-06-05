@@ -346,7 +346,9 @@ package body kv.apg.fa.nfa is
 
    begin
       if Debug then Put_Line("Processing in state " & Image(State)); end if;
-      Working_State.State := State;
+      Working_State.State.Id           := State.Id;
+      Working_State.State.Accepting    := State.Accepting;
+      Working_State.State.Accepted_Key := State.Accepted_Key;
       if State.Transitions /= null then
          for Transition of State.Transitions.all loop
             Working_State.Trans.Append(Transition);
@@ -379,7 +381,9 @@ package body kv.apg.fa.nfa is
       Trans_Index : Positive;
 
    begin
-      List(Index) := State.State;
+      List(Index).Id           := State.State.Id;
+      List(Index).Accepting    := State.State.Accepting;
+      List(Index).Accepted_Key := State.State.Accepted_Key;
       pragma Assert(List(Index).Id = Index, "State ID does not match it's index!");
       if not State.Trans.Is_Empty then
          List(Index).Transitions := new Transition_List_Type(1..Positive(State.Trans.Length));

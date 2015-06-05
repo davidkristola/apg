@@ -1,9 +1,32 @@
 with Ada.Text_IO; use Ada.Text_IO;
 
+with Ada.Containers.Doubly_Linked_Lists;
+with Ada.Containers.Ordered_Sets;
+
 package body kv.apg.fa.nfa.convert is
 
    use kv.apg.fast;
 
+   package State_List is new Ada.Containers.Doubly_Linked_Lists(State_Id_Type);
+   -- State_List.List;
+   -- Append
+   -- First_Element
+   -- Delete_First
+
+   package State_Set is new Ada.Containers.Ordered_Sets(State_Id_Type);
+   -- State_Set.Set
+   -- Include
+   -- Contains
+
+
+
+   Debug : Boolean := False;
+
+   -------------------------------------------------------------------------
+   procedure Set_Debug(Value : in Boolean) is
+   begin
+      Debug := Value;
+   end Set_Debug;
 
 
    ----------------------------------------------------------------------------
@@ -48,8 +71,13 @@ package body kv.apg.fa.nfa.convert is
        Cnfa :    out Nfa_Class) is
    begin
       Self.Internal_Set_Nfa(Nfa);
-      --TODO: get rid of epsilon transitions
-      Self.Internal_Unmix_Epsilon_Transitions;
+      if Debug then Put_Line("Self.Image = " & Self.Image); end if;
+      Self.Internal_Banish_Epsilon_Transitions;
+      if Debug then Put_Line("Self.Image = " & Self.Image); end if;
+      Self.Internal_Remove_Duplicates;
+      if Debug then Put_Line("Self.Image = " & Self.Image); end if;
+      Self.Internal_Remove_Unreachables;
+      if Debug then Put_Line("Self.Image = " & Self.Image); end if;
       Cnfa := Self.Internal_Get_Cnfa;
    end Nfa_To_Cnfa;
 
@@ -70,7 +98,7 @@ package body kv.apg.fa.nfa.convert is
             end if;
          end loop;
          if (Epsilon_Count > 0) and (Normal_Count > 0) then
-            Put_Line("Find_Next_Mixed_Epsilon found " & Img(S.State.Id));
+            if Debug then Put_Line("Find_Next_Mixed_Epsilon found " & Img(S.State.Id)); end if;
             return S.State.Id;
          end if;
       end loop;
@@ -99,19 +127,19 @@ package body kv.apg.fa.nfa.convert is
       New_Transition : Transition_Type;
 
    begin
-      Put_Line("Internal_Bump_Non_Epsilon_At " & Positive'IMAGE(Index));
+      if Debug then Put_Line("Internal_Bump_Non_Epsilon_At " & Positive'IMAGE(Index)); end if;
       -- Initialize State
       Set_Non_Accepting(New_State.State, State_Id_Type(Self.Working_States.Length) + 1, 0);
-      Put_Line("New_State.State = " & Image(New_State.State));
+      if Debug then Put_Line("New_State.State = " & Image(New_State.State)); end if;
       -- Find non-epsilon transition
       while Self.Working_States(Index).Trans(Non_Epsilon_Index).Criteria = Epsilon loop
          Non_Epsilon_Index := Non_Epsilon_Index + 1;
       end loop;
-      Put_Line("The non-epsilon transition is <"&Image(Self.Working_States(Index).Trans(Non_Epsilon_Index))&"> at " & Positive'IMAGE(Non_Epsilon_Index));
+      if Debug then Put_Line("The non-epsilon transition is <"&Image(Self.Working_States(Index).Trans(Non_Epsilon_Index))&"> at " & Positive'IMAGE(Non_Epsilon_Index)); end if;
       -- Copy transition
       New_State.Trans.Append(Self.Working_States(Index).Trans(Non_Epsilon_Index));
       -- Add new state to the list
-      Put_Line("Appending New_State " & Image(New_State));
+      if Debug then Put_Line("Appending New_State " & Image(New_State)); end if;
       Self.Working_States.Append(New_State);
       -- Replace non-epsilon with an epsilon to the new state
       Set_Epsilon(New_Transition, State_Id_Type(Self.Working_States.Length));
@@ -211,7 +239,7 @@ package body kv.apg.fa.nfa.convert is
       end loop;
       Working_States.Reference(Positive(Where.State)).Trans.Delete(Where.Transition);
       if Working_States.Reference(Positive(Where.Next)).State.Accepting then
-         --Put_Line("copy accepting key ="&Key_Type'IMAGE(Working_States.Reference(Positive(Where.Next)).State.Accepted_Key));
+         if Debug then Put_Line("copy accepting key ="&Key_Type'IMAGE(Working_States.Reference(Positive(Where.Next)).State.Accepted_Key)); end if;
          Working_States.Reference(Positive(Where.State)).State.Accepted_Key := Working_States.Reference(Positive(Where.Next)).State.Accepted_Key;
          Working_States.Reference(Positive(Where.State)).State.Accepting := True;
       end if;
@@ -222,7 +250,7 @@ package body kv.apg.fa.nfa.convert is
       (Self : in out To_Cnfa_Class) is
       Where : State_And_Transition_Tuple;
    begin
-      Put_Line("------------------------------");
+      if Debug then Put_Line("--------------Internal_Collapse_Epsilon_Transitions----------------"); end if;
       pragma Assert(Find_Next_Mixed_Epsilon(Self.Working_States) = Invalid_State);
       pragma Assert(Find_Next_Chained_Epsilon(Self.Working_States).State = 0);
       loop
@@ -237,7 +265,7 @@ package body kv.apg.fa.nfa.convert is
       (Self : in out To_Cnfa_Class) is
       Where : State_And_Transition_Tuple;
    begin
-      Put_Line("-------------Internal_Banish_Epsilon_Transitions-----------------");
+      if Debug then Put_Line("-------------Internal_Banish_Epsilon_Transitions-----------------"); end if;
       loop
          Where := Find_Next_Epsilon(Self.Working_States);
          exit when Where.State = 0;
@@ -251,7 +279,7 @@ package body kv.apg.fa.nfa.convert is
        Old_Target : in     State_Id_Type;
        New_Target : in     State_Id_Type) is
    begin
-      Put_Line("Retarget from "&Img(Old_Target)&" to "&Img(New_Target));
+      if Debug then Put_Line("Retarget from "&Img(Old_Target)&" to "&Img(New_Target)); end if;
 
       for S of Self.Working_States loop
          for T of S.Trans loop
@@ -268,7 +296,7 @@ package body kv.apg.fa.nfa.convert is
        Remove : in     State_Id_Type) is
 
    begin
-      Put_Line("Deleting state "&Img(Remove));
+      if Debug then Put_Line("Deleting state "&Img(Remove)); end if;
       for Index in 1 .. Positive(Self.Working_States.Length) loop
          if Index > Positive(Remove) then
             Self.Internal_Retarget_Transitions(State_Id_Type(Index), State_Id_Type(Index - 1));
@@ -342,7 +370,7 @@ package body kv.apg.fa.nfa.convert is
    begin
       Where := Find_Duplicates(Self);
       while Where.First /= 0 loop
-         Put_Line("Duplicate pair: "&Natural'IMAGE(Where.First) & Natural'IMAGE(Where.Other));
+         if Debug then Put_Line("Duplicate pair: "&Natural'IMAGE(Where.First) & Natural'IMAGE(Where.Other)); end if;
          Self.Internal_Retarget_Transitions(State_Id_Type(Where.Other), State_Id_Type(Where.First));
          Self.Internal_Delete(State_Id_Type(Where.Other));
          Where := Find_Duplicates(Self);
@@ -352,8 +380,33 @@ package body kv.apg.fa.nfa.convert is
    ----------------------------------------------------------------------------
    procedure Internal_Remove_Unreachables
       (Self : in out To_Cnfa_Class) is
+
+      Unchecked : State_List.List;
+      Reachable : State_Set.Set;
+      Working : State_Id_Type;
+      Target : State_Id_Type;
+
    begin
-      null;
+      if Debug then Put_Line("==========Internal_Remove_Unreachables==========="); end if;
+      Unchecked.Append(1);
+      while not Unchecked.Is_Empty loop
+         Working := Unchecked.First_Element;
+         Unchecked.Delete_First;
+         Reachable.Include(Working);
+         -- now add everything that we can reach that isin't reachable
+         for T of Self.Working_States.Constant_Reference(Positive(Working)).Trans loop
+            Target := T.To_State;
+            if not Reachable.Contains(Target) then
+               Unchecked.Append(Target);
+            end if;
+         end loop;
+      end loop;
+      -- Must delete in reverse order
+      for Index in reverse 1 .. State_Id_Type(Self.Working_States.Length) loop
+         if not Reachable.Contains(Index) then
+            Self.Internal_Delete(Index);
+         end if;
+      end loop;
    end Internal_Remove_Unreachables;
 
    ----------------------------------------------------------------------------

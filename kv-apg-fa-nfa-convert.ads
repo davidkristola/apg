@@ -75,4 +75,8 @@ package kv.apg.fa.nfa.convert is
    function Internal_Get_Cnfa
       (Self : To_Cnfa_Class) return kv.apg.fa.nfa.Nfa_Class;
 
+
+   -- Control debug output of package
+   procedure Set_Debug(Value : in Boolean);
+
 end kv.apg.fa.nfa.convert;

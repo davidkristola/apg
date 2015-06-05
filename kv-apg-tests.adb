@@ -1537,7 +1537,7 @@ package body kv.apg.tests is
       WS : constant Wide_Wide_String := To_Wide_Wide_String(S & Ada.Characters.Latin_1.LF);
       Token : kv.apg.tokens.Token_Class;
    begin
-      T.Log("Ingesting <"&S&">");
+      --T.Log("Ingesting <"&S&">");
       for WC of WS loop
          T.Lexer.Ingest_Character(WC);
       end loop;
@@ -1545,7 +1545,7 @@ package body kv.apg.tests is
          Token := T.Lexer.Get_Next_Token;
          T.Parser.Ingest_Token(Token);
       end loop;
-      T.Log("Done parsing. Directive count = " & Natural'IMAGE(T.Parser.Directive_Count));
+      --T.Log("Done parsing. Directive count = " & Natural'IMAGE(T.Parser.Directive_Count));
    end Parse_Line;
 
    ----------------------------------------------------------------------------
@@ -1686,16 +1686,42 @@ package body kv.apg.tests is
    type Nfa_To_Cnfa_9_Test is new Base_Nfa_To_Cnfa_Test_Class with null record;
    procedure Run(T : in out Nfa_To_Cnfa_9_Test) is
       Nfa_Image : constant String := "[1{ɛ=>2,ɛ=>4}/2{97=>3}/3{ɛ=>10}/4{ɛ=>5,ɛ=>7}/5{98=>6}/6{ɛ=>9}/7{99=>8}/8{ɛ=>9}/9{ɛ=>10}/(10:96){}]";
-      Uut_Image : constant String := "[1{97=>3,98=>6,99=>8}/2{97=>3}/(3:96){}/4{98=>6,99=>8}/5{98=>6}/(6:96){}/7{99=>8}/(8:96){}/(9:96){}/(10:96){}]";
-      Fin_Image : constant String := "[1{97=>3,98=>6,99=>8}/2{97=>3}/(3:96){}/4{98=>6,99=>8}/5{98=>6}/(6:96){}/7{99=>8}/(8:96){}]";
+      Uut_Image : constant String := "[1{97=>3,98=>3,99=>3}/2{97=>3}/(3:96){}/4{98=>3,99=>3}/5{98=>3}/6{99=>3}]";
+      Fin_Image : constant String := "[1{97=>2,98=>2,99=>2}/(2:96){}]";
    begin
       Prepare_Nfa(T, " 'a' | ('b' | 'c') ");
       T.Assert(T.Nfa.Image = Nfa_Image, "Wrong NFA image! Expected <"&Nfa_Image&">, got <" & T.Nfa.Image & ">");
       T.Uut.Internal_Set_Nfa(T.Nfa);
       T.Uut.Internal_Banish_Epsilon_Transitions;
+      T.Uut.Internal_Remove_Duplicates;
       T.Assert(T.Uut.Image = Uut_Image, "Wrong UUT image! Expected <"&Uut_Image&">, got <" & T.Uut.Image & ">");
       T.Uut.Internal_Remove_Unreachables;
       T.Assert(T.Uut.Image = Fin_Image, "Wrong Fin image! Expected <"&Fin_Image&">, got <" & T.Uut.Image & ">");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Nfa_To_Cnfa_10_Test is new Base_Nfa_To_Cnfa_Test_Class with null record;
+   procedure Run(T : in out Nfa_To_Cnfa_10_Test) is
+      Clean_NFA_Image : constant String := "[1{97=>2,98=>2,99=>2}/(2:96){}]";
+      Cnfa : aliased kv.apg.fa.nfa.Nfa_Class;
+   begin
+      Prepare_Nfa(T, " 'a' | ('b' | 'c') ");
+      --T.Log("++++++++++++++++++++Nfa_To_Cnfa_10_Test");
+      --kv.apg.fa.nfa.convert.Set_Debug(True);
+      T.Uut.Nfa_To_Cnfa(T.Nfa, Cnfa);
+      T.Assert(Cnfa.Image = Clean_NFA_Image, "Wrong Clean NFA image! Expected <"&Clean_NFA_Image&">, got <" & Cnfa.Image & ">");
+      --kv.apg.fa.nfa.convert.Set_Debug(False);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Nfa_To_Cnfa_11_Test is new Base_Nfa_To_Cnfa_Test_Class with null record;
+   procedure Run(T : in out Nfa_To_Cnfa_11_Test) is
+      Clean_NFA_Image : constant String := "[1{109=>2,109=>7}/2{111=>3}/3{100=>4}/4{101=>5}/5{108=>6}/(6:96){}/7{109=>7,111=>8}/8{111=>8,100=>6}]";
+      Cnfa : aliased kv.apg.fa.nfa.Nfa_Class;
+   begin
+      Prepare_Nfa(T, " ""model"" | ( 'm' + 'o' + 'd' ) ");
+      T.Uut.Nfa_To_Cnfa(T.Nfa, Cnfa);
+      T.Assert(Cnfa.Image = Clean_NFA_Image, "Wrong Clean NFA image! Expected <"&Clean_NFA_Image&">, got <" & Cnfa.Image & ">");
    end Run;
 
 
@@ -1805,8 +1831,8 @@ package body kv.apg.tests is
       suite.register(new Nfa_To_Cnfa_7_Test, "Nfa_To_Cnfa_7_Test");
       suite.register(new Nfa_To_Cnfa_8_Test, "Nfa_To_Cnfa_8_Test");
       suite.register(new Nfa_To_Cnfa_9_Test, "Nfa_To_Cnfa_9_Test");
---      suite.register(new XXX, "XXX");
---      suite.register(new XXX, "XXX");
+      suite.register(new Nfa_To_Cnfa_10_Test, "Nfa_To_Cnfa_10_Test");
+      suite.register(new Nfa_To_Cnfa_11_Test, "Nfa_To_Cnfa_11_Test");
 --      suite.register(new XXX, "XXX");
    end register;
 
