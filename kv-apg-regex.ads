@@ -210,4 +210,26 @@ private
        Start : in out State_Id_Type);
 
 
+   type Range_Node_Class is new Node_Class with
+      record
+         A : Node_Pointer_Type;
+         B : Node_Pointer_Type;
+      end record;
+   type Range_Node_Pointer_Type is access all Range_Node_Class;
+   overriding procedure Prepare_For_Graft
+      (Self  : in out Range_Node_Class;
+       Box   : in out Reg_Ex_Container_Class'CLASS);
+   overriding procedure Process_This(Self : in out Range_Node_Class);
+   overriding function Is_Complete(Self : Range_Node_Class) return Boolean;
+   overriding function Image_This(Self : in out Range_Node_Class) return String_Type;
+   overriding procedure Graft_To_Tree
+      (Self : in out Range_Node_Class;
+       Node : in     Node_Pointer_Type);
+   overriding function Count_Nfa_Transition_Sets(Self : Range_Node_Class) return Natural;
+   overriding procedure Set_Nfa_Transitions
+      (Self  : in out Range_Node_Class;
+       NFA   : in out kv.apg.fa.nfa.Nfa_Class;
+       Start : in out State_Id_Type);
+
+
 end kv.apg.regex;

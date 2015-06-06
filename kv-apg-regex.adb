@@ -35,6 +35,7 @@ package body kv.apg.regex is
       Sub_Node : Subsequence_Node_Pointer_Type;
       Or_Node : Or_Node_Pointer_Type;
       Zoro_Node : Zoro_Node_Pointer_Type;
+      Range_Node : Range_Node_Pointer_Type;
 
    begin
       if Debug then Put_Line("(reg ex) Allocate_Node called with <" & Token.Get_Data_As_String & ">"); end if;
@@ -61,6 +62,9 @@ package body kv.apg.regex is
          elsif Token.Get_Data_As_String = "?" then
             Zoro_Node := new Zoro_Node_Class;
             return Node_Pointer_Type(Zoro_Node);
+         elsif Token.Get_Data_As_String = "-" then
+            Range_Node := new Range_Node_Class;
+            return Node_Pointer_Type(Range_Node);
          end if;
       end if;
       if Debug then Put_Line("Allocate_Node returning null"); end if;
@@ -726,5 +730,124 @@ package body kv.apg.regex is
       NFA.Append_State_Transition(Sub_Start, Transition_Over);
    end Set_Nfa_Transitions;
 
+
+
+
+
+
+   -------------------------------------------------------------------------
+   overriding procedure Prepare_For_Graft
+      (Self  : in out Range_Node_Class;
+       Box   : in out Reg_Ex_Container_Class'CLASS) is
+
+      Left : Node_Pointer_Type;
+
+   begin
+      if Debug then Put_Line("Range_Node_Class.Prepare_For_Graft"); end if;
+      Box.Linear_Detach(Left);
+      if Debug then Put_Line("Range_Node_Class.Prepare_For_Graft, detached and setting A with " & To_String(+Left.Image_Tree)); end if;
+      Self.A := Left;
+      if Debug then Put_Line("result: " & To_String(+Self.Image_Tree)); end if;
+   end Prepare_For_Graft;
+
+   -------------------------------------------------------------------------
+   procedure Process_This(Self : in out Range_Node_Class) is
+   begin
+      if Debug then Put_Line("Range_Node_Class.Process_This"); end if;
+   end Process_This;
+
+   -------------------------------------------------------------------------
+   overriding function Is_Complete(Self : Range_Node_Class) return Boolean is
+   begin
+      -- Both A and B must be set and then B is complete
+      return (Self.A /= null) and ((Self.B /= null) and then (Self.B.Is_Complete));
+   end Is_Complete;
+
+   -------------------------------------------------------------------------
+   overriding function Image_This(Self : in out Range_Node_Class) return String_Type is
+   begin
+      if Self.B = null then
+         return To_String_Type("(") & Self.A.Image_This & To_String_Type("|null");
+      end if;
+      return To_String_Type("(") & Self.A.Image_This & To_String_Type("|") & Self.B.Image_This & To_String_Type(")");
+   end Image_This;
+
+   -------------------------------------------------------------------------
+   overriding procedure Graft_To_Tree
+      (Self : in out Range_Node_Class;
+       Node : in     Node_Pointer_Type) is
+   begin
+      if Debug then Put_Line("Range_Node_Class.Graft_To_Tree"); end if;
+      if Self.Is_Complete then
+         if Debug then Put_Line("Is_Complete, Self.Linear_Attach(Node)..."); end if;
+         Self.Linear_Attach(Node);
+      else
+         -- Only B can be incomplete
+         if Self.B = null then
+            if Debug then Put_Line("Filling in OR's B!"); end if;
+            Self.B := Node;
+         else
+            if Debug then Put_Line("graft to B..."); end if;
+            Self.B.Graft_To_Tree(Node);
+         end if;
+      end if;
+      if Debug then Put_Line("result: " & To_String(+Self.Image_Tree)); end if;
+   end Graft_To_Tree;
+
+   -------------------------------------------------------------------------
+   overriding function Count_Nfa_Transition_Sets(Self : Range_Node_Class) return Natural is
+   begin
+      -- The OR part contributes A + B - 1 transition sets because the first set includes going to A *or* B.
+      return (Self.A.Count_Nfa_Transition_Sets + Self.B.Count_Nfa_Transition_Sets + 3) + (if Self.Previous = null then 0 else Self.Previous.Count_Nfa_Transition_Sets);
+   end Count_Nfa_Transition_Sets;
+
+   -------------------------------------------------------------------------
+   overriding procedure Set_Nfa_Transitions
+      (Self  : in out Range_Node_Class;
+       NFA   : in out kv.apg.fa.nfa.Nfa_Class;
+       Start : in out State_Id_Type) is
+      Start_A : State_Id_Type;
+      End_A : State_Id_Type;
+      Start_B : State_Id_Type;
+      End_B : State_Id_Type;
+      Start_Next : State_Id_Type;
+      Transition : Transition_Type;
+   begin
+      if Debug then Put_Line("Range_Node_Class.Set_Nfa_Transitions starting at " & State_Id_Type'IMAGE(Start)); end if;
+      if Self.Previous /= null then
+         Self.Previous.Set_Nfa_Transitions(NFA, Start);
+      end if;
+
+      Start_A := Start + 1;
+      End_A := Start_A + State_Id_Type(Self.A.Count_Nfa_Transition_Sets);
+      Start_B := End_A + 1;
+      End_B := Start_B + State_Id_Type(Self.B.Count_Nfa_Transition_Sets);
+      Start_Next := End_B + 1;
+      if Debug then Put_Line("Adding epsilon transitions to " & State_Id_Type'IMAGE(Start_A) & State_Id_Type'IMAGE(Start_B) & State_Id_Type'IMAGE(Start_Next)); end if;
+
+      -- Add first Epsilon transition to both A and B
+      Set_Epsilon(Transition, Start_A);
+      NFA.Append_State_Transition(Start, Transition);
+      Set_Epsilon(Transition, Start_B);
+      NFA.Append_State_Transition(Start, Transition);
+      Start := Start + 1;
+
+      Self.A.Set_Nfa_Transitions(NFA, Start);
+
+      -- Start should now be End_A
+
+      Set_Epsilon(Transition, Start_Next);
+      NFA.Append_State_Transition(Start, Transition);
+      Start := Start + 1;
+
+      Self.B.Set_Nfa_Transitions(NFA, Start);
+
+      -- Start should now be End_B
+
+      NFA.Append_State_Transition(Start, Transition);
+      Start := Start + 1;
+
+      if Debug then Put_Line("result: " & NFA.Image); end if;
+   end Set_Nfa_Transitions;
 
 end kv.apg.regex;

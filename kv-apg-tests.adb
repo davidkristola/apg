@@ -569,6 +569,15 @@ package body kv.apg.tests is
       Run_Token_Test(T, "a_and_maybe_b", "'a' 'b' ? ;", """a"" (""b"")?");
    end Run;
 
+   ----------------------------------------------------------------------------
+   type Parse_Range_Token_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Range_Token_Test) is
+   begin
+      kv.apg.regex.Set_Debug(True);
+      Run_Token_Test(T, "a_to_z", "'a'-'z';", "(U0061-U007A)");
+      kv.apg.regex.Set_Debug(False);
+   end Run;
+
 
 
    ----------------------------------------------------------------------------
@@ -1771,6 +1780,7 @@ package body kv.apg.tests is
       suite.register(new Parse_Or_Sub_Sub_Star_Token_Test, "Parse_Or_Sub_Sub_Star_Token_Test");
       suite.register(new Parse_Plus_Token_Test, "Parse_Plus_Token_Test");
       suite.register(new Parse_Zoro_Token_Test, "Parse_Zoro_Token_Test");
+      suite.register(new Parse_Range_Token_Test, "Parse_Range_Token_Test");
 
       suite.register(new Fast_Uninit_Test, "Fast_Uninit_Test");
       suite.register(new Fast_Any_Test, "Fast_Any_Test");

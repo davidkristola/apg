@@ -57,7 +57,8 @@ package body kv.apg.parse.token is
          Token.Get_Data_As_String = "+" or else
          Token.Get_Data_As_String = "?" or else
          Token.Get_Data_As_String = "(" or else
-         Token.Get_Data_As_String = ")"
+         Token.Get_Data_As_String = ")" or else
+         Token.Get_Data_As_String = "-"
       then
          return True; -- Valid symbol
       end if;
