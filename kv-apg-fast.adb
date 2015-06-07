@@ -2,6 +2,8 @@ with Ada.Unchecked_Deallocation;
 with Interfaces;
 with Ada.Text_IO; use Ada.Text_IO;
 
+with String_Ops;
+
 package body kv.apg.fast is
 
    procedure Free is new Ada.Unchecked_Deallocation(Transition_List_Type, Transition_List_Pointer_Type);
@@ -72,6 +74,22 @@ package body kv.apg.fast is
    begin
       return Decimal_Image(2..Decimal_Image'LAST);
    end Img;
+
+   ----------------------------------------------------------------------------
+   function Code_Point(Char : Wide_Wide_Character) return String is
+      Image_Short : String := "U0000";
+      Image_Long  : String := "U00000000";
+      Value : Interfaces.Unsigned_32 := Interfaces.Unsigned_32(Wide_Wide_Character'POS(Char));
+      use Interfaces;
+   begin
+      if Value > 16#FFFF# then
+         String_Ops.Stuff_Hex(Value, Image_Long(2..9));
+         return Image_Long;
+      else
+         String_Ops.Stuff_Hex(Value, Image_Short(2..5));
+         return Image_Short;
+      end if;
+   end Code_Point;
 
    ----------------------------------------------------------------------------
    function Img(Key : Key_Type) return String is

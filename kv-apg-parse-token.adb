@@ -62,6 +62,17 @@ package body kv.apg.parse.token is
       then
          return True; -- Valid symbol
       end if;
+      if Token.Get_Kind = A_Word then
+      -- TODO: consider pushing this into the tokenizer and having an A_Code_Point token.
+         declare
+            Word : constant String := Token.Get_Data_As_String;
+         begin
+            if (Word(1) = 'U' and then ((Word'LENGTH = 5) or (Word'LENGTH = 9))) then
+               return True; -- Valid (looking) Code Point
+            end if;
+            -- TODO: valid named patterns or named sets?
+         end;
+      end if;
       return False;
    end Is_Valid_Token;
 

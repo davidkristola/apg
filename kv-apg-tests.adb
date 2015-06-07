@@ -514,6 +514,17 @@ package body kv.apg.tests is
    end Run;
 
    ----------------------------------------------------------------------------
+   type Parse_Or_Token_Pi_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Or_Token_Pi_Test) is
+   begin
+      kv.apg.regex.Set_Debug(True);
+--      Run_Token_Test(T, "pi", """Pi"" | U004B ;", "(""Pi""|""K"")");
+      Run_Token_Test(T, "pi", """Pi"" | U03C0 ;", "(""Pi""|""π"")");
+      kv.apg.regex.Set_Debug(False);
+   end Run;
+
+
+   ----------------------------------------------------------------------------
    type Parse_Star_Token_Test is new Parser_Test_Class with null record;
    procedure Run(T : in out Parse_Star_Token_Test) is
    begin
@@ -573,9 +584,18 @@ package body kv.apg.tests is
    type Parse_Range_Token_Test is new Parser_Test_Class with null record;
    procedure Run(T : in out Parse_Range_Token_Test) is
    begin
-      kv.apg.regex.Set_Debug(True);
+      --kv.apg.regex.Set_Debug(True);
       Run_Token_Test(T, "a_to_z", "'a'-'z';", "(U0061-U007A)");
-      kv.apg.regex.Set_Debug(False);
+      --kv.apg.regex.Set_Debug(False);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parse_Range_2_Token_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Range_2_Token_Test) is
+   begin
+      --kv.apg.regex.Set_Debug(True);
+      Run_Token_Test(T, "a_to_z", "U0061-U007A;", "(U0061-U007A)");
+      --kv.apg.regex.Set_Debug(False);
    end Run;
 
 
@@ -1772,6 +1792,7 @@ package body kv.apg.tests is
       suite.register(new Parse_Or_Token_2_Test, "Parse_Or_Token_2_Test");
       suite.register(new Parse_Cat_Token_Test, "Parse_Cat_Token_Test");
       suite.register(new Parse_Or_Token_3_Test, "Parse_Or_Token_3_Test");
+      suite.register(new Parse_Or_Token_Pi_Test, "Parse_Or_Token_Pi_Test");
       suite.register(new Parse_Star_Token_Test, "Parse_Star_Token_Test");
       suite.register(new Parse_Subsequence_Token_Test, "Parse_Subsequence_Token_Test");
       suite.register(new Parse_Or_Subsequence_Token_Test, "Parse_Or_Subsequence_Token_Test");
@@ -1781,6 +1802,7 @@ package body kv.apg.tests is
       suite.register(new Parse_Plus_Token_Test, "Parse_Plus_Token_Test");
       suite.register(new Parse_Zoro_Token_Test, "Parse_Zoro_Token_Test");
       suite.register(new Parse_Range_Token_Test, "Parse_Range_Token_Test");
+      suite.register(new Parse_Range_2_Token_Test, "Parse_Range_2_Token_Test");
 
       suite.register(new Fast_Uninit_Test, "Fast_Uninit_Test");
       suite.register(new Fast_Any_Test, "Fast_Any_Test");

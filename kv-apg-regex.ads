@@ -212,8 +212,8 @@ private
 
    type Range_Node_Class is new Node_Class with
       record
-         A : Node_Pointer_Type;
-         B : Node_Pointer_Type;
+         Lower : Node_Pointer_Type; -- Wide_Wide_Character;
+         Upper : Node_Pointer_Type; -- Wide_Wide_Character;
       end record;
    type Range_Node_Pointer_Type is access all Range_Node_Class;
    overriding procedure Prepare_For_Graft

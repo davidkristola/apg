@@ -106,6 +106,7 @@ package kv.apg.fast is
    function Img(ID : State_Universe_Type) return String;
    function Img(Char : Wide_Wide_Character) return String;
    function Img(Key : Key_Type) return String;
+   function Code_Point(Char : Wide_Wide_Character) return String;
 
    -- Control debug output of package
    procedure Set_Debug(Value : in Boolean);

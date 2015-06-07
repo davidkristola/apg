@@ -1,10 +1,9 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Strings.Wide_Wide_Unbounded;
-
 with Ada.Wide_Wide_Characters.Handling;
 with Ada.Characters.Latin_1;
 with Ada.Characters.Conversions;
-
+with Interfaces;
 
 package body kv.apg.regex is
 
@@ -37,6 +36,8 @@ package body kv.apg.regex is
       Zoro_Node : Zoro_Node_Pointer_Type;
       Range_Node : Range_Node_Pointer_Type;
 
+      use Interfaces;
+
    begin
       if Debug then Put_Line("(reg ex) Allocate_Node called with <" & Token.Get_Data_As_String & ">"); end if;
       if Token.Get_Kind = A_Char or else Token.Get_Kind = A_String or else Token.Get_Kind = A_Block then
@@ -67,6 +68,30 @@ package body kv.apg.regex is
             return Node_Pointer_Type(Range_Node);
          end if;
       end if;
+
+      if Token.Get_Kind = A_Word then
+         declare
+            Word : constant String := Token.Get_Data_As_String;
+            Code_Point : Interfaces.Unsigned_32;
+            Short_String : Wide_Wide_String(1..1);
+         begin
+            if (Word(1) = 'U' and then ((Word'LENGTH = 5) or (Word'LENGTH = 9))) then
+
+               Code_Point := Interfaces.Unsigned_32'VALUE("16#" & Word(2..Word'LAST) & "#");
+               if Debug then Put_Line("Creating a Match node on Unicode code point " & Interfaces.Unsigned_32'IMAGE(Code_Point)); end if;
+               Short_String(1) := Wide_Wide_Character'VAL(Code_Point);
+
+               Code_Point := Interfaces.Unsigned_32(Wide_Wide_Character'POS(Short_String(1)));
+               if Debug then Put_Line("Code Point readback yields " & Interfaces.Unsigned_32'IMAGE(Code_Point)); end if;
+
+               Match_Node := new Match_Node_Class;
+               Match_Node.Initialize(+Short_String);
+               return Node_Pointer_Type(Match_Node);
+
+            end if;
+         end;
+      end if;
+
       if Debug then Put_Line("Allocate_Node returning null"); end if;
       return null;
    end Allocate_Node;
@@ -745,8 +770,9 @@ package body kv.apg.regex is
    begin
       if Debug then Put_Line("Range_Node_Class.Prepare_For_Graft"); end if;
       Box.Linear_Detach(Left);
-      if Debug then Put_Line("Range_Node_Class.Prepare_For_Graft, detached and setting A with " & To_String(+Left.Image_Tree)); end if;
-      Self.A := Left;
+      -- TODO: validate!
+      if Debug then Put_Line("Range_Node_Class.Prepare_For_Graft, detached and setting Lower with " & To_String(+Left.Image_Tree)); end if;
+      Self.Lower := Left;
       if Debug then Put_Line("result: " & To_String(+Self.Image_Tree)); end if;
    end Prepare_For_Graft;
 
@@ -759,17 +785,20 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    overriding function Is_Complete(Self : Range_Node_Class) return Boolean is
    begin
-      -- Both A and B must be set and then B is complete
-      return (Self.A /= null) and ((Self.B /= null) and then (Self.B.Is_Complete));
+      return (Self.Lower /= null) and (Self.Upper /= null);
    end Is_Complete;
 
    -------------------------------------------------------------------------
    overriding function Image_This(Self : in out Range_Node_Class) return String_Type is
+      Lower : Wide_Wide_Character;
+      Upper : Wide_Wide_Character;
    begin
-      if Self.B = null then
-         return To_String_Type("(") & Self.A.Image_This & To_String_Type("|null");
+      Lower := Element(Match_Node_Class'CLASS(Self.Lower.all).Value, 1);
+      if Self.Upper = null then
+         return To_String_Type("("& Code_Point(Lower) &"-null");
       end if;
-      return To_String_Type("(") & Self.A.Image_This & To_String_Type("|") & Self.B.Image_This & To_String_Type(")");
+      Upper := Element(Match_Node_Class'CLASS(Self.Upper.all).Value, 1);
+      return To_String_Type("("& Code_Point(Lower) &"-"& Code_Point(Upper) &")");
    end Image_This;
 
    -------------------------------------------------------------------------
@@ -782,13 +811,11 @@ package body kv.apg.regex is
          if Debug then Put_Line("Is_Complete, Self.Linear_Attach(Node)..."); end if;
          Self.Linear_Attach(Node);
       else
-         -- Only B can be incomplete
-         if Self.B = null then
-            if Debug then Put_Line("Filling in OR's B!"); end if;
-            Self.B := Node;
-         else
-            if Debug then Put_Line("graft to B..."); end if;
-            Self.B.Graft_To_Tree(Node);
+         -- Upper can't be incomplete
+         --TODO: validate this!
+         if Self.Upper = null then
+            if Debug then Put_Line("Filling in range's upper!"); end if;
+            Self.Upper := Node;
          end if;
       end if;
       if Debug then Put_Line("result: " & To_String(+Self.Image_Tree)); end if;
@@ -797,8 +824,8 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    overriding function Count_Nfa_Transition_Sets(Self : Range_Node_Class) return Natural is
    begin
-      -- The OR part contributes A + B - 1 transition sets because the first set includes going to A *or* B.
-      return (Self.A.Count_Nfa_Transition_Sets + Self.B.Count_Nfa_Transition_Sets + 3) + (if Self.Previous = null then 0 else Self.Previous.Count_Nfa_Transition_Sets);
+      -- A range is only one NFA transition
+      return (1) + (if Self.Previous = null then 0 else Self.Previous.Count_Nfa_Transition_Sets);
    end Count_Nfa_Transition_Sets;
 
    -------------------------------------------------------------------------
@@ -806,48 +833,28 @@ package body kv.apg.regex is
       (Self  : in out Range_Node_Class;
        NFA   : in out kv.apg.fa.nfa.Nfa_Class;
        Start : in out State_Id_Type) is
-      Start_A : State_Id_Type;
-      End_A : State_Id_Type;
-      Start_B : State_Id_Type;
-      End_B : State_Id_Type;
-      Start_Next : State_Id_Type;
+
       Transition : Transition_Type;
+      Destination : State_Id_Type;
+      Lower : Wide_Wide_Character;
+      Upper : Wide_Wide_Character;
+
    begin
       if Debug then Put_Line("Range_Node_Class.Set_Nfa_Transitions starting at " & State_Id_Type'IMAGE(Start)); end if;
       if Self.Previous /= null then
          Self.Previous.Set_Nfa_Transitions(NFA, Start);
       end if;
 
-      Start_A := Start + 1;
-      End_A := Start_A + State_Id_Type(Self.A.Count_Nfa_Transition_Sets);
-      Start_B := End_A + 1;
-      End_B := Start_B + State_Id_Type(Self.B.Count_Nfa_Transition_Sets);
-      Start_Next := End_B + 1;
-      if Debug then Put_Line("Adding epsilon transitions to " & State_Id_Type'IMAGE(Start_A) & State_Id_Type'IMAGE(Start_B) & State_Id_Type'IMAGE(Start_Next)); end if;
+      Lower := Element(Match_Node_Class'CLASS(Self.Lower.all).Value, 1);
+      Upper := Element(Match_Node_Class'CLASS(Self.Upper.all).Value, 1);
 
-      -- Add first Epsilon transition to both A and B
-      Set_Epsilon(Transition, Start_A);
-      NFA.Append_State_Transition(Start, Transition);
-      Set_Epsilon(Transition, Start_B);
-      NFA.Append_State_Transition(Start, Transition);
-      Start := Start + 1;
-
-      Self.A.Set_Nfa_Transitions(NFA, Start);
-
-      -- Start should now be End_A
-
-      Set_Epsilon(Transition, Start_Next);
-      NFA.Append_State_Transition(Start, Transition);
-      Start := Start + 1;
-
-      Self.B.Set_Nfa_Transitions(NFA, Start);
-
-      -- Start should now be End_B
-
+      Destination := Start + 1;
+      Set_Range(Transition, Destination, Lower, Upper);
       NFA.Append_State_Transition(Start, Transition);
       Start := Start + 1;
 
       if Debug then Put_Line("result: " & NFA.Image); end if;
    end Set_Nfa_Transitions;
+
 
 end kv.apg.regex;
