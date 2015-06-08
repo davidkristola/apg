@@ -1,5 +1,6 @@
 with Ada.Wide_Wide_Characters.Handling;
 with Ada.Characters.Conversions;
+with Ada.Strings.UTF_Encoding.Wide_Wide_Strings;
 
 package body kv.core.wwstr is
 
@@ -20,5 +21,18 @@ package body kv.core.wwstr is
 
    ----------------------------------------------------------------------------
    function "+"(U : String_Type) return Wide_Wide_String renames Ada.Strings.Wide_Wide_Unbounded.To_Wide_Wide_String;
+
+
+   ----------------------------------------------------------------------------
+   function To_WWS(S : Ada.Strings.UTF_Encoding.UTF_8_String) return Wide_Wide_String is
+   begin
+      return Ada.Strings.UTF_Encoding.Wide_Wide_Strings.Decode(S);
+   end To_WWS;
+
+   ----------------------------------------------------------------------------
+   function To_UTF(S : Wide_Wide_String) return Ada.Strings.UTF_Encoding.UTF_8_String is
+   begin
+      return Ada.Strings.UTF_Encoding.Wide_Wide_Strings.Encode(S);
+   end To_UTF;
 
 end kv.core.wwstr;

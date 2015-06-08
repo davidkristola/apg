@@ -465,7 +465,7 @@ package body kv.apg.tests is
       T.Assert(Directive.Get_Name = To_String_Type(Name), "wrong name, got " & To_String(+Directive.Get_Name) & ", expected " & Name);
       T.Assert(not kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Is_Empty, "tree shouldn't be null");
       Tree_Image := kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Tree.Image_Tree;
-      T.Assert(Tree_Image = To_String_Type(Expected), "wrong regex, got <" & To_String(+Tree_Image) & ">, expected <" & Expected & ">");
+      T.Assert(+Tree_Image = To_WWS(Expected), "wrong regex, got <" & To_UTF(+Tree_Image) & ">, expected <" & Expected & ">");
       kv.apg.directives.Free(Directive);
       --kv.apg.regex.Set_Debug(False);
    end Run_Token_Test;
@@ -517,8 +517,7 @@ package body kv.apg.tests is
    type Parse_Or_Token_Pi_Test is new Parser_Test_Class with null record;
    procedure Run(T : in out Parse_Or_Token_Pi_Test) is
    begin
-      kv.apg.regex.Set_Debug(True);
---      Run_Token_Test(T, "pi", """Pi"" | U004B ;", "(""Pi""|""K"")");
+      --kv.apg.regex.Set_Debug(True);
       Run_Token_Test(T, "pi", """Pi"" | U03C0 ;", "(""Pi""|""π"")");
       kv.apg.regex.Set_Debug(False);
    end Run;
