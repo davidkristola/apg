@@ -40,7 +40,7 @@ private
    function Status(Self : State_Class) return Status_Type;
    function Get_Directive(Self : State_Class) return kv.apg.directives.Directive_Pointer_Type is abstract;
 
-   type State_Pointer_Type is access State_Class'CLASS;
+   type State_Pointer_Type is access all State_Class'CLASS;
 
 
    use kv.apg.directives; -- "="

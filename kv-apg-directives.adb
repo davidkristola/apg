@@ -49,11 +49,13 @@ package body kv.apg.directives is
    procedure Initialize
       (Self : in out Token_Class;
        Name : in     String_Type;
-       Tree : in     kv.apg.regex.Regular_Expression_Tree_Type) is
+       Tree : in     kv.apg.regex.Regular_Expression_Tree_Type;
+       Kind : in     Token_Subtype) is
    begin
 --      Put_Line("Token_Class.Initialize Name = '" & To_String(+Name) & "'");
       Self.Name := Name;
       Self.Tree := Tree;
+      Self.Kind := Kind;
    end Initialize;
 
    ----------------------------------------------------------------------------
@@ -67,5 +69,11 @@ package body kv.apg.directives is
    begin
       return Self.Tree;
    end Get_Tree;
+
+   ----------------------------------------------------------------------------
+   not overriding function Get_Subtype(Self : in     Token_Class) return Token_Subtype is
+   begin
+      return Self.Kind;
+   end Get_Subtype;
 
 end kv.apg.directives;

@@ -52,7 +52,7 @@ package body kv.apg.tokens is
    ----------------------------------------------------------------------------
    function Get_Data_As_String(Self : Token_Class) return String is
    begin
-      return To_String(+Self.Data); -- This could lose information
+      return To_UTF(+Self.Data);
    end Get_Data_As_String;
 
    ----------------------------------------------------------------------------

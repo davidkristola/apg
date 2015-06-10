@@ -42,6 +42,7 @@ package body kv.apg.parse is
    procedure Ingest_Token
       (Self  : in out Parser_Class;
        Token : in     kv.apg.tokens.Token_Class) is
+      Token_State : kv.apg.parse.token.Token_State_Pointer_Type;
       use kv.apg.tokens;
    begin
       if Token.Get_Kind = A_Comment then
@@ -53,9 +54,11 @@ package body kv.apg.parse is
             if Token.Get_Data_As_String = "set" then
                Self.Action := Process;
                Self.Substate := new kv.apg.parse.set.Set_State_Class;
-            elsif Token.Get_Data_As_String = "token" then
+            elsif kv.apg.parse.token.Is_Token_Variant(Token.Get_Data_As_String) then
                Self.Action := Process;
-               Self.Substate := new kv.apg.parse.token.Token_State_Class;
+               Token_State := new kv.apg.parse.token.Token_State_Class;
+               Token_State.Initialize(Token.Get_Data_As_String);
+               Self.Substate := State_Pointer_Type(Token_State);
             else
                Self.Action := Recover;
             end if;

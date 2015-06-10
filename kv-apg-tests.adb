@@ -597,6 +597,32 @@ package body kv.apg.tests is
       --kv.apg.regex.Set_Debug(False);
    end Run;
 
+   ----------------------------------------------------------------------------
+   type Parse_Pattern_Token_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Pattern_Token_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      use kv.apg.directives;
+   begin
+      Parse_This(T, "pattern pat1 = '0'-'9' + ;" & Ada.Characters.Latin_1.LF);
+      Check_States(T, Errors => 0, Directives => 1);
+      Directive := T.Parser.Next_Directive;
+      T.Assert(kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Subtype = Pattern, "Expected subtype to be pattern");
+      kv.apg.directives.Free(Directive);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parse_Skipover_Token_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Skipover_Token_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      use kv.apg.directives;
+   begin
+      Parse_This(T, "skipover pat2 = (' ' | U0009) + ;" & Ada.Characters.Latin_1.LF);
+      Check_States(T, Errors => 0, Directives => 1);
+      Directive := T.Parser.Next_Directive;
+      T.Assert(kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Subtype = Skipover, "Expected subtype to be skipover");
+      kv.apg.directives.Free(Directive);
+   end Run;
+
 
 
    ----------------------------------------------------------------------------
@@ -1802,6 +1828,10 @@ package body kv.apg.tests is
       suite.register(new Parse_Zoro_Token_Test, "Parse_Zoro_Token_Test");
       suite.register(new Parse_Range_Token_Test, "Parse_Range_Token_Test");
       suite.register(new Parse_Range_2_Token_Test, "Parse_Range_2_Token_Test");
+      suite.register(new Parse_Pattern_Token_Test, "Parse_Pattern_Token_Test");
+      suite.register(new Parse_Skipover_Token_Test, "Parse_Skipover_Token_Test");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
 
       suite.register(new Fast_Uninit_Test, "Fast_Uninit_Test");
       suite.register(new Fast_Any_Test, "Fast_Any_Test");

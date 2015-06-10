@@ -22,13 +22,17 @@ package kv.apg.directives is
    overriding procedure Process(Self : in out Set_Class);
    not overriding function Get_Value(Self : in     Set_Class) return String_Type;
 
+   type Token_Subtype is (Accepting, Pattern, Skipover);
+
    type Token_Class is new Directive_Class with private;
    not overriding procedure Initialize
       (Self : in out Token_Class;
        Name : in     String_Type;
-       Tree : in     kv.apg.regex.Regular_Expression_Tree_Type);
+       Tree : in     kv.apg.regex.Regular_Expression_Tree_Type;
+       Kind : in     Token_Subtype);
    overriding procedure Process(Self : in out Token_Class);
    not overriding function Get_Tree(Self : in     Token_Class) return kv.apg.regex.Regular_Expression_Tree_Type;
+   not overriding function Get_Subtype(Self : in     Token_Class) return Token_Subtype;
 
 private
 
@@ -40,6 +44,7 @@ private
    type Token_Class is new Directive_Class with
       record
          Tree : kv.apg.regex.Regular_Expression_Tree_Type;
+         Kind : Token_Subtype;
       end record;
 
 end kv.apg.directives;

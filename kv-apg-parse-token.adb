@@ -21,6 +21,27 @@ package body kv.apg.parse.token is
    use kv.core.wwstr;
 
    -------------------------------------------------------------------------
+   function Is_Token_Variant(S : String) return Boolean is
+   begin
+      return (S = "token") or (S = "pattern") or (S = "skipover");
+   end Is_Token_Variant;
+
+   -------------------------------------------------------------------------
+   not overriding procedure Initialize(Self : in out Token_State_Class; Token_Variant : in     String) is
+   begin
+      if (Token_Variant = "token") then
+         Self.Kind := kv.apg.directives.Accepting;
+      elsif (Token_Variant = "pattern") then
+         Self.Kind := kv.apg.directives.Pattern;
+      elsif (Token_Variant = "skipover") then
+         Self.Kind := kv.apg.directives.Skipover;
+      else
+         -- There should be no way to get here.
+         Self.Status := Done_Error;
+      end if;
+   end Initialize;
+
+   -------------------------------------------------------------------------
    procedure Expect_Name
       (Self  : in out Token_State_Class;
        Token : in     kv.apg.tokens.Token_Class) is
@@ -115,7 +136,7 @@ package body kv.apg.parse.token is
       Directive : access kv.apg.directives.Token_Class;
    begin
       Directive := new kv.apg.directives.Token_Class;
-      Directive.Initialize(Name => Self.Name_Token.Get_Data, Tree => Self.Tree);
+      Directive.Initialize(Name => Self.Name_Token.Get_Data, Tree => Self.Tree, Kind => Self.Kind);
       return kv.apg.directives.Directive_Pointer_Type(Directive);
    end Get_Directive;
 
