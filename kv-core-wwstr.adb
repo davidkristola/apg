@@ -24,12 +24,10 @@ package body kv.core.wwstr is
 
 
    ----------------------------------------------------------------------------
-   function To_WWS(S : Ada.Strings.UTF_Encoding.UTF_8_String) return Wide_Wide_String is
-   begin
-      return Ada.Strings.UTF_Encoding.Wide_Wide_Strings.Decode(S);
-   end To_WWS;
+   function To_WWS(S : Ada.Strings.UTF_Encoding.UTF_8_String) return Wide_Wide_String renames Ada.Strings.UTF_Encoding.Wide_Wide_Strings.Decode;
 
    ----------------------------------------------------------------------------
+   -- Can't use a rename.
    function To_UTF(S : Wide_Wide_String) return Ada.Strings.UTF_Encoding.UTF_8_String is
    begin
       return Ada.Strings.UTF_Encoding.Wide_Wide_Strings.Encode(S);
