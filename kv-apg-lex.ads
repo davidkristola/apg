@@ -1,6 +1,5 @@
 
-with Ada.Strings.Wide_Wide_Unbounded;
-with Ada.Containers.Doubly_Linked_Lists;
+private with Ada.Containers.Doubly_Linked_Lists;
 
 with kv.apg.tokens;
 with kv.core.wwstr; use kv.core.wwstr;
