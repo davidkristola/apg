@@ -14,6 +14,8 @@ package kv.apg.directives is
    type Directive_Pointer_Type is access all Directive_Class'CLASS;
    procedure Free(Directive : in out Directive_Pointer_Type);
 
+
+
    type Set_Class is new Directive_Class with private;
    not overriding procedure Initialize
       (Self  : in out Set_Class;
@@ -21,6 +23,8 @@ package kv.apg.directives is
        Value : in     String_Type);
    overriding procedure Process(Self : in out Set_Class);
    not overriding function Get_Value(Self : in     Set_Class) return String_Type;
+
+
 
    type Token_Subtype is (Accepting, Pattern, Skipover);
 
