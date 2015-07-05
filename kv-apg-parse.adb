@@ -112,4 +112,25 @@ package body kv.apg.parse is
       return Directive;
    end Next_Directive;
 
+   ----------------------------------------------------------------------------
+   procedure Process_Directives
+      (self    : in out Parser_Class;
+       Visitor : in out kv.apg.directives.Directive_Visitor_Class'CLASS) is
+   begin
+      for Directive of Self.Directives loop
+         Directive.Process(Visitor);
+      end loop;
+   end Process_Directives;
+
+   ----------------------------------------------------------------------------
+   procedure Delete_Directives
+      (Self : in out Parser_Class) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+   begin
+      while not Self.Directives.Is_Empty loop
+         Directive := Self.Next_Directive;
+         Free(Directive);
+      end loop;
+   end Delete_Directives;
+
 end kv.apg.parse;

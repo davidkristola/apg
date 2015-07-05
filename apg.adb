@@ -36,11 +36,16 @@ procedure apg is
       end loop;
    end Parse_Tokens;
 
+   procedure Process_Input_File(File_Name : in     String) is
+   begin
+      Ingest_File(File_Name);
+      Parse_Tokens;
+   end Process_Input_File;
+
 begin
    -- Set default execution parameters
    -- Process command line arguments (if any/can we have none? default input file?)
    -- Process the input file (singular and required; standard input from a pipe?)
-   Ingest_File(Argument(1));
-   Parse_Tokens;
+   Process_Input_File(Argument(1));
    -- Generate output files
 end apg;

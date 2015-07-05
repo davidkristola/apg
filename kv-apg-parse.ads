@@ -26,6 +26,13 @@ package kv.apg.parse is
    function Next_Directive
       (Self : in out Parser_Class) return kv.apg.directives.Directive_Pointer_Type;
 
+   procedure Process_Directives
+      (self    : in out Parser_Class;
+       Visitor : in out kv.apg.directives.Directive_Visitor_Class'CLASS);
+
+   procedure Delete_Directives
+      (Self : in out Parser_Class);
+
 private
 
    type Status_Type is (Working, Done_Good, Done_Error);

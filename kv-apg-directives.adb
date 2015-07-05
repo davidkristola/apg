@@ -33,9 +33,9 @@ package body kv.apg.directives is
    end Initialize;
 
    ----------------------------------------------------------------------------
-   procedure Process(Self : in out Set_Class) is
+   procedure Process(Self : in out Set_Class; Visitor : in out Directive_Visitor_Class'CLASS) is
    begin
-      Put_Line("Set_Class::Process");
+      Visitor.Process_Set(Self);
    end Process;
 
    ----------------------------------------------------------------------------
@@ -59,9 +59,9 @@ package body kv.apg.directives is
    end Initialize;
 
    ----------------------------------------------------------------------------
-   procedure Process(Self : in out Token_Class) is
+   procedure Process(Self : in out Token_Class; Visitor : in out Directive_Visitor_Class'CLASS) is
    begin
-      Put_Line("Token_Class::Process");
+      Visitor.Process_Token(Self);
    end Process;
 
    ----------------------------------------------------------------------------

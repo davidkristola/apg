@@ -624,6 +624,58 @@ package body kv.apg.tests is
    end Run;
 
 
+   package Parse_Visitor_Test_Util is
+      type Visitor_Class is new kv.apg.directives.Directive_Visitor_Class with
+         record
+            S : Natural := 0;
+            T : Natural := 0;
+         end record;
+      overriding procedure Process_Set
+         (Self      : in out Visitor_Class;
+          Directive : in out kv.apg.directives.Set_Class'CLASS);
+
+      overriding procedure Process_Token
+         (Self      : in out Visitor_Class;
+          Directive : in out kv.apg.directives.Token_Class'CLASS);
+   end Parse_Visitor_Test_Util;
+
+   package body Parse_Visitor_Test_Util is
+      overriding procedure Process_Set
+         (Self      : in out Visitor_Class;
+          Directive : in out kv.apg.directives.Set_Class'CLASS) is
+      begin
+         Self.S := Self.S + 1;
+      end Process_Set;
+
+      overriding procedure Process_Token
+         (Self      : in out Visitor_Class;
+          Directive : in out kv.apg.directives.Token_Class'CLASS) is
+      begin
+         Self.T := Self.T + 1;
+      end Process_Token;
+   end Parse_Visitor_Test_Util;
+
+   ----------------------------------------------------------------------------
+   type Parse_Visitor_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Visitor_Test) is
+      V : Parse_Visitor_Test_Util.Visitor_Class;
+      use kv.apg.directives;
+   begin
+      Parse_This(T, "set lex_spec = ""test.ads"";" & Ada.Characters.Latin_1.LF);
+      Parse_This(T, "token foo = 'a' 'b' ?;" & Ada.Characters.Latin_1.LF);
+      Parse_This(T, "pattern pat1 = '0'-'9' + ;" & Ada.Characters.Latin_1.LF);
+      Parse_This(T, "skipover pat2 = (' ' | U0009) + ;" & Ada.Characters.Latin_1.LF);
+      Check_States(T, Errors => 0, Directives => 4);
+
+      T.Parser.Process_Directives(V);
+      T.Assert(V.S = 1, "Expected one set directive visited!");
+      T.Assert(V.T = 3, "Expected three token directives visited!");
+
+      T.Parser.Delete_Directives;
+      T.Assert(T.Parser.Directive_Count = 0, "Undeleted directives ramain!");
+   end Run;
+
+
 
    ----------------------------------------------------------------------------
    type Fast_Transition_Test_Class is abstract new kv.core.ut.Test_Class with
@@ -1830,6 +1882,7 @@ package body kv.apg.tests is
       suite.register(new Parse_Range_2_Token_Test, "Parse_Range_2_Token_Test");
       suite.register(new Parse_Pattern_Token_Test, "Parse_Pattern_Token_Test");
       suite.register(new Parse_Skipover_Token_Test, "Parse_Skipover_Token_Test");
+      suite.register(new Parse_Visitor_Test, "Parse_Visitor_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 
