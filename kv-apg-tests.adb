@@ -15,6 +15,7 @@ with kv.apg.fast;
 with kv.apg.fa.nfa;
 with kv.apg.fa.dfa;
 with kv.apg.fa.nfa.convert;
+with kv.apg.lexgen;
 
 with kv.core.wwstr;
 
@@ -339,7 +340,7 @@ package body kv.apg.tests is
    ----------------------------------------------------------------------------
    type Parser_Test_Class is abstract new Lexer_Test_Class with
       record
-         Parser : kv.apg.parse.Parser_Class;
+         Parser : aliased kv.apg.parse.Parser_Class;
       end record;
 
    ----------------------------------------------------------------------------
@@ -1834,6 +1835,33 @@ package body kv.apg.tests is
 
 
    ----------------------------------------------------------------------------
+   type Base_Lexgen_Test_Class is abstract new Parser_Test_Class with
+      record
+         -- part of base class: Lexer : kv.apg.lex.Lexer_Class;
+         -- part of base class: Parser : aliased kv.apg.parse.Parser_Class;
+         Generator : kv.apg.lexgen.Generator_Class;
+      end record;
+
+   ----------------------------------------------------------------------------
+   overriding procedure Tear_Down(T : in out Base_Lexgen_Test_Class) is
+   begin
+      T.Parser.Delete_Directives;
+   end Tear_Down;
+
+
+   ----------------------------------------------------------------------------
+   type Lexgen_Count_Tokens_Test is new Base_Lexgen_Test_Class with null record;
+   procedure Run(T : in out Lexgen_Count_Tokens_Test) is
+      use kv.apg.lexgen;
+      use Ada.Characters.Latin_1;
+   begin
+      Parse_This(T, "token one = 'a' 'b' 'c';" & LF);
+      T.Generator.Initialize(T.Parser'UNCHECKED_ACCESS);
+      T.Assert(T.Generator.Token_Count = 1, "Should have 1 token");
+   end Run;
+
+
+   ----------------------------------------------------------------------------
    procedure register(suite : in kv.core.ut.Suite_Pointer_Type) is
    begin
       suite.register(new Initial_State_Test, "Initial_State_Test");
@@ -1934,7 +1962,6 @@ package body kv.apg.tests is
 
       suite.register(new Nfa_To_Dfa_1_Test, "Nfa_To_Dfa_1_Test");
 --      suite.register(new XXX, "XXX");
---      suite.register(new XXX, "XXX");
 
       suite.register(new Nfa_To_Cnfa_1_Test, "Nfa_To_Cnfa_1_Test");
       suite.register(new Nfa_To_Cnfa_2_Test, "Nfa_To_Cnfa_2_Test");
@@ -1947,6 +1974,10 @@ package body kv.apg.tests is
       suite.register(new Nfa_To_Cnfa_9_Test, "Nfa_To_Cnfa_9_Test");
       suite.register(new Nfa_To_Cnfa_10_Test, "Nfa_To_Cnfa_10_Test");
       suite.register(new Nfa_To_Cnfa_11_Test, "Nfa_To_Cnfa_11_Test");
+--      suite.register(new XXX, "XXX");
+
+      suite.register(new Lexgen_Count_Tokens_Test, "Lexgen_Count_Tokens_Test");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;
 

@@ -6,6 +6,7 @@ with kv.apg.directives;
 package kv.apg.parse is
 
    type Parser_Class is tagged private;
+   type Parser_Pointer_Type is access all Parser_Class;
 
    procedure Initialise
       (Self : in out Parser_Class);
