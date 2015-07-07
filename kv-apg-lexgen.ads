@@ -16,6 +16,7 @@ private
    type Generator_Class is tagged
       record
          Parser : kv.apg.parse.Parser_Pointer_Type;
+         Tokens : Natural;
       end record;
 
 end kv.apg.lexgen;
