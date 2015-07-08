@@ -48,11 +48,11 @@ package kv.apg.directives is
 
    procedure Process_Set
       (Self      : in out Directive_Visitor_Class;
-       Directive : in out Set_Class'CLASS) is abstract;
+       Directive : in out Set_Class'CLASS) is null;
 
    procedure Process_Token
       (Self      : in out Directive_Visitor_Class;
-       Directive : in out Token_Class'CLASS) is abstract;
+       Directive : in out Token_Class'CLASS) is null;
 
 private
 
