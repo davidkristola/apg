@@ -1,8 +1,13 @@
 
 with kv.apg.parse;
+with kv.apg.enum;
 
 package kv.apg.lexgen is
 
+   -- The goal of this generator is to create a collection of Ada source files
+   -- that will input a UTF-8 stream of text and output a stream of tokens.
+   -- Tokens are represented as they are in this program.
+   --
    type Generator_Class is tagged private;
 
    procedure Initialize

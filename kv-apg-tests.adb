@@ -16,6 +16,7 @@ with kv.apg.fa.nfa;
 with kv.apg.fa.dfa;
 with kv.apg.fa.nfa.convert;
 with kv.apg.lexgen;
+with kv.apg.enum;
 
 with kv.core.wwstr;
 
@@ -1835,6 +1836,36 @@ package body kv.apg.tests is
 
 
    ----------------------------------------------------------------------------
+   type Enum_Test_Class is abstract new kv.core.ut.Test_Class with
+      record
+         Enum : kv.apg.enum.Enumeration_Class;
+      end record;
+
+   ----------------------------------------------------------------------------
+   type Init_Enum_Test is new Enum_Test_Class with null record;
+   procedure Run(T : in out Init_Enum_Test) is
+      use kv.apg.enum;
+   begin
+      T.Enum.Initialize;
+      T.Assert(T.Enum.Get_Count = 0, "Should have 0 enumerations");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Append_Count_Enum_Test is new Enum_Test_Class with null record;
+   procedure Run(T : in out Append_Count_Enum_Test) is
+      use kv.apg.enum;
+   begin
+      T.Enum.Initialize;
+      T.Enum.Append(+"one");
+      T.Enum.Append(+"two");
+      T.Enum.Append(+"three");
+      T.Assert(T.Enum.Get_Count = 3, "Should have 3 enumerations");
+   end Run;
+
+
+
+
+   ----------------------------------------------------------------------------
    type Base_Lexgen_Test_Class is abstract new Parser_Test_Class with
       record
          -- part of base class: Lexer : kv.apg.lex.Lexer_Class;
@@ -1974,6 +2005,13 @@ package body kv.apg.tests is
       suite.register(new Nfa_To_Cnfa_9_Test, "Nfa_To_Cnfa_9_Test");
       suite.register(new Nfa_To_Cnfa_10_Test, "Nfa_To_Cnfa_10_Test");
       suite.register(new Nfa_To_Cnfa_11_Test, "Nfa_To_Cnfa_11_Test");
+--      suite.register(new XXX, "XXX");
+
+      suite.register(new Init_Enum_Test, "Init_Enum_Test");
+      suite.register(new Append_Count_Enum_Test, "Append_Count_Enum_Test");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 
       suite.register(new Lexgen_Count_Tokens_Test, "Lexgen_Count_Tokens_Test");
