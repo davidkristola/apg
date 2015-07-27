@@ -17,6 +17,7 @@ with kv.apg.fa.dfa;
 with kv.apg.fa.nfa.convert;
 with kv.apg.lexgen;
 with kv.apg.enum;
+with kv.apg.writer.buffer;
 
 with kv.core.wwstr;
 
@@ -1833,12 +1834,52 @@ package body kv.apg.tests is
    end Run;
 
 
+   ----------------------------------------------------------------------------
+   type Buffer_Writer_Test_Class is abstract new kv.core.ut.Test_Class with
+      record
+         Buff : kv.apg.writer.buffer.Buffer_Writer_Class;
+      end record;
+
+   ----------------------------------------------------------------------------
+   type Write_Line_BW_Test is new Buffer_Writer_Test_Class with null record;
+   procedure Run(T : in out Write_Line_BW_Test) is
+   begin
+      T.Buff.Write_Line("This is a test");
+      T.Assert(T.Buff.Line_Count = 1, "Should have 1 line");
+      T.Assert(T.Buff.Get_Line(1) = To_String_Type("This is a test"), "Line 1 does not match");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Write_Some_BW_Test is new Buffer_Writer_Test_Class with null record;
+   procedure Run(T : in out Write_Some_BW_Test) is
+   begin
+      T.Buff.Write_Some("This ");
+      T.Buff.Write_Some(      "is a");
+      T.Buff.Write_Some(          " test");
+      T.Assert(T.Buff.Line_Count = 0, "Should have 0 lines (line never completed)");
+      T.Buff.New_Line;
+      T.Assert(T.Buff.Line_Count = 1, "Should have 1 line");
+      T.Assert(T.Buff.Get_Line(1) = To_String_Type("This is a test"), "Line 1 does not match");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Mix_Line_BW_Test is new Buffer_Writer_Test_Class with null record;
+   procedure Run(T : in out Mix_Line_BW_Test) is
+   begin
+      T.Buff.Write_Some("This ");
+      T.Buff.Write_Line(      "is a test");
+      T.Assert(T.Buff.Line_Count = 1, "Should have 1 line");
+      T.Buff.New_Line(2);
+      T.Assert(T.Buff.Line_Count = 3, "Should have 3 line");
+      T.Assert(T.Buff.Get_Line(1) = To_String_Type("This is a test"), "Line 1 does not match");
+   end Run;
 
 
    ----------------------------------------------------------------------------
    type Enum_Test_Class is abstract new kv.core.ut.Test_Class with
       record
          Enum : kv.apg.enum.Enumeration_Class;
+         Buff : kv.apg.writer.buffer.Buffer_Writer_Class;
       end record;
 
    ----------------------------------------------------------------------------
@@ -1846,7 +1887,7 @@ package body kv.apg.tests is
    procedure Run(T : in out Init_Enum_Test) is
       use kv.apg.enum;
    begin
-      T.Enum.Initialize;
+      T.Enum.Initialize(+"Enum_Type");
       T.Assert(T.Enum.Get_Count = 0, "Should have 0 enumerations");
    end Run;
 
@@ -1855,11 +1896,24 @@ package body kv.apg.tests is
    procedure Run(T : in out Append_Count_Enum_Test) is
       use kv.apg.enum;
    begin
-      T.Enum.Initialize;
+      T.Enum.Initialize(+"Enum_Type");
       T.Enum.Append(+"one");
       T.Enum.Append(+"two");
       T.Enum.Append(+"three");
       T.Assert(T.Enum.Get_Count = 3, "Should have 3 enumerations");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Write_Enum_Test is new Enum_Test_Class with null record;
+   procedure Run(T : in out Write_Enum_Test) is
+      use kv.apg.enum;
+   begin
+      T.Enum.Initialize(+"Enum_Type");
+      T.Enum.Append(+"Alpha");
+      T.Enum.Append(+"Beta");
+      T.Enum.Append(+"Gama");
+      T.Enum.Write(T.Buff);
+      T.Assert(T.Buff.Line_Count = 4, "Should have 4 line");
    end Run;
 
 
@@ -2007,9 +2061,13 @@ package body kv.apg.tests is
       suite.register(new Nfa_To_Cnfa_11_Test, "Nfa_To_Cnfa_11_Test");
 --      suite.register(new XXX, "XXX");
 
+      suite.register(new Write_Line_BW_Test, "Write_Line_BW_Test");
+      suite.register(new Write_Some_BW_Test, "Write_Some_BW_Test");
+      suite.register(new Mix_Line_BW_Test, "Mix_Line_BW_Test");
+
       suite.register(new Init_Enum_Test, "Init_Enum_Test");
       suite.register(new Append_Count_Enum_Test, "Append_Count_Enum_Test");
---      suite.register(new XXX, "XXX");
+      suite.register(new Write_Enum_Test, "Write_Enum_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");

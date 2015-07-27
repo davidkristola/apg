@@ -2,18 +2,25 @@ private with Ada.Containers.Doubly_Linked_Lists;
 
 with kv.core.wwstr; use kv.core.wwstr;
 
+with kv.apg.writer;
+
 package kv.apg.enum is
 
    type Enumeration_Class is tagged private;
 
    procedure Initialize
-      (Self : in out Enumeration_Class);
+      (Self : in out Enumeration_Class;
+       Name : in     String_Type);
 
    procedure Append
       (Self : in out Enumeration_Class;
        Name : in     String_Type);
 
    function Get_Count(Self : Enumeration_Class) return Natural;
+
+   procedure Write
+      (Self   : in     Enumeration_Class;
+       Writer : in     kv.apg.writer.Writer_Class'CLASS);
 
 private
 
@@ -27,6 +34,7 @@ private
 
    type Enumeration_Class is tagged
       record
+         Name   : String_Type;
          Values : Value_List.List;
          First  : Integer;
          Last   : Integer;
