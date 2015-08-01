@@ -1911,9 +1911,13 @@ package body kv.apg.tests is
       T.Enum.Initialize(+"Enum_Type");
       T.Enum.Append(+"Alpha");
       T.Enum.Append(+"Beta");
-      T.Enum.Append(+"Gama");
+      T.Enum.Append(+"Gamma");
       T.Enum.Write(T.Buff);
       T.Assert(T.Buff.Line_Count = 4, "Should have 4 line");
+      T.Assert(T.Buff.Get_Line(1) = To_String_Type("   type Enum_Type is"), "Should be type dec, is '" & To_UTF(+T.Buff.Get_Line(1)) & "'");
+      T.Assert(T.Buff.Get_Line(2) = To_String_Type("      (Alpha,"), "Should be Alpha, is '" & To_UTF(+T.Buff.Get_Line(2)) & "'");
+      T.Assert(T.Buff.Get_Line(3) = To_String_Type("       Beta,"), "Should be Alpha, is '" & To_UTF(+T.Buff.Get_Line(3)) & "'");
+      T.Assert(T.Buff.Get_Line(4) = To_String_Type("       Gamma);"), "Should be Alpha, is '" & To_UTF(+T.Buff.Get_Line(4)) & "'");
    end Run;
 
 

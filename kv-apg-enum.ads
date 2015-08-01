@@ -20,7 +20,7 @@ package kv.apg.enum is
 
    procedure Write
       (Self   : in     Enumeration_Class;
-       Writer : in     kv.apg.writer.Writer_Class'CLASS);
+       Writer : in out kv.apg.writer.Writer_Class'CLASS);
 
 private
 

@@ -32,9 +32,23 @@ package body kv.apg.enum is
    ----------------------------------------------------------------------------
    procedure Write
       (Self   : in     Enumeration_Class;
-       Writer : in     kv.apg.writer.Writer_Class'CLASS) is
+       Writer : in out kv.apg.writer.Writer_Class'CLASS) is
+
+      Count : Positive := 1;
+      Last : Natural := Self.Get_Count;
+
    begin
-   null;
+      Writer.Write_Line("   type " & To_UTF(+Self.Name) & " is");
+      for V of Self.Values loop
+         if Count = 1 then
+            Writer.Write_Line("      (" & To_UTF(+V.Name) & ",");
+         elsif Count = Last then
+            Writer.Write_Line("       " & To_UTF(+V.Name) & ");");
+         else
+            Writer.Write_Line("       " & To_UTF(+V.Name) & ",");
+         end if;
+         Count := Count + 1;
+      end loop;
    end Write;
 
 end kv.apg.enum;
