@@ -1929,6 +1929,7 @@ package body kv.apg.tests is
          -- part of base class: Lexer : kv.apg.lex.Lexer_Class;
          -- part of base class: Parser : aliased kv.apg.parse.Parser_Class;
          Generator : kv.apg.lexgen.Generator_Class;
+         Buff : kv.apg.writer.buffer.Buffer_Writer_Class;
       end record;
 
    ----------------------------------------------------------------------------
@@ -1936,6 +1937,15 @@ package body kv.apg.tests is
    begin
       T.Parser.Delete_Directives;
    end Tear_Down;
+
+   ----------------------------------------------------------------------------
+   procedure Test_Line
+      (T      : in out Base_Lexgen_Test_Class'CLASS;
+       Number : in     Positive;
+       Line   : in     String) is
+   begin
+      T.Assert(T.Buff.Get_Line(Number) = To_String_Type(Line), "Should be '"&Line&"', is '" & To_UTF(+T.Buff.Get_Line(Number)) & "'");
+   end Test_Line;
 
 
    ----------------------------------------------------------------------------
@@ -1945,9 +1955,28 @@ package body kv.apg.tests is
       use Ada.Characters.Latin_1;
    begin
       Parse_This(T, "token one = 'a' 'b' 'c';" & LF);
-      T.Generator.Initialize(T.Parser'UNCHECKED_ACCESS);
+      T.Generator.Initialize(T.Parser'UNCHECKED_ACCESS, +"My_Package", +"My_Enum", +"My_FA");
       T.Assert(T.Generator.Token_Count = 1, "Should have 1 token");
    end Run;
+
+   ----------------------------------------------------------------------------
+   type Lexgen_One_Token_Recognizer_Test is new Base_Lexgen_Test_Class with null record;
+   procedure Run(T : in out Lexgen_One_Token_Recognizer_Test) is
+      use kv.apg.lexgen;
+      use Ada.Characters.Latin_1;
+      Line_0 : constant String := ""; -- Empty lines
+      Line_1 : constant String := "-- This file is machine generated. Do not edit.";
+      Line_3 : constant String := "package my_lex_example is";
+   begin
+      Parse_This(T, "token one = 'a' 'b' 'c';" & LF);
+      T.Generator.Initialize(T.Parser'UNCHECKED_ACCESS, +"my_lex_example", +"Key_Type", +"My_FA");
+      T.Generator.Write_Spec(T.Buff);
+      Test_Line(T, 1, Line_1);
+      Test_Line(T, 2, Line_0);
+      Test_Line(T, 3, Line_3);
+   end Run;
+
+
 
 
    ----------------------------------------------------------------------------
@@ -2077,7 +2106,7 @@ package body kv.apg.tests is
 --      suite.register(new XXX, "XXX");
 
       suite.register(new Lexgen_Count_Tokens_Test, "Lexgen_Count_Tokens_Test");
---      suite.register(new XXX, "XXX");
+      suite.register(new Lexgen_One_Token_Recognizer_Test, "Lexgen_One_Token_Recognizer_Test");
 --      suite.register(new XXX, "XXX");
    end register;
 
