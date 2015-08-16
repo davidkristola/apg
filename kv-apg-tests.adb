@@ -18,6 +18,7 @@ with kv.apg.fa.nfa.convert;
 with kv.apg.lexgen;
 with kv.apg.enum;
 with kv.apg.writer.buffer;
+with kv.apg.rewriter;
 
 with kv.core.wwstr;
 
@@ -1955,7 +1956,7 @@ package body kv.apg.tests is
       use Ada.Characters.Latin_1;
    begin
       Parse_This(T, "token one = 'a' 'b' 'c';" & LF);
-      T.Generator.Initialize(T.Parser'UNCHECKED_ACCESS, +"My_Package", +"My_Enum", +"My_FA");
+      T.Generator.Initialize(T.Parser'UNCHECKED_ACCESS, +"My_Package");
       T.Assert(T.Generator.Token_Count = 1, "Should have 1 token");
    end Run;
 
@@ -1968,13 +1969,86 @@ package body kv.apg.tests is
       Line_1 : constant String := "-- This file is machine generated. Do not edit.";
       Line_3 : constant String := "package my_lex_example is";
    begin
-      Parse_This(T, "token one = 'a' 'b' 'c';" & LF);
-      T.Generator.Initialize(T.Parser'UNCHECKED_ACCESS, +"my_lex_example", +"Key_Type", +"My_FA");
+      Parse_This(T, "token One = 'a' 'b' 'c';" & LF);
+      T.Generator.Initialize(T.Parser'UNCHECKED_ACCESS, +"my_lex_example");
       T.Generator.Write_Spec(T.Buff);
       Test_Line(T, 1, Line_1);
       Test_Line(T, 2, Line_0);
       Test_Line(T, 3, Line_3);
    end Run;
+
+
+   package foo_to_bar is
+      type Foo_Bar_Class is new kv.apg.rewriter.Text_Converter_Class with null record;
+      overriding procedure Convert
+         (Self      : in out Foo_Bar_Class;
+          Original  : in     String_Type;
+          Converted :    out String_Type);
+   end foo_to_bar;
+   package body foo_to_bar is
+      overriding procedure Convert
+         (Self      : in out Foo_Bar_Class;
+          Original  : in     String_Type;
+          Converted :    out String_Type) is
+      begin
+         if Original = +"Foo" then
+            Converted := +"Bar";
+         elsif Original = +"3" then
+            Converted := +"«Foo»3«Unk»";
+         else
+            Converted := +"Zing";
+         end if;
+      end Convert;
+   end foo_to_bar;
+
+   ----------------------------------------------------------------------------
+   type Rewriter_No_Change_Test is new Base_Lexgen_Test_Class with null record;
+   procedure Run(T : in out Rewriter_No_Change_Test) is
+      Cnv : foo_to_bar.Foo_Bar_Class;
+      Rew : kv.apg.rewriter.Rewriter_Class;
+      Buf : kv.apg.writer.buffer.Buffer_Writer_Class;
+      Line_1 : constant String := "This is a test";
+   begin
+      Buf.Write_Line(Line_1);
+      Rew.Apply(Buf, Cnv, T.Buff);
+      Test_Line(T, 1, Line_1);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Rewriter_Change_Test is new Base_Lexgen_Test_Class with null record;
+   procedure Run(T : in out Rewriter_Change_Test) is
+      Cnv : foo_to_bar.Foo_Bar_Class;
+      Rew : kv.apg.rewriter.Rewriter_Class;
+      Buf : kv.apg.writer.buffer.Buffer_Writer_Class;
+      Line_1_o : constant String := "This is a test";
+      Line_2_o : constant String := "Change «Foo» into Bar";
+      Line_3_o : constant String := "And change «Unk» into Zing.";
+      Line_2_e : constant String := "Change Bar into Bar";
+      Line_3_e : constant String := "And change Zing into Zing.";
+   begin
+      Buf.Write_Line(Line_1_o);
+      Buf.Write_Line(Line_2_o);
+      Buf.Write_Line(Line_3_o);
+      Rew.Apply(Buf, Cnv, T.Buff);
+      Test_Line(T, 1, Line_1_o);
+      Test_Line(T, 2, Line_2_e);
+      Test_Line(T, 3, Line_3_e);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Rewriter_Recursive_Test is new Base_Lexgen_Test_Class with null record;
+   procedure Run(T : in out Rewriter_Recursive_Test) is
+      Cnv : foo_to_bar.Foo_Bar_Class;
+      Rew : kv.apg.rewriter.Rewriter_Class;
+      Buf : kv.apg.writer.buffer.Buffer_Writer_Class;
+      Line_1 : constant String := "This is a «Foo» test of «Unk» and «3»";
+      Expected : constant String := "This is a Bar test of Zing and Bar3Zing";
+   begin
+      Buf.Write_Line(Line_1);
+      Rew.Apply(Buf, Cnv, T.Buff);
+      Test_Line(T, 1, Expected);
+   end Run;
+
 
 
 
@@ -2107,6 +2181,10 @@ package body kv.apg.tests is
 
       suite.register(new Lexgen_Count_Tokens_Test, "Lexgen_Count_Tokens_Test");
       suite.register(new Lexgen_One_Token_Recognizer_Test, "Lexgen_One_Token_Recognizer_Test");
+      suite.register(new Rewriter_No_Change_Test, "Rewriter_No_Change_Test");
+      suite.register(new Rewriter_Change_Test, "Rewriter_Change_Test");
+      suite.register(new Rewriter_Recursive_Test, "Rewriter_Recursive_Test");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;
 

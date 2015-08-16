@@ -34,17 +34,13 @@ package body kv.apg.lexgen is
 
    ----------------------------------------------------------------------------
    procedure Initialize
-      (Self            : in out Generator_Class;
-       Parser          : in     kv.apg.parse.Parser_Pointer_Type;
-       Package_Name    : in     String_Type;
-       Token_Enum_Name : in     String_Type;
-       FA_Name         : in     String_Type) is
+      (Self         : in out Generator_Class;
+       Parser       : in     kv.apg.parse.Parser_Pointer_Type;
+       Package_Name : in     String_Type) is
       V : Token_Count_Util.Visitor_Class;
    begin
       Self.Parser := Parser;
       Self.Package_Name := Package_Name;
-      Self.Token_Enum_Name := Token_Enum_Name;
-      Self.FA_Name := FA_Name;
       Parser.Process_Directives(V);
       Self.Tokens := V.Get_Token_Count;
    end Initialize;
