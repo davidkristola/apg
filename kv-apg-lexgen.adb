@@ -46,6 +46,15 @@ package body kv.apg.lexgen is
    end Initialize;
 
    ----------------------------------------------------------------------------
+   overriding procedure Convert
+      (Self      : in out Generator_Class;
+       Original  : in     String_Type;
+       Converted :    out String_Type) is
+   begin
+      Converted := +"ERROR";
+   end Convert;
+
+   ----------------------------------------------------------------------------
    function Token_Count(Self : Generator_Class) return Natural is
    begin
       return Self.Tokens;

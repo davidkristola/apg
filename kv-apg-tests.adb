@@ -1961,6 +1961,19 @@ package body kv.apg.tests is
    end Run;
 
    ----------------------------------------------------------------------------
+   type Lexgen_Package_Name_Test is new Base_Lexgen_Test_Class with null record;
+   procedure Run(T : in out Lexgen_Package_Name_Test) is
+      use kv.apg.lexgen;
+      Template_Line : constant String := "package_name";
+      Expected_Line : constant String := "my_lex_example";
+      Produced_Line : String_Type;
+   begin
+      T.Generator.Initialize(T.Parser'UNCHECKED_ACCESS, +"my_lex_example");
+      T.Generator.Convert(To_String_Type(Template_Line), Produced_Line);
+      T.Assert(Produced_Line = To_String_Type(Expected_Line), "Produced line was wrong, got:" & To_UTF(+Produced_Line));
+   end Run;
+
+   ----------------------------------------------------------------------------
    type Lexgen_One_Token_Recognizer_Test is new Base_Lexgen_Test_Class with null record;
    procedure Run(T : in out Lexgen_One_Token_Recognizer_Test) is
       use kv.apg.lexgen;
@@ -2049,7 +2062,22 @@ package body kv.apg.tests is
       Test_Line(T, 1, Expected);
    end Run;
 
-
+   ----------------------------------------------------------------------------
+   type Rewriter_Helper_Test is new Base_Lexgen_Test_Class with null record;
+   procedure Run(T : in out Rewriter_Helper_Test) is
+      a : constant String := "This is a ";
+      b : constant String :=            "Foo";
+      c : constant String :=                " test";
+      Line_1 : constant String := a & "«" & b & "»" & c;
+      Temp_Line : kv.apg.rewriter.Template_Line_Class;
+   begin
+      Temp_Line.Initialize(To_String_Type(Line_1));
+      T.Assert(Temp_Line.Has_Template, "Expected Has_Template true");
+      T.Assert(Temp_Line.Get_Before = To_String_Type(a), "Expected Get_Before='"&a&"', got '"&To_UTF(+Temp_Line.Get_Before)&"'.");
+      T.Assert(Temp_Line.Get_Template = To_String_Type(b), "Expected Get_Template='"&b&"', got '"&To_UTF(+Temp_Line.Get_Template)&"'.");
+      T.Assert(Temp_Line.Get_After = To_String_Type(c), "Expected Get_After='"&c&"', got '"&To_UTF(+Temp_Line.Get_After)&"'.");
+      T.Assert(Temp_Line.Get_All = To_String_Type(Line_1), "Expected Get_All='"&Line_1&"', got '"&To_UTF(+Temp_Line.Get_All)&"'.");
+   end Run;
 
 
 
@@ -2180,10 +2208,13 @@ package body kv.apg.tests is
 --      suite.register(new XXX, "XXX");
 
       suite.register(new Lexgen_Count_Tokens_Test, "Lexgen_Count_Tokens_Test");
+      suite.register(new Lexgen_Package_Name_Test, "Lexgen_Package_Name_Test");
       suite.register(new Lexgen_One_Token_Recognizer_Test, "Lexgen_One_Token_Recognizer_Test");
       suite.register(new Rewriter_No_Change_Test, "Rewriter_No_Change_Test");
       suite.register(new Rewriter_Change_Test, "Rewriter_Change_Test");
       suite.register(new Rewriter_Recursive_Test, "Rewriter_Recursive_Test");
+      suite.register(new Rewriter_Helper_Test, "Rewriter_Helper_Test");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;
