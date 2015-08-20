@@ -1,9 +1,12 @@
 
+with Ada.Strings.Wide_Wide_Unbounded;
+
 with kv.apg.enum;
 with kv.apg.directives;
 
 package body kv.apg.lexgen is
 
+   use Ada.Strings.Wide_Wide_Unbounded;
 
    package Token_Count_Util is
       type Visitor_Class is new kv.apg.directives.Directive_Visitor_Class with private;
@@ -46,12 +49,33 @@ package body kv.apg.lexgen is
    end Initialize;
 
    ----------------------------------------------------------------------------
+   overriding function Is_Multi_Line(Self : Generator_Class; Original : String_Type) return Boolean is
+   begin
+      return False;
+   end Is_Multi_Line;
+
+   ----------------------------------------------------------------------------
    overriding procedure Convert
       (Self      : in out Generator_Class;
-       Original  : in     String_Type;
+       Template  : in     String_Type;
        Converted :    out String_Type) is
    begin
+      if Template = +"package_name" then
+         Converted := Self.Package_Name;
+         return;
+      end if;
       Converted := +"ERROR";
+   end Convert;
+
+   ----------------------------------------------------------------------------
+   overriding function Convert
+      (Self      : in out Generator_Class;
+       Prefix    : in     String_Type;
+       Postfix   : in     String_Type;
+       Template  : in     String_Type) return kv.apg.writer.buffer.Buffer_Class'CLASS is
+      Empty : kv.apg.writer.buffer.Buffer_Writer_Class;
+   begin
+      return kv.apg.writer.buffer.Buffer_Class'CLASS(Empty);
    end Convert;
 
    ----------------------------------------------------------------------------

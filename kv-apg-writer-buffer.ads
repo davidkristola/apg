@@ -5,7 +5,13 @@ with kv.core.wwstr; use kv.core.wwstr;
 
 package kv.apg.writer.buffer is
 
-   type Buffer_Writer_Class is new Writer_Class with private;
+   type Buffer_Class is interface;
+   function Line_Count(Self : Buffer_Class) return Natural is abstract;
+   function Get_Line
+      (Self : Buffer_Class;
+       Line : Positive) return String_Type is abstract;
+
+   type Buffer_Writer_Class is new Writer_Class and Buffer_Class with private;
 
    overriding procedure Write_Line
       (Self : in out Buffer_Writer_Class;
@@ -25,10 +31,10 @@ package kv.apg.writer.buffer is
       (Self  : in out Buffer_Writer_Class;
        Count : in     Positive := 1);
 
-   not overriding function Line_Count
+   overriding function Line_Count
       (Self : Buffer_Writer_Class) return Natural;
 
-   not overriding function Get_Line
+   overriding function Get_Line
       (Self : Buffer_Writer_Class;
        Line : Positive) return String_Type;
 
@@ -39,7 +45,7 @@ private
        Element_Type => String_Type,
        "=" => Ada.Strings.Wide_Wide_Unbounded."=");
 
-   type Buffer_Writer_Class is new Writer_Class with
+   type Buffer_Writer_Class is new Writer_Class and Buffer_Class with
       record
          Unfinished : String_Type;
          Lines      : String_Vector.Vector;

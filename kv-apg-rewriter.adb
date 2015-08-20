@@ -23,13 +23,34 @@ package body kv.apg.rewriter is
 
       Working     : Template_Line_Class;
       Replacement : String_Type;
+      Empty : kv.apg.writer.buffer.Buffer_Writer_Class;
+      Temp : kv.apg.writer.buffer.Buffer_Writer_Class;
+
+      procedure Transfer(Multi_Lines : kv.apg.writer.buffer.Buffer_Class'CLASS) is
+      begin
+         Temp := Empty;
+         for I in 1 .. Multi_Lines.Line_Count loop
+            Temp.Write_Line(Multi_Lines.Get_Line(I));
+         end loop;
+      end Transfer;
 
    begin
       for I in 1..Source.Line_Count loop
          Working.Initialize(Source.Get_Line(I));
          while Working.Has_Template loop
-            Converter.Convert(Working.Get_Template, Replacement);
-            Working.Initialize(Working.Get_Before & Replacement & Working.Get_After);
+            if Converter.Is_Multi_Line(Working.Get_Template) then
+               Transfer(Converter.Convert
+                  (Prefix => Working.Get_Before,
+                   Postfix => Working.Get_After,
+                   Template => Working.Get_Template));
+               for I in 1 .. Temp.Line_Count - 1 loop
+                  Destination.Write_Line(Temp.Get_Line(I));
+               end loop;
+               Working.Initialize(Temp.Get_Line(Temp.Line_Count));
+            else
+               Converter.Convert(Working.Get_Template, Replacement);
+               Working.Initialize(Working.Get_Before & Replacement & Working.Get_After);
+            end if;
          end loop;
          Destination.Write_Line(Working.Get_All);
       end loop;

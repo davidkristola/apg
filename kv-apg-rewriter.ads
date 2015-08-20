@@ -5,11 +5,19 @@ with kv.apg.writer.buffer;
 
 package kv.apg.rewriter is
 
-   type Text_Converter_Class is abstract tagged null record;
+   Wrong_Convert_Error : exception;
+
+   type Text_Converter_Class is interface;
+   function Is_Multi_Line(Self : Text_Converter_Class; Original : String_Type) return Boolean is abstract;
    procedure Convert
       (Self      : in out Text_Converter_Class;
-       Original  : in     String_Type;
+       Template  : in     String_Type;
        Converted :    out String_Type) is abstract;
+   function Convert
+      (Self      : in out Text_Converter_Class;
+       Prefix    : in     String_Type;
+       Postfix   : in     String_Type;
+       Template  : in     String_Type) return kv.apg.writer.buffer.Buffer_Class'CLASS is abstract;
 
    type Rewriter_Class is tagged null record;
    procedure Apply

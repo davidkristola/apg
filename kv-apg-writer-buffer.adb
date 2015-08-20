@@ -47,14 +47,14 @@ package body kv.apg.writer.buffer is
    end New_Line;
 
    ----------------------------------------------------------------------------
-   not overriding function Line_Count
+   overriding function Line_Count
       (Self : Buffer_Writer_Class) return Natural is
    begin
       return Natural(Self.Lines.Length);
    end Line_Count;
 
    ----------------------------------------------------------------------------
-   not overriding function Get_Line
+   overriding function Get_Line
       (Self : Buffer_Writer_Class;
        Line : Positive) return String_Type is
    begin

@@ -1993,24 +1993,51 @@ package body kv.apg.tests is
 
    package foo_to_bar is
       type Foo_Bar_Class is new kv.apg.rewriter.Text_Converter_Class with null record;
+      overriding function Is_Multi_Line(Self : Foo_Bar_Class; Original : String_Type) return Boolean;
       overriding procedure Convert
          (Self      : in out Foo_Bar_Class;
-          Original  : in     String_Type;
+          Template  : in     String_Type;
           Converted :    out String_Type);
+      overriding function Convert
+         (Self      : in out Foo_Bar_Class;
+          Prefix    : in     String_Type;
+          Postfix   : in     String_Type;
+          Template  : in     String_Type) return kv.apg.writer.buffer.Buffer_Class'CLASS;
    end foo_to_bar;
    package body foo_to_bar is
+      overriding function Is_Multi_Line(Self : Foo_Bar_Class; Original : String_Type) return Boolean is
+      begin
+         return Original = +"Multi";
+      end Is_Multi_Line;
       overriding procedure Convert
          (Self      : in out Foo_Bar_Class;
-          Original  : in     String_Type;
+          Template  : in     String_Type;
           Converted :    out String_Type) is
       begin
-         if Original = +"Foo" then
+         if Template = +"Foo" then
             Converted := +"Bar";
-         elsif Original = +"3" then
+         elsif Template = +"3" then
             Converted := +"«Foo»3«Unk»";
+         elsif Template = +"Multi" then
+            raise kv.apg.rewriter.Wrong_Convert_Error;
          else
             Converted := +"Zing";
          end if;
+      end Convert;
+      overriding function Convert
+         (Self      : in out Foo_Bar_Class;
+          Prefix    : in     String_Type;
+          Postfix   : in     String_Type;
+          Template  : in     String_Type) return kv.apg.writer.buffer.Buffer_Class'CLASS is
+         Ott : kv.apg.writer.buffer.Buffer_Writer_Class;
+      begin
+         if Template /= +"Multi" then
+            raise kv.apg.rewriter.Wrong_Convert_Error;
+         end if;
+         Ott.Write_Line("One");
+         Ott.Write_Line("Two");
+         Ott.Write_Line("Three");
+         return kv.apg.writer.buffer.Buffer_Class'CLASS(Ott);
       end Convert;
    end foo_to_bar;
 
@@ -2060,6 +2087,27 @@ package body kv.apg.tests is
       Buf.Write_Line(Line_1);
       Rew.Apply(Buf, Cnv, T.Buff);
       Test_Line(T, 1, Expected);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Rewriter_Multi_Change_Test is new Base_Lexgen_Test_Class with null record;
+   procedure Run(T : in out Rewriter_Multi_Change_Test) is
+      Cnv : foo_to_bar.Foo_Bar_Class;
+      Rew : kv.apg.rewriter.Rewriter_Class;
+      Buf : kv.apg.writer.buffer.Buffer_Writer_Class;
+      Line_1_o : constant String := "This is a test";
+      Line_2_o : constant String := "«Multi»";
+      Line_3_o : constant String := "And change «Unk» into Zing.";
+      Line_2_e : constant String := "One";
+      Line_5_e : constant String := "And change Zing into Zing.";
+   begin
+      Buf.Write_Line(Line_1_o);
+      Buf.Write_Line(Line_2_o);
+      Buf.Write_Line(Line_3_o);
+      Rew.Apply(Buf, Cnv, T.Buff);
+      Test_Line(T, 1, Line_1_o);
+      Test_Line(T, 2, Line_2_e);
+      Test_Line(T, 5, Line_5_e);
    end Run;
 
    ----------------------------------------------------------------------------
@@ -2205,7 +2253,6 @@ package body kv.apg.tests is
       suite.register(new Write_Enum_Test, "Write_Enum_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
---      suite.register(new XXX, "XXX");
 
       suite.register(new Lexgen_Count_Tokens_Test, "Lexgen_Count_Tokens_Test");
       suite.register(new Lexgen_Package_Name_Test, "Lexgen_Package_Name_Test");
@@ -2213,6 +2260,7 @@ package body kv.apg.tests is
       suite.register(new Rewriter_No_Change_Test, "Rewriter_No_Change_Test");
       suite.register(new Rewriter_Change_Test, "Rewriter_Change_Test");
       suite.register(new Rewriter_Recursive_Test, "Rewriter_Recursive_Test");
+      suite.register(new Rewriter_Multi_Change_Test, "Rewriter_Multi_Change_Test");
       suite.register(new Rewriter_Helper_Test, "Rewriter_Helper_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");

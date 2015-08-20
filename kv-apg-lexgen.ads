@@ -3,6 +3,7 @@ with kv.core.wwstr; use kv.core.wwstr;
 with kv.apg.parse;
 with kv.apg.writer;
 with kv.apg.rewriter;
+with kv.apg.writer.buffer;
 
 package kv.apg.lexgen is
 
@@ -17,10 +18,18 @@ package kv.apg.lexgen is
        Parser       : in     kv.apg.parse.Parser_Pointer_Type;
        Package_Name : in     String_Type);
 
+   overriding function Is_Multi_Line(Self : Generator_Class; Original : String_Type) return Boolean;
+
    overriding procedure Convert
       (Self      : in out Generator_Class;
-       Original  : in     String_Type;
+       Template  : in     String_Type;
        Converted :    out String_Type);
+
+   overriding function Convert
+      (Self      : in out Generator_Class;
+       Prefix    : in     String_Type;
+       Postfix   : in     String_Type;
+       Template  : in     String_Type) return kv.apg.writer.buffer.Buffer_Class'CLASS;
 
    function Token_Count(Self : Generator_Class) return Natural;
 
