@@ -1966,11 +1966,12 @@ package body kv.apg.tests is
       use kv.apg.lexgen;
       Template_Line : constant String := "package_name";
       Expected_Line : constant String := "my_lex_example";
-      Produced_Line : String_Type;
+      empty : String_Type;
+      Buf : kv.apg.writer.buffer.Buffer_Writer_Class;
    begin
       T.Generator.Initialize(T.Parser'UNCHECKED_ACCESS, +"my_lex_example");
-      T.Generator.Convert(To_String_Type(Template_Line), Produced_Line);
-      T.Assert(Produced_Line = To_String_Type(Expected_Line), "Produced line was wrong, got:" & To_UTF(+Produced_Line));
+      Buf := kv.apg.writer.buffer.Buffer_Writer_Class(T.Generator.Convert(empty, empty, To_String_Type(Template_Line)));
+      T.Assert(Buf.Get_Line(1) = To_String_Type(Expected_Line), "Produced line was wrong, got:" & To_UTF(+Buf.Get_Line(1)));
    end Run;
 
    ----------------------------------------------------------------------------
@@ -1993,11 +1994,6 @@ package body kv.apg.tests is
 
    package foo_to_bar is
       type Foo_Bar_Class is new kv.apg.rewriter.Text_Converter_Class with null record;
-      overriding function Is_Multi_Line(Self : Foo_Bar_Class; Original : String_Type) return Boolean;
-      overriding procedure Convert
-         (Self      : in out Foo_Bar_Class;
-          Template  : in     String_Type;
-          Converted :    out String_Type);
       overriding function Convert
          (Self      : in out Foo_Bar_Class;
           Prefix    : in     String_Type;
@@ -2005,39 +2001,27 @@ package body kv.apg.tests is
           Template  : in     String_Type) return kv.apg.writer.buffer.Buffer_Class'CLASS;
    end foo_to_bar;
    package body foo_to_bar is
-      overriding function Is_Multi_Line(Self : Foo_Bar_Class; Original : String_Type) return Boolean is
-      begin
-         return Original = +"Multi";
-      end Is_Multi_Line;
-      overriding procedure Convert
-         (Self      : in out Foo_Bar_Class;
-          Template  : in     String_Type;
-          Converted :    out String_Type) is
-      begin
-         if Template = +"Foo" then
-            Converted := +"Bar";
-         elsif Template = +"3" then
-            Converted := +"«Foo»3«Unk»";
-         elsif Template = +"Multi" then
-            raise kv.apg.rewriter.Wrong_Convert_Error;
-         else
-            Converted := +"Zing";
-         end if;
-      end Convert;
       overriding function Convert
          (Self      : in out Foo_Bar_Class;
           Prefix    : in     String_Type;
           Postfix   : in     String_Type;
           Template  : in     String_Type) return kv.apg.writer.buffer.Buffer_Class'CLASS is
-         Ott : kv.apg.writer.buffer.Buffer_Writer_Class;
+         Answer : kv.apg.writer.buffer.Buffer_Writer_Class;
       begin
-         if Template /= +"Multi" then
-            raise kv.apg.rewriter.Wrong_Convert_Error;
+         Answer.Write_Some(Prefix);
+         if Template = +"Multi" then
+            Answer.Write_Line("One");
+            Answer.Write_Line("Two");
+            Answer.Write_Some("Three");
+         elsif Template = +"Foo" then
+            Answer.Write_Some("Bar");
+         elsif Template = +"3" then
+            Answer.Write_Some("«Foo»3«Unk»");
+         else
+            Answer.Write_Some("Zing");
          end if;
-         Ott.Write_Line("One");
-         Ott.Write_Line("Two");
-         Ott.Write_Line("Three");
-         return kv.apg.writer.buffer.Buffer_Class'CLASS(Ott);
+         Answer.Write_Line(Postfix);
+         return kv.apg.writer.buffer.Buffer_Class'CLASS(Answer);
       end Convert;
    end foo_to_bar;
 

@@ -49,33 +49,21 @@ package body kv.apg.lexgen is
    end Initialize;
 
    ----------------------------------------------------------------------------
-   overriding function Is_Multi_Line(Self : Generator_Class; Original : String_Type) return Boolean is
-   begin
-      return False;
-   end Is_Multi_Line;
-
-   ----------------------------------------------------------------------------
-   overriding procedure Convert
-      (Self      : in out Generator_Class;
-       Template  : in     String_Type;
-       Converted :    out String_Type) is
-   begin
-      if Template = +"package_name" then
-         Converted := Self.Package_Name;
-         return;
-      end if;
-      Converted := +"ERROR";
-   end Convert;
-
-   ----------------------------------------------------------------------------
    overriding function Convert
       (Self      : in out Generator_Class;
        Prefix    : in     String_Type;
        Postfix   : in     String_Type;
        Template  : in     String_Type) return kv.apg.writer.buffer.Buffer_Class'CLASS is
-      Empty : kv.apg.writer.buffer.Buffer_Writer_Class;
+      Transformed : kv.apg.writer.buffer.Buffer_Writer_Class;
    begin
-      return kv.apg.writer.buffer.Buffer_Class'CLASS(Empty);
+      Transformed.Write_Some(Prefix);
+      if Template = +"package_name" then
+         Transformed.Write_Some(Self.Package_Name);
+      else
+         Transformed.Write_Some("ERROR");
+      end if;
+      Transformed.Write_Line(Postfix);
+      return kv.apg.writer.buffer.Buffer_Class'CLASS(Transformed);
    end Convert;
 
    ----------------------------------------------------------------------------

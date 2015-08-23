@@ -18,13 +18,6 @@ package kv.apg.lexgen is
        Parser       : in     kv.apg.parse.Parser_Pointer_Type;
        Package_Name : in     String_Type);
 
-   overriding function Is_Multi_Line(Self : Generator_Class; Original : String_Type) return Boolean;
-
-   overriding procedure Convert
-      (Self      : in out Generator_Class;
-       Template  : in     String_Type;
-       Converted :    out String_Type);
-
    overriding function Convert
       (Self      : in out Generator_Class;
        Prefix    : in     String_Type;

@@ -38,19 +38,14 @@ package body kv.apg.rewriter is
       for I in 1..Source.Line_Count loop
          Working.Initialize(Source.Get_Line(I));
          while Working.Has_Template loop
-            if Converter.Is_Multi_Line(Working.Get_Template) then
-               Transfer(Converter.Convert
-                  (Prefix => Working.Get_Before,
-                   Postfix => Working.Get_After,
-                   Template => Working.Get_Template));
-               for I in 1 .. Temp.Line_Count - 1 loop
-                  Destination.Write_Line(Temp.Get_Line(I));
-               end loop;
-               Working.Initialize(Temp.Get_Line(Temp.Line_Count));
-            else
-               Converter.Convert(Working.Get_Template, Replacement);
-               Working.Initialize(Working.Get_Before & Replacement & Working.Get_After);
-            end if;
+            Transfer(Converter.Convert
+               (Prefix => Working.Get_Before,
+                Postfix => Working.Get_After,
+                Template => Working.Get_Template));
+            for I in 1 .. Temp.Line_Count - 1 loop
+               Destination.Write_Line(Temp.Get_Line(I));
+            end loop;
+            Working.Initialize(Temp.Get_Line(Temp.Line_Count));
          end loop;
          Destination.Write_Line(Working.Get_All);
       end loop;
