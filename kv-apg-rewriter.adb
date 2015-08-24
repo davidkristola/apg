@@ -15,7 +15,7 @@ package body kv.apg.rewriter is
 
 
    ----------------------------------------------------------------------------
-  procedure Apply
+   procedure Apply
       (Self        : in out Rewriter_Class;
        Source      : in     kv.apg.writer.buffer.Buffer_Writer_Class;
        Converter   : in out Text_Converter_Class'CLASS;
@@ -23,58 +23,73 @@ package body kv.apg.rewriter is
 
       use kv.apg.writer.buffer;
 
-      Working     : Template_Line_Class;
-      Replacement : String_Type;
-      Empty       : kv.apg.writer.buffer.Buffer_Writer_Class;
-      Temp        : kv.apg.writer.buffer.Buffer_Writer_Class;
+      -------------------------------------------------------------------------
+      -- Postcondition: the returned buffer is clean
+      function Recursive_Transform
+         (Lines : Buffer_Class'CLASS) return Buffer_Writer_Class is
 
-      function Transfer(Multi_Lines : kv.apg.writer.buffer.Buffer_Class'CLASS) return Buffer_Writer_Class is
-         T1 : Buffer_Writer_Class;
-         T2 : Buffer_Writer_Class;
-         W  : Template_Line_Class;
-         R  : Boolean := False;
+         Initial_Copy : Buffer_Writer_Class;
+         Clean_Copy : Buffer_Writer_Class;
+         Possible_Template : Template_Line_Class;
+         Needs_More_Processing : Boolean := False;
+
       begin
-         Temp := Empty;
-         for I in 1 .. Multi_Lines.Line_Count loop
-            W.Initialize(Multi_Lines.Get_Line(I));
-            if W.Has_Template then
-               R := True;
+         for I in 1 .. Lines.Line_Count loop
+            Possible_Template.Initialize(Lines.Get_Line(I));
+            if Possible_Template.Has_Template then
+               Needs_More_Processing := True;
             end if;
-            T1.Write_Line(Multi_Lines.Get_Line(I));
+            Initial_Copy.Write_Line(Lines.Get_Line(I));
          end loop;
-         if R then
-            Self.Apply(T1, Converter, T2);
-            return T2;
+         if Needs_More_Processing then
+            Self.Apply(Initial_Copy, Converter, Clean_Copy);
+            return Clean_Copy;
          else
-            return T1;
+            return Initial_Copy;
          end if;
-      end Transfer;
+      end Recursive_Transform;
 
-   begin
-      for I in 1..Source.Line_Count loop
-         Working.Initialize(Source.Get_Line(I));
-         if Working.Has_Template then
-            Temp := Transfer(Converter.Convert
+      -------------------------------------------------------------------------
+      function Expand_Template(Working : Template_Line_Class) return Buffer_Writer_Class is
+      begin
+         return Recursive_Transform
+            (Converter.Convert
                (Prefix => Working.Get_Before,
                 Postfix => Working.Get_After,
                 Template => Working.Get_Template));
-            for I in 1 .. Temp.Line_Count loop
-               Destination.Write_Line(Temp.Get_Line(I));
-            end loop;
+      end Expand_Template;
+
+      -------------------------------------------------------------------------
+      -- Precondition: line is clean (has no unresolved templates)
+      procedure Copy_Line_To_Destination(Line : in     String_Type) is
+      begin
+         Destination.Write_Line(Line);
+      end Copy_Line_To_Destination;
+
+      -------------------------------------------------------------------------
+      -- Precondition: all lines are clean (has no unresolved templates)
+      procedure Copy_All_Lines_To_Destination(Lines : in     Buffer_Writer_Class) is
+      begin
+         for I in 1 .. Lines.Line_Count loop
+            Copy_Line_To_Destination(Lines.Get_Line(I));
+         end loop;
+      end Copy_All_Lines_To_Destination;
+
+      -------------------------------------------------------------------------
+      procedure Apply_Line(Line : in     String_Type) is
+         Possible_Template : Template_Line_Class;
+      begin
+         Possible_Template.Initialize(Line);
+         if Possible_Template.Has_Template then
+            Copy_All_Lines_To_Destination(Expand_Template(Possible_Template));
          else
-            Destination.Write_Line(Working.Get_All);
+            Copy_Line_To_Destination(Line);
          end if;
---         while Working.Has_Template loop
---            Transfer(Converter.Convert
---               (Prefix => Working.Get_Before,
---                Postfix => Working.Get_After,
---                Template => Working.Get_Template));
---            for I in 1 .. Temp.Line_Count - 1 loop
---               Destination.Write_Line(Temp.Get_Line(I));
---            end loop;
---            Working.Initialize(Temp.Get_Line(Temp.Line_Count));
---         end loop;
---         Destination.Write_Line(Working.Get_All);
+      end Apply_Line;
+
+   begin
+      for I in 1..Source.Line_Count loop
+         Apply_Line(Source.Get_Line(I));
       end loop;
    end Apply;
 
