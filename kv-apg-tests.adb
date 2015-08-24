@@ -2007,12 +2007,24 @@ package body kv.apg.tests is
           Postfix   : in     String_Type;
           Template  : in     String_Type) return kv.apg.writer.buffer.Buffer_Class'CLASS is
          Answer : kv.apg.writer.buffer.Buffer_Writer_Class;
+         Indent : Natural;
+         function Spaces(Indent : Natural) return String is
+            Answer : constant String(1..Indent) := (others => ' ');
+         begin
+            return Answer;
+         end Spaces;
       begin
          Answer.Write_Some(Prefix);
          if Template = +"Multi" then
             Answer.Write_Line("One");
             Answer.Write_Line("Two");
             Answer.Write_Some("Three");
+         elsif Template = +"RecursiveMulti" then
+            Indent := Length(Prefix);
+            Answer.Write_Line("1");
+            Answer.Write_Line(Spaces(Indent)&"«Foo»");
+            Answer.Write_Line(Spaces(Indent)&"«3»");
+            Answer.Write_Some(Spaces(Indent)&"4");
          elsif Template = +"Foo" then
             Answer.Write_Some("Bar");
          elsif Template = +"3" then
@@ -2092,6 +2104,26 @@ package body kv.apg.tests is
       Test_Line(T, 1, Line_1_o);
       Test_Line(T, 2, Line_2_e);
       Test_Line(T, 5, Line_5_e);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Rewriter_Recursive_Multi_Change_Test is new Base_Lexgen_Test_Class with null record;
+   procedure Run(T : in out Rewriter_Recursive_Multi_Change_Test) is
+      Cnv : foo_to_bar.Foo_Bar_Class;
+      Rew : kv.apg.rewriter.Rewriter_Class;
+      Buf : kv.apg.writer.buffer.Buffer_Writer_Class;
+      Line_1_t : constant String := "This is a «RecursiveMulti» test";
+      Line_1_e : constant String := "This is a 1";
+      Line_2_e : constant String := "          Bar";
+      Line_3_e : constant String := "          Bar3Zing";
+      Line_4_e : constant String := "          4 test";
+   begin
+      Buf.Write_Line(Line_1_t);
+      Rew.Apply(Buf, Cnv, T.Buff);
+      Test_Line(T, 1, Line_1_e);
+      Test_Line(T, 2, Line_2_e);
+      Test_Line(T, 3, Line_3_e);
+      Test_Line(T, 4, Line_4_e);
    end Run;
 
    ----------------------------------------------------------------------------
@@ -2245,8 +2277,8 @@ package body kv.apg.tests is
       suite.register(new Rewriter_Change_Test, "Rewriter_Change_Test");
       suite.register(new Rewriter_Recursive_Test, "Rewriter_Recursive_Test");
       suite.register(new Rewriter_Multi_Change_Test, "Rewriter_Multi_Change_Test");
+      suite.register(new Rewriter_Recursive_Multi_Change_Test, "Rewriter_Recursive_Multi_Change_Test");
       suite.register(new Rewriter_Helper_Test, "Rewriter_Helper_Test");
---      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;
