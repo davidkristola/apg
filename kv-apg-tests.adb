@@ -628,6 +628,7 @@ package body kv.apg.tests is
    end Run;
 
 
+   --<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
    package Parse_Visitor_Test_Util is
       type Visitor_Class is new kv.apg.directives.Directive_Visitor_Class with
          record
@@ -658,6 +659,7 @@ package body kv.apg.tests is
          Self.T := Self.T + 1;
       end Process_Token;
    end Parse_Visitor_Test_Util;
+   -->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
    ----------------------------------------------------------------------------
    type Parse_Visitor_Test is new Parser_Test_Class with null record;
@@ -1842,8 +1844,8 @@ package body kv.apg.tests is
       end record;
 
    ----------------------------------------------------------------------------
-   type Write_Line_BW_Test is new Buffer_Writer_Test_Class with null record;
-   procedure Run(T : in out Write_Line_BW_Test) is
+   type Write_Line_Buffer_Writer_Test is new Buffer_Writer_Test_Class with null record;
+   procedure Run(T : in out Write_Line_Buffer_Writer_Test) is
    begin
       T.Buff.Write_Line("This is a test");
       T.Assert(T.Buff.Line_Count = 1, "Should have 1 line");
@@ -1851,8 +1853,8 @@ package body kv.apg.tests is
    end Run;
 
    ----------------------------------------------------------------------------
-   type Write_Some_BW_Test is new Buffer_Writer_Test_Class with null record;
-   procedure Run(T : in out Write_Some_BW_Test) is
+   type Write_Some_Buffer_Writer_Test is new Buffer_Writer_Test_Class with null record;
+   procedure Run(T : in out Write_Some_Buffer_Writer_Test) is
    begin
       T.Buff.Write_Some("This ");
       T.Buff.Write_Some(      "is a");
@@ -1864,8 +1866,8 @@ package body kv.apg.tests is
    end Run;
 
    ----------------------------------------------------------------------------
-   type Mix_Line_BW_Test is new Buffer_Writer_Test_Class with null record;
-   procedure Run(T : in out Mix_Line_BW_Test) is
+   type Mix_Line_Buffer_Writer_Test is new Buffer_Writer_Test_Class with null record;
+   procedure Run(T : in out Mix_Line_Buffer_Writer_Test) is
    begin
       T.Buff.Write_Some("This ");
       T.Buff.Write_Line(      "is a test");
@@ -1992,6 +1994,7 @@ package body kv.apg.tests is
    end Run;
 
 
+   --<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
    package foo_to_bar is
       type Foo_Bar_Class is new kv.apg.rewriter.Text_Converter_Class with null record;
       overriding function Convert
@@ -2036,6 +2039,7 @@ package body kv.apg.tests is
          return kv.apg.writer.buffer.Buffer_Class'CLASS(Answer);
       end Convert;
    end foo_to_bar;
+   -->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
    ----------------------------------------------------------------------------
    type Rewriter_No_Change_Test is new Base_Lexgen_Test_Class with null record;
@@ -2141,6 +2145,30 @@ package body kv.apg.tests is
       T.Assert(Temp_Line.Get_Template = To_String_Type(b), "Expected Get_Template='"&b&"', got '"&To_UTF(+Temp_Line.Get_Template)&"'.");
       T.Assert(Temp_Line.Get_After = To_String_Type(c), "Expected Get_After='"&c&"', got '"&To_UTF(+Temp_Line.Get_After)&"'.");
       T.Assert(Temp_Line.Get_All = To_String_Type(Line_1), "Expected Get_All='"&Line_1&"', got '"&To_UTF(+Temp_Line.Get_All)&"'.");
+   end Run;
+
+
+
+
+   ----------------------------------------------------------------------------
+   type Lexgen_Token_Type_Test is new Base_Lexgen_Test_Class with null record;
+   procedure Run(T : in out Lexgen_Token_Type_Test) is
+      use kv.apg.lexgen;
+      use Ada.Characters.Latin_1;
+      --Buffer : kv.apg.writer.buffer.Buffer_Writer_Class;
+   begin
+      Parse_This(T, "token One = 'a' 'b' 'c';" & LF);
+      Parse_This(T, "token Two = 'a' 'q' 'z';" & LF);
+      Parse_This(T, "token Three = 'e' 'f' 'g';" & LF);
+      T.Generator.Initialize(T.Parser'UNCHECKED_ACCESS, +"My_Package");
+      T.Assert(T.Generator.Token_Count = 3, "Should have 3 token");
+      T.Generator.Insert_Token_Type(T.Buff);
+      T.Buff.New_Line;
+      Test_Line(T, 1, "   type Token_Type is");
+      Test_Line(T, 2, "      (Invalid,");
+      Test_Line(T, 3, "       One,");
+      Test_Line(T, 4, "       Two,");
+      Test_Line(T, 5, "       Three);");
    end Run;
 
 
@@ -2260,15 +2288,13 @@ package body kv.apg.tests is
       suite.register(new Nfa_To_Cnfa_11_Test, "Nfa_To_Cnfa_11_Test");
 --      suite.register(new XXX, "XXX");
 
-      suite.register(new Write_Line_BW_Test, "Write_Line_BW_Test");
-      suite.register(new Write_Some_BW_Test, "Write_Some_BW_Test");
-      suite.register(new Mix_Line_BW_Test, "Mix_Line_BW_Test");
+      suite.register(new Write_Line_Buffer_Writer_Test, "Write_Line_Buffer_Writer_Test");
+      suite.register(new Write_Some_Buffer_Writer_Test, "Write_Some_Buffer_Writer_Test");
+      suite.register(new Mix_Line_Buffer_Writer_Test, "Mix_Line_Buffer_Writer_Test");
 
       suite.register(new Init_Enum_Test, "Init_Enum_Test");
       suite.register(new Append_Count_Enum_Test, "Append_Count_Enum_Test");
       suite.register(new Write_Enum_Test, "Write_Enum_Test");
---      suite.register(new XXX, "XXX");
---      suite.register(new XXX, "XXX");
 
       suite.register(new Lexgen_Count_Tokens_Test, "Lexgen_Count_Tokens_Test");
       suite.register(new Lexgen_Package_Name_Test, "Lexgen_Package_Name_Test");
@@ -2279,6 +2305,9 @@ package body kv.apg.tests is
       suite.register(new Rewriter_Multi_Change_Test, "Rewriter_Multi_Change_Test");
       suite.register(new Rewriter_Recursive_Multi_Change_Test, "Rewriter_Recursive_Multi_Change_Test");
       suite.register(new Rewriter_Helper_Test, "Rewriter_Helper_Test");
+
+      suite.register(new Lexgen_Token_Type_Test, "Lexgen_Token_Type_Test");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;

@@ -4,6 +4,7 @@ with kv.apg.parse;
 with kv.apg.writer;
 with kv.apg.rewriter;
 with kv.apg.writer.buffer;
+with kv.apg.enum;
 
 package kv.apg.lexgen is
 
@@ -24,6 +25,18 @@ package kv.apg.lexgen is
        Postfix   : in     String_Type;
        Template  : in     String_Type) return kv.apg.writer.buffer.Buffer_Class'CLASS;
 
+   -- Convert will call these routines based on the template:
+   not overriding procedure Insert_Package_Name -- "package_name"
+      (Self   : in out Generator_Class;
+       Buffer : in out kv.apg.writer.buffer.Buffer_Writer_Class);
+
+   not overriding procedure Insert_Token_Type -- "token_type"
+      (Self   : in out Generator_Class;
+       Buffer : in out kv.apg.writer.buffer.Buffer_Writer_Class);
+
+
+
+
    function Token_Count(Self : Generator_Class) return Natural;
 
    procedure Write_Spec
@@ -41,6 +54,7 @@ private
          Parser       : kv.apg.parse.Parser_Pointer_Type;
          Package_Name : String_Type;
          Tokens       : Natural;
+         Token_Enum   : kv.apg.enum.Enumeration_Class;
       end record;
 
 end kv.apg.lexgen;
