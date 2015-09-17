@@ -350,7 +350,7 @@ package body kv.apg.tests is
    procedure Parse_This(T : in out Parser_Test_Class'CLASS; S : in String) is
       Token : kv.apg.tokens.Token_Class;
    begin
-      Ingest_All(T, S);
+      Ingest_All(T, S & Ada.Characters.Latin_1.LF);
       while T.Lexer.Tokens_Available > 0 loop
          Token := T.Lexer.Get_Next_Token;
          T.Parser.Ingest_Token(Token);
@@ -373,7 +373,7 @@ package body kv.apg.tests is
       use kv.apg.directives;
    begin
       T.Parser.Initialise; --TODO: make this OBE
-      Parse_This(T, "set lex_spec = ""test.ads"";" & Ada.Characters.Latin_1.LF);
+      Parse_This(T, "set lex_spec = ""test.ads"";");
       Check_States(T, Errors => 0, Directives => 1);
       Directive := T.Parser.Next_Directive;
       T.Assert(Directive.all'TAG = kv.apg.directives.Set_Class'TAG, "wrong class");
@@ -388,7 +388,7 @@ package body kv.apg.tests is
       use kv.apg.directives;
       use Ada.Characters.Latin_1;
    begin
-      Parse_This(T, "set #lex_spec = ""test.ads"";" & LF & "lex_spec #= ""test.ads"";" & LF & "= #""test.ads"";" & LF & """test.ads"";" & LF);
+      Parse_This(T, "set #lex_spec = ""test.ads"";" & LF & "lex_spec #= ""test.ads"";" & LF & "= #""test.ads"";" & LF & """test.ads"";");
       Check_States(T, Errors => 0, Directives => 1);
       Directive := T.Parser.Next_Directive;
       T.Assert(Directive.all'TAG = kv.apg.directives.Set_Class'TAG, "wrong class");
@@ -400,7 +400,7 @@ package body kv.apg.tests is
    type Parse_Set_Error_1_Test is new Parser_Test_Class with null record;
    procedure Run(T : in out Parse_Set_Error_1_Test) is
    begin
-      Parse_This(T, "set lex_spec **** ""test.ads"";" & Ada.Characters.Latin_1.LF);
+      Parse_This(T, "set lex_spec **** ""test.ads"";");
       Check_States(T, Errors => 1, Directives => 0);
    end Run;
 
@@ -408,7 +408,7 @@ package body kv.apg.tests is
    type Parse_Set_Error_2_Test is new Parser_Test_Class with null record;
    procedure Run(T : in out Parse_Set_Error_2_Test) is
    begin
-      Parse_This(T, "set ""lex_spec"" = ""test.ads"";" & Ada.Characters.Latin_1.LF);
+      Parse_This(T, "set ""lex_spec"" = ""test.ads"";");
       Check_States(T, Errors => 1, Directives => 0);
    end Run;
 
@@ -416,7 +416,7 @@ package body kv.apg.tests is
    type Parse_Set_Error_3_Test is new Parser_Test_Class with null record;
    procedure Run(T : in out Parse_Set_Error_3_Test) is
    begin
-      Parse_This(T, "set lex_spec = test;" & Ada.Characters.Latin_1.LF);
+      Parse_This(T, "set lex_spec = test;");
       Check_States(T, Errors => 1, Directives => 0);
    end Run;
 
@@ -429,7 +429,7 @@ package body kv.apg.tests is
       use Ada.Strings.UTF_Encoding.Strings;
    begin
       T.Parser.Initialise; --TODO: make this OBE
-      Parse_This(T, Decode("set lex_spec = «test.ads»;" & Ada.Characters.Latin_1.LF, UTF_8));
+      Parse_This(T, Decode("set lex_spec = «test.ads»;", UTF_8));
       Check_States(T, Errors => 0, Directives => 1);
       Directive := T.Parser.Next_Directive;
       T.Assert(Directive.all'TAG = kv.apg.directives.Set_Class'TAG, "wrong class");
@@ -442,7 +442,7 @@ package body kv.apg.tests is
    type Parse_Set_Error_4_Test is new Parser_Test_Class with null record;
    procedure Run(T : in out Parse_Set_Error_4_Test) is
    begin
-      Parse_This(T, "set lex_spec = ""test"" foo ;" & Ada.Characters.Latin_1.LF);
+      Parse_This(T, "set lex_spec = ""test"" foo ;");
       Check_States(T, Errors => 1, Directives => 0);
    end Run;
 
@@ -462,7 +462,7 @@ package body kv.apg.tests is
    begin
       --kv.apg.regex.Set_Debug(True);
       --Put_Line("------ token test: " & "token " & name & " = " & Definition);
-      Parse_This(T, "token " & name & " = " & Definition & Ada.Characters.Latin_1.LF);
+      Parse_This(T, "token " & name & " = " & Definition);
       Check_States(T, Errors => 0, Directives => 1);
       Directive := T.Parser.Next_Directive;
       T.Assert(Directive.all'TAG = kv.apg.directives.Token_Class'TAG, "wrong class");
@@ -607,7 +607,7 @@ package body kv.apg.tests is
       Directive : kv.apg.directives.Directive_Pointer_Type;
       use kv.apg.directives;
    begin
-      Parse_This(T, "pattern pat1 = '0'-'9' + ;" & Ada.Characters.Latin_1.LF);
+      Parse_This(T, "pattern pat1 = '0'-'9' + ;");
       Check_States(T, Errors => 0, Directives => 1);
       Directive := T.Parser.Next_Directive;
       T.Assert(kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Subtype = Pattern, "Expected subtype to be pattern");
@@ -620,7 +620,7 @@ package body kv.apg.tests is
       Directive : kv.apg.directives.Directive_Pointer_Type;
       use kv.apg.directives;
    begin
-      Parse_This(T, "skipover pat2 = (' ' | U0009) + ;" & Ada.Characters.Latin_1.LF);
+      Parse_This(T, "skipover pat2 = (' ' | U0009) + ;");
       Check_States(T, Errors => 0, Directives => 1);
       Directive := T.Parser.Next_Directive;
       T.Assert(kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Subtype = Skipover, "Expected subtype to be skipover");
@@ -667,10 +667,10 @@ package body kv.apg.tests is
       V : Parse_Visitor_Test_Util.Visitor_Class;
       use kv.apg.directives;
    begin
-      Parse_This(T, "set lex_spec = ""test.ads"";" & Ada.Characters.Latin_1.LF);
-      Parse_This(T, "token foo = 'a' 'b' ?;" & Ada.Characters.Latin_1.LF);
-      Parse_This(T, "pattern pat1 = '0'-'9' + ;" & Ada.Characters.Latin_1.LF);
-      Parse_This(T, "skipover pat2 = (' ' | U0009) + ;" & Ada.Characters.Latin_1.LF);
+      Parse_This(T, "set lex_spec = ""test.ads"";");
+      Parse_This(T, "token foo = 'a' 'b' ?;");
+      Parse_This(T, "pattern pat1 = '0'-'9' + ;");
+      Parse_This(T, "skipover pat2 = (' ' | U0009) + ;");
       Check_States(T, Errors => 0, Directives => 4);
 
       T.Parser.Process_Directives(V);
@@ -1955,9 +1955,8 @@ package body kv.apg.tests is
    type Lexgen_Count_Tokens_Test is new Base_Lexgen_Test_Class with null record;
    procedure Run(T : in out Lexgen_Count_Tokens_Test) is
       use kv.apg.lexgen;
-      use Ada.Characters.Latin_1;
    begin
-      Parse_This(T, "token one = 'a' 'b' 'c';" & LF);
+      Parse_This(T, "token one = 'a' 'b' 'c';");
       T.Generator.Initialize(T.Parser'UNCHECKED_ACCESS, +"My_Package");
       T.Assert(T.Generator.Token_Count = 1, "Should have 1 token");
    end Run;
@@ -1980,12 +1979,11 @@ package body kv.apg.tests is
    type Lexgen_One_Token_Recognizer_Test is new Base_Lexgen_Test_Class with null record;
    procedure Run(T : in out Lexgen_One_Token_Recognizer_Test) is
       use kv.apg.lexgen;
-      use Ada.Characters.Latin_1;
       Line_0 : constant String := ""; -- Empty lines
       Line_1 : constant String := "-- This file is machine generated. Do not edit.";
       Line_3 : constant String := "package my_lex_example is";
    begin
-      Parse_This(T, "token One = 'a' 'b' 'c';" & LF);
+      Parse_This(T, "token One = 'a' 'b' 'c';");
       T.Generator.Initialize(T.Parser'UNCHECKED_ACCESS, +"my_lex_example");
       T.Generator.Write_Spec(T.Buff);
       Test_Line(T, 1, Line_1);
@@ -2154,12 +2152,10 @@ package body kv.apg.tests is
    type Lexgen_Token_Type_Test is new Base_Lexgen_Test_Class with null record;
    procedure Run(T : in out Lexgen_Token_Type_Test) is
       use kv.apg.lexgen;
-      use Ada.Characters.Latin_1;
-      --Buffer : kv.apg.writer.buffer.Buffer_Writer_Class;
    begin
-      Parse_This(T, "token One = 'a' 'b' 'c';" & LF);
-      Parse_This(T, "token Two = 'a' 'q' 'z';" & LF);
-      Parse_This(T, "token Three = 'e' 'f' 'g';" & LF);
+      Parse_This(T, "token One = 'a' 'b' 'c';");
+      Parse_This(T, "token Two = 'a' 'q' 'z';");
+      Parse_This(T, "token Three = 'e' 'f' 'g';");
       T.Generator.Initialize(T.Parser'UNCHECKED_ACCESS, +"My_Package");
       T.Assert(T.Generator.Token_Count = 3, "Should have 3 token");
       T.Generator.Insert_Token_Type(T.Buff);
