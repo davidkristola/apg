@@ -114,6 +114,22 @@ package body kv.apg.fast is
    end Image;
 
    ----------------------------------------------------------------------------
+   function Source_Code(Self : Transition_Type) return String is
+   begin
+      --TODO: this is just wrong
+      case Self.Criteria is
+         when Epsilon =>
+            return "ɛ=>" & Img(Self.To_State);
+         when Any =>
+            return "any=>" & Img(Self.To_State);
+         when Match =>
+            return Img(Self.Value) & "=>" & Img(Self.To_State);
+         when From_To =>
+            return Img(Self.Lower) & "-" & Img(Self.Upper) & "=>" & Img(Self.To_State);
+      end case;
+   end Source_Code;
+
+   ----------------------------------------------------------------------------
    function Move(Self : in Transition_Type; Check : in Wide_Wide_Character) return State_Universe_Type is
    begin
       case Self.Criteria is

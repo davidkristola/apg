@@ -14,7 +14,7 @@ package my_lex_example.Static_Nfa_Definition is
    T2 : aliased constant Transition_List_Type := (1 => (Match, 3, WWC'VAL(98)), 2 => (Match, 2, WWC'VAL(97)));
    T3 : aliased constant Transition_List_Type := (1 => (Match, 4, WWC'VAL(99)), 2 => (Match, 2, WWC'VAL(97)), 3 => (Match, 3, WWC'VAL(98)));
    T4 : aliased constant Transition_List_Type := (1 => (Match, 5, WWC'VAL(100)), 2 => (Match, 2, WWC'VAL(97)), 3 => (Match, 3, WWC'VAL(98)), 4 => (Match, 4, WWC'VAL(99)));
-   T5 : aliased constant Transition_List_Type := (1 => (Match, 5, WWC'VAL(100)));
+   T5 : aliased constant Transition_List_Type := (1 => (FROM_TO, 5, WWC'VAL(100), WWC'VAL(121)));
    State_List : aliased constant State_List_Type :=
       (1 => (1, False, Invalid, T1'ACCESS),
        2 => (2, False, Invalid, T2'ACCESS),

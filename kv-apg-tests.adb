@@ -776,6 +776,20 @@ package body kv.apg.tests is
 
 
    ----------------------------------------------------------------------------
+   type Fast_Transition_Source_Code_Test is new Fast_Transition_Test_Class with null record;
+   procedure Run(T : in out Fast_Transition_Source_Code_Test) is
+      use kv.apg.fast;
+      Dest : constant State_Id_Type := 7;
+      Explanation : constant String := "range";
+      First_C : constant Character := 'b';
+      Last_C : constant Character := 'y';
+   begin
+      Set_Range(T.Uut, Dest, To_Wide_Wide_Character(First_C), To_Wide_Wide_Character(Last_C));
+      T.Assert(Source_Code(T.Uut) = ("(FROM_TO, 7, WWC'VAL(98), WWC'VAL(121))"), "Wrong Source_Code! Got <" & (Source_Code(T.Uut)) & ">");
+   end Run;
+
+
+   ----------------------------------------------------------------------------
    type Fast_State_Test_Class is abstract new kv.core.ut.Test_Class with
       record
          Uut : kv.apg.fast.State_Type;
@@ -2226,6 +2240,7 @@ package body kv.apg.tests is
       suite.register(new Fast_Any_Test, "Fast_Any_Test");
       suite.register(new Fast_Match_Test, "Fast_Match_Test");
       suite.register(new Fast_Range_Test, "Fast_Range_Test");
+      suite.register(new Fast_Transition_Source_Code_Test, "Fast_Transition_Source_Code_Test");
       suite.register(new Fast_Init_State_Accepting_Test, "Fast_Init_State_Accepting_Test");
       suite.register(new Fast_Init_State_Non_Accepting_Test, "Fast_Init_State_Non_Accepting_Test");
       suite.register(new Fast_Get_Count_Test, "Fast_Get_Count_Test");
