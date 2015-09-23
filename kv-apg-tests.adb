@@ -780,12 +780,37 @@ package body kv.apg.tests is
    procedure Run(T : in out Fast_Transition_Source_Code_Test) is
       use kv.apg.fast;
       Dest : constant State_Id_Type := 7;
-      Explanation : constant String := "range";
+--      Explanation : constant String := "range";
       First_C : constant Character := 'b';
       Last_C : constant Character := 'y';
    begin
       Set_Range(T.Uut, Dest, To_Wide_Wide_Character(First_C), To_Wide_Wide_Character(Last_C));
       T.Assert(Source_Code(T.Uut) = ("(FROM_TO, 7, WWC'VAL(98), WWC'VAL(121))"), "Wrong Source_Code! Got <" & (Source_Code(T.Uut)) & ">");
+      Set_Any(T.Uut, Dest);
+      T.Assert(Source_Code(T.Uut) = ("(ANY, 7)"), "Wrong Source_Code! Got <" & (Source_Code(T.Uut)) & ">");
+      Set_Match(T.Uut, Dest, To_Wide_Wide_Character(First_C));
+      T.Assert(Source_Code(T.Uut) = ("(MATCH, 7, WWC'VAL(98))"), "Wrong Source_Code! Got <" & (Source_Code(T.Uut)) & ">");
+      Set_Epsilon(T.Uut, Dest);
+      T.Assert(Source_Code(T.Uut) = ("ERROR"), "Wrong Source_Code! Got <" & (Source_Code(T.Uut)) & ">");
+   end Run;
+
+
+   ----------------------------------------------------------------------------
+   type Fast_Transition_List_Source_Code_Test is new Fast_Transition_Test_Class with null record;
+   procedure Run(T : in out Fast_Transition_List_Source_Code_Test) is
+      use kv.apg.fast;
+      D1 : constant State_Id_Type := 7;
+      D2 : constant State_Id_Type := 11;
+      D3 : constant State_Id_Type := 13;
+      First_C : constant Character := 'b';
+      Last_C : constant Character := 'y';
+      Uut : Transition_List_Type(1..3);
+      Expected : constant String := "(1 => (FROM_TO, 7, WWC'VAL(98), WWC'VAL(121)), 2 => (ANY, 11), 3 => (MATCH, 13, WWC'VAL(98)))";
+   begin
+      Set_Range(Uut(1), D1, To_Wide_Wide_Character(First_C), To_Wide_Wide_Character(Last_C));
+      Set_Any(Uut(2), D2);
+      Set_Match(Uut(3), D3, To_Wide_Wide_Character(First_C));
+      T.Assert(Source_Code(Uut) = Expected, "Wrong Source_Code! Got <" & (Source_Code(Uut)) & ">, expected <"&Expected&">");
    end Run;
 
 
@@ -2241,6 +2266,7 @@ package body kv.apg.tests is
       suite.register(new Fast_Match_Test, "Fast_Match_Test");
       suite.register(new Fast_Range_Test, "Fast_Range_Test");
       suite.register(new Fast_Transition_Source_Code_Test, "Fast_Transition_Source_Code_Test");
+      suite.register(new Fast_Transition_List_Source_Code_Test, "Fast_Transition_List_Source_Code_Test");
       suite.register(new Fast_Init_State_Accepting_Test, "Fast_Init_State_Accepting_Test");
       suite.register(new Fast_Init_State_Non_Accepting_Test, "Fast_Init_State_Non_Accepting_Test");
       suite.register(new Fast_Get_Count_Test, "Fast_Get_Count_Test");

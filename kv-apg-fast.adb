@@ -115,18 +115,35 @@ package body kv.apg.fast is
 
    ----------------------------------------------------------------------------
    function Source_Code(Self : Transition_Type) return String is
+      Sep : constant String := ", ";
+      Me  : constant String := Acceptance_Type'IMAGE(Self.Criteria) & Sep & Img(Self.To_State);
+      -------------------------------------------------------------------------
+      function WWC(C : Wide_Wide_Character) return String is
+      begin
+         return Sep & "WWC'VAL(" & Img(C) & ")";
+      end WWC;
+      -------------------------------------------------------------------------
+      function Common(Additional : String := "") return String is
+      begin
+         return "(" & Me & Additional & ")";
+      end Common;
    begin
-      --TODO: this is just wrong
       case Self.Criteria is
          when Epsilon =>
-            return "ɛ=>" & Img(Self.To_State);
+            return "ERROR";
          when Any =>
-            return "any=>" & Img(Self.To_State);
+            return Common;
          when Match =>
-            return Img(Self.Value) & "=>" & Img(Self.To_State);
+            return Common( WWC(Self.Value) );
          when From_To =>
-            return Img(Self.Lower) & "-" & Img(Self.Upper) & "=>" & Img(Self.To_State);
+            return Common( WWC(Self.Lower) & WWC(Self.Upper) );
       end case;
+   end Source_Code;
+
+   ----------------------------------------------------------------------------
+   function Source_Code(Self : Transition_List_Type) return String is
+   begin
+      return "TODO";
    end Source_Code;
 
    ----------------------------------------------------------------------------

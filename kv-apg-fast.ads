@@ -43,6 +43,7 @@ package kv.apg.fast is
    function Get_Dest(Self : Transition_Type) return State_Universe_Type;
    function Image(Self : Transition_Type) return String;
    function Source_Code(Self : Transition_Type) return String;
+   function Source_Code(Self : Transition_List_Type) return String;
 
    function Move(Self : in Transition_Type; Check : in Wide_Wide_Character) return State_Universe_Type;
    function Epsilon_Move(Self : in Transition_Type) return State_Universe_Type;
