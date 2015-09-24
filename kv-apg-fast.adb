@@ -142,8 +142,13 @@ package body kv.apg.fast is
 
    ----------------------------------------------------------------------------
    function Source_Code(Self : Transition_List_Type) return String is
+      function X(I : Positive) return String is
+         N : constant String := Positive'IMAGE(I);
+      begin
+         return N(2..N'LAST) & " => " & Source_Code(Self(I)) & (if I = Self'LAST then "" else ", " & X(I+1));
+      end X;
    begin
-      return "TODO";
+      return "(" & X(1) & ")";
    end Source_Code;
 
    ----------------------------------------------------------------------------
@@ -346,6 +351,12 @@ package body kv.apg.fast is
    begin
       return State_Part & "{" & Transition_Part & "}";
    end Image;
+
+   ----------------------------------------------------------------------------
+   function Source_Code(Self : State_Type; Key : String) return String is
+   begin
+      return "(" & Key & ", T" & Img(Self.Id) & "'ACCESS)";
+   end Source_Code;
 
    ----------------------------------------------------------------------------
    function Compute_Transitions

@@ -780,7 +780,6 @@ package body kv.apg.tests is
    procedure Run(T : in out Fast_Transition_Source_Code_Test) is
       use kv.apg.fast;
       Dest : constant State_Id_Type := 7;
---      Explanation : constant String := "range";
       First_C : constant Character := 'b';
       Last_C : constant Character := 'y';
    begin
@@ -1024,6 +1023,21 @@ package body kv.apg.tests is
       T.Assert(Get_Transition_Count(Copy) = 2, "Get_Transition_Count should be 2 but is not!");
       T.Assert(Image(Copy) = ("5{97=>67,98=>33}"), "Wrong image! Got <" & (Image(Copy)) & ">");
    end Run;
+
+   ----------------------------------------------------------------------------
+   type Fast_State_Source_Code_Test is new Fast_State_Test_Class with null record;
+   procedure Run(T : in out Fast_State_Source_Code_Test) is
+      use kv.apg.fast;
+      Expected : constant String := "(Invalid, T5'ACCESS)";
+   begin
+      Set_Non_Accepting(T.Uut, 5, 0);
+      declare
+         Answer : constant String := Source_Code(T.Uut, "Invalid");
+      begin
+         T.Assert(Answer = Expected, "Wrong Source_Code! Got <" & (Answer) & ">, expected " & Expected);
+      end;
+   end Run;
+
 
 
 
@@ -2207,6 +2221,15 @@ package body kv.apg.tests is
    end Run;
 
 
+   ----------------------------------------------------------------------------
+   type Lexgen_State_List_Source_Code_Test is new Base_Lexgen_Test_Class with null record;
+   procedure Run(T : in out Lexgen_State_List_Source_Code_Test) is
+      use kv.apg.fast;
+   begin
+      T.Assert(False, "test not coded");
+   end Run;
+
+
 
    ----------------------------------------------------------------------------
    procedure register(suite : in kv.core.ut.Suite_Pointer_Type) is
@@ -2267,6 +2290,7 @@ package body kv.apg.tests is
       suite.register(new Fast_Range_Test, "Fast_Range_Test");
       suite.register(new Fast_Transition_Source_Code_Test, "Fast_Transition_Source_Code_Test");
       suite.register(new Fast_Transition_List_Source_Code_Test, "Fast_Transition_List_Source_Code_Test");
+
       suite.register(new Fast_Init_State_Accepting_Test, "Fast_Init_State_Accepting_Test");
       suite.register(new Fast_Init_State_Non_Accepting_Test, "Fast_Init_State_Non_Accepting_Test");
       suite.register(new Fast_Get_Count_Test, "Fast_Get_Count_Test");
@@ -2279,6 +2303,7 @@ package body kv.apg.tests is
       suite.register(new Fast_Renumber_T_Test, "Fast_Renumber_T_Test");
       suite.register(new Fast_Renumber_S_Test, "Fast_Renumber_S_Test");
       suite.register(new Fast_Deep_Copy_Test, "Fast_Deep_Copy_Test");
+      suite.register(new Fast_State_Source_Code_Test, "Fast_State_Source_Code_Test");
 
       suite.register(new Init_Nfa_Test, "Init_Nfa_Test");
       suite.register(new Image_Nfa_Test, "Image_Nfa_Test");
@@ -2344,6 +2369,7 @@ package body kv.apg.tests is
       suite.register(new Rewriter_Helper_Test, "Rewriter_Helper_Test");
 
       suite.register(new Lexgen_Token_Type_Test, "Lexgen_Token_Type_Test");
+      suite.register(new Lexgen_State_List_Source_Code_Test, "Lexgen_State_List_Source_Code_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
