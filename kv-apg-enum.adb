@@ -51,4 +51,15 @@ package body kv.apg.enum is
       end loop;
    end Write;
 
+   ----------------------------------------------------------------------------
+   function Get(Self : Enumeration_Class; Index : Positive) return String_Type is
+   begin
+      for V of Self.Values loop
+         if V.Value = Index then
+            return V.Name;
+         end if;
+      end loop;
+      return +"";
+   end Get;
+
 end kv.apg.enum;

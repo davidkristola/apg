@@ -5,6 +5,7 @@ with kv.apg.writer;
 with kv.apg.rewriter;
 with kv.apg.writer.buffer;
 with kv.apg.enum;
+with kv.apg.fast;
 
 package kv.apg.lexgen is
 
@@ -34,6 +35,13 @@ package kv.apg.lexgen is
       (Self   : in out Generator_Class;
        Buffer : in out kv.apg.writer.buffer.Buffer_Writer_Class);
 
+   not overriding function Get_States(Self : Generator_Class) return kv.apg.fast.State_List_Type;
+   not overriding function Get_Tokens(Self : Generator_Class) return kv.apg.enum.Enumeration_Class;
+
+   procedure Source_Code_States
+      (States : in     kv.apg.fast.State_List_Type;
+       Tokens : in     kv.apg.enum.Enumeration_Class;
+       Buffer : in out kv.apg.writer.buffer.Buffer_Writer_Class);
 
 
 

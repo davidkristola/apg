@@ -22,6 +22,8 @@ package kv.apg.enum is
       (Self   : in     Enumeration_Class;
        Writer : in out kv.apg.writer.Writer_Class'CLASS);
 
+   function Get(Self : Enumeration_Class; Index : Positive) return String_Type;
+
 private
 
    type Value_Type is

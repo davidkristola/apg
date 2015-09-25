@@ -1977,6 +1977,20 @@ package body kv.apg.tests is
    end Run;
 
 
+   ----------------------------------------------------------------------------
+   type Get_Enum_Test is new Enum_Test_Class with null record;
+   procedure Run(T : in out Get_Enum_Test) is
+      use kv.apg.enum;
+   begin
+      T.Enum.Initialize(+"Enum_Type");
+      T.Enum.Append(+"Alpha");
+      T.Enum.Append(+"Beta");
+      T.Enum.Append(+"Gamma");
+      T.Enum.Append(+"Epsilon");
+      T.Assert(T.Enum.Get(3) = +"Gamma", "Get should return Gamma, got <" & To_UTF(+T.Enum.Get(3)) & ">");
+   end Run;
+
+
 
 
    ----------------------------------------------------------------------------
@@ -2225,7 +2239,10 @@ package body kv.apg.tests is
    type Lexgen_State_List_Source_Code_Test is new Base_Lexgen_Test_Class with null record;
    procedure Run(T : in out Lexgen_State_List_Source_Code_Test) is
       use kv.apg.fast;
+      Buf : kv.apg.writer.buffer.Buffer_Writer_Class;
    begin
+      -- call kv.apg.lexgen.Source_Code_States and check the
+      kv.apg.lexgen.Source_Code_States(T.Generator.Get_States, T.Generator.Get_Tokens, Buf);
       T.Assert(False, "test not coded");
    end Run;
 
@@ -2357,6 +2374,7 @@ package body kv.apg.tests is
       suite.register(new Init_Enum_Test, "Init_Enum_Test");
       suite.register(new Append_Count_Enum_Test, "Append_Count_Enum_Test");
       suite.register(new Write_Enum_Test, "Write_Enum_Test");
+      suite.register(new Get_Enum_Test, "Get_Enum_Test");
 
       suite.register(new Lexgen_Count_Tokens_Test, "Lexgen_Count_Tokens_Test");
       suite.register(new Lexgen_Package_Name_Test, "Lexgen_Package_Name_Test");

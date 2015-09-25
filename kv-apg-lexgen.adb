@@ -99,10 +99,34 @@ package body kv.apg.lexgen is
       (Self   : in out Generator_Class;
        Buffer : in out kv.apg.writer.buffer.Buffer_Writer_Class) is
    begin
---      Buffer.Write_Some(Self.Package_Name);
       Self.Token_Enum.Write(Buffer);
    end Insert_Token_Type;
 
+
+   ----------------------------------------------------------------------------
+   not overriding function Get_States(Self : Generator_Class) return kv.apg.fast.State_List_Type is
+      List : kv.apg.fast.State_List_Type(1..0);
+   begin
+      return List;
+   end Get_States;
+
+
+   ----------------------------------------------------------------------------
+   not overriding function Get_Tokens(Self : Generator_Class) return kv.apg.enum.Enumeration_Class is
+   begin
+      return Self.Token_Enum;
+   end Get_Tokens;
+
+
+   ----------------------------------------------------------------------------
+   procedure Source_Code_States
+      (States : in     kv.apg.fast.State_List_Type;
+       Tokens : in     kv.apg.enum.Enumeration_Class;
+       Buffer : in out kv.apg.writer.buffer.Buffer_Writer_Class) is
+   begin
+      --TODO
+      Tokens.Write(Buffer);
+   end Source_Code_States;
 
 
    ----------------------------------------------------------------------------
