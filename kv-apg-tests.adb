@@ -2236,14 +2236,31 @@ package body kv.apg.tests is
 
 
    ----------------------------------------------------------------------------
+   type Lexgen_State_List_Test is new Base_Lexgen_Test_Class with null record;
+   procedure Run(T : in out Lexgen_State_List_Test) is
+      use kv.apg.fast;
+      State_List_Image : constant String := "[1{97=>2,97=>5,101=>8}/2{98=>3}/3{99=>4}/(4:1){}/5{113=>6}/6{122=>7}/(7:2){}/8{102=>9}/9{103=>10}/(10:3){}]";
+      Cnfa : aliased kv.apg.fa.nfa.Nfa_Class;
+   begin
+      Parse_This(T, "token One = 'a' 'b' 'c';");
+      Parse_This(T, "token Two = 'a' 'q' 'z';");
+      Parse_This(T, "token Three = 'e' 'f' 'g';");
+      T.Generator.Initialize(T.Parser'UNCHECKED_ACCESS, +"My_Package");
+      Cnfa := T.Generator.Get_Cnfa;
+      T.Assert(Cnfa.Image = State_List_Image, "Wrong Clean NFA image! Expected <"&State_List_Image&">, got <" & Cnfa.Image & ">");
+   end Run;
+
+
+   ----------------------------------------------------------------------------
    type Lexgen_State_List_Source_Code_Test is new Base_Lexgen_Test_Class with null record;
    procedure Run(T : in out Lexgen_State_List_Source_Code_Test) is
       use kv.apg.fast;
-      Buf : kv.apg.writer.buffer.Buffer_Writer_Class;
+      Expected : constant String := "(1 => (FROM_TO, 7, WWC'VAL(98), WWC'VAL(121)), 2 => (ANY, 11), 3 => (MATCH, 13, WWC'VAL(98)))";
+      Expected_1 : constant String := "(1 => (MATCH, 2, WWC'VAL(97)), 2 => (MATCH, 5, WWC'VAL(97)), 3 => (MATCH, 8, WWC'VAL(101)))";
    begin
-      -- call kv.apg.lexgen.Source_Code_States and check the
-      kv.apg.lexgen.Source_Code_States(T.Generator.Get_States, T.Generator.Get_Tokens, Buf);
-      T.Assert(False, "test not coded");
+      kv.apg.lexgen.Source_Code_States(T.Generator.Get_States, T.Generator.Get_Tokens, T.Buff);
+      Test_Line(T, 1, "   T1 : aliased constant Transition_List_Type := ("&Expected_1&");"); -- {97=>2,97=>5,101=>8}
+      T.Assert(False, "test not complete");
    end Run;
 
 
@@ -2387,8 +2404,8 @@ package body kv.apg.tests is
       suite.register(new Rewriter_Helper_Test, "Rewriter_Helper_Test");
 
       suite.register(new Lexgen_Token_Type_Test, "Lexgen_Token_Type_Test");
+      suite.register(new Lexgen_State_List_Test, "Lexgen_State_List_Test");
       suite.register(new Lexgen_State_List_Source_Code_Test, "Lexgen_State_List_Source_Code_Test");
---      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;

@@ -13,6 +13,7 @@ package kv.apg.fa is
        Existing : in     State_List_Pointer_Type);
 
    function Get_State_Count(Self : Finite_Automata_Class) return Natural;
+   function Get_State_List(Self : Finite_Automata_Class) return State_List_Pointer_Type;
    function Get_Start_State(Self : Finite_Automata_Class) return State_Id_Type;
    function Image(Self : Finite_Automata_Class) return String;
    function Is_Accepting(Self : Finite_Automata_Class; State : State_Id_Type) return Boolean;

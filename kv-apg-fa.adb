@@ -29,6 +29,12 @@ package body kv.apg.fa is
    end Get_State_Count;
 
    ----------------------------------------------------------------------------
+   function Get_State_List(Self : Finite_Automata_Class) return State_List_Pointer_Type is
+   begin
+      return Self.States;
+   end Get_State_List;
+
+   ----------------------------------------------------------------------------
    function Get_Start_State(Self : Finite_Automata_Class) return State_Id_Type is
    begin
       return Self.Start;
