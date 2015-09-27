@@ -87,6 +87,7 @@ package kv.apg.fast is
    function Get_Key(Self : State_Type) return Key_Type;
    function Get_Transition_Count(Self : State_Type) return Natural;
    function Get_Transition(Self : State_Type; Index : Positive) return Transition_Type;
+   function Get_Transitions(Self : State_Type) return Transition_List_Pointer_Type;
    function Image(Self : State_Type) return String;
    function Source_Code(Self : State_Type; Key : String) return String;
 

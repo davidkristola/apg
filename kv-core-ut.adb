@@ -20,11 +20,17 @@ package body kv.core.ut is
       T.Asserts := T.Asserts + 1;
       T.Suite.Increment_Asserts;
       if not condition then
-         T.Fails := T.Fails + 1;
-         T.Suite.Increment_Fail;
-         Put_Line((+T.Name) & " *** " & fail_message);
+         T.Fail(fail_message);
       end if;
    end Assert;
+
+   ----------------------------------------------------------------------------
+   procedure Fail(T : in out Test_Class; fail_message : in String) is
+   begin
+      T.Fails := T.Fails + 1;
+      T.Suite.Increment_Fail;
+      Put_Line((+T.Name) & " *** " & fail_message);
+   end Fail;
 
    ----------------------------------------------------------------------------
    procedure Remember

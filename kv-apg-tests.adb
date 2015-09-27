@@ -2014,7 +2014,11 @@ package body kv.apg.tests is
        Number : in     Positive;
        Line   : in     String) is
    begin
-      T.Assert(T.Buff.Get_Line(Number) = To_String_Type(Line), "Should be '"&Line&"', is '" & To_UTF(+T.Buff.Get_Line(Number)) & "'");
+      if T.Buff.Line_Count < Number then
+         T.Fail("Too few lines in the buffer!");
+      else
+         T.Assert(T.Buff.Get_Line(Number) = To_String_Type(Line), "Should be '"&Line&"', is '" & To_UTF(+T.Buff.Get_Line(Number)) & "'");
+      end if;
    end Test_Line;
 
 
@@ -2255,12 +2259,51 @@ package body kv.apg.tests is
    type Lexgen_State_List_Source_Code_Test is new Base_Lexgen_Test_Class with null record;
    procedure Run(T : in out Lexgen_State_List_Source_Code_Test) is
       use kv.apg.fast;
-      Expected : constant String := "(1 => (FROM_TO, 7, WWC'VAL(98), WWC'VAL(121)), 2 => (ANY, 11), 3 => (MATCH, 13, WWC'VAL(98)))";
       Expected_1 : constant String := "(1 => (MATCH, 2, WWC'VAL(97)), 2 => (MATCH, 5, WWC'VAL(97)), 3 => (MATCH, 8, WWC'VAL(101)))";
+      Expected_2 : constant String := "(1 => (MATCH, 3, WWC'VAL(98)))";
+      Expected_3 : constant String := "(1 => (MATCH, 4, WWC'VAL(99)))";
+      Expected_5 : constant String := "(1 => (MATCH, 6, WWC'VAL(113)))";
+      Expected_6 : constant String := "(1 => (MATCH, 7, WWC'VAL(122)))";
+      Expected_8 : constant String := "(1 => (MATCH, 9, WWC'VAL(102)))";
+      Expected_9 : constant String := "(1 => (MATCH, 10, WWC'VAL(103)))";
+      Expected_10 : constant String := "(1 => (Invalid, T1'ACCESS),";
+      Expected_11 : constant String := " 2 => (Invalid, T2'ACCESS),";
+      Expected_12 : constant String := " 3 => (Invalid, T3'ACCESS),";
+      Expected_13 : constant String := " 4 => (One, null),";
+      Expected_14 : constant String := " 5 => (Invalid, T5'ACCESS),";
+      Expected_15 : constant String := " 6 => (Invalid, T6'ACCESS),";
+      Expected_16 : constant String := " 7 => (Two, null),";
+      Expected_17 : constant String := " 8 => (Invalid, T8'ACCESS),";
+      Expected_18 : constant String := " 9 => (Invalid, T9'ACCESS),";
+      Expected_19 : constant String := " 10 => (Three, null));";
    begin
+      Parse_This(T, "token One = 'a' 'b' 'c';");
+      Parse_This(T, "token Two = 'a' 'q' 'z';");
+      Parse_This(T, "token Three = 'e' 'f' 'g';");
+      T.Generator.Initialize(T.Parser'UNCHECKED_ACCESS, +"My_Package");
       kv.apg.lexgen.Source_Code_States(T.Generator.Get_States, T.Generator.Get_Tokens, T.Buff);
       Test_Line(T, 1, "   T1 : aliased constant Transition_List_Type := ("&Expected_1&");"); -- {97=>2,97=>5,101=>8}
-      T.Assert(False, "test not complete");
+      Test_Line(T, 2, "   T2 : aliased constant Transition_List_Type := ("&Expected_2&");"); -- {98=>3}
+      Test_Line(T, 3, "   T3 : aliased constant Transition_List_Type := ("&Expected_3&");"); -- {99=>4}
+      -- Transition 4 is empty and skipped
+      Test_Line(T, 4, "   T5 : aliased constant Transition_List_Type := ("&Expected_5&");"); -- {113=>6}
+      Test_Line(T, 5, "   T6 : aliased constant Transition_List_Type := ("&Expected_6&");"); -- {122=>7}
+      -- Transition 7 is empty and skipped
+      Test_Line(T, 6, "   T8 : aliased constant Transition_List_Type := ("&Expected_8&");"); -- {102=>9}
+      Test_Line(T, 7, "   T9 : aliased constant Transition_List_Type := ("&Expected_9&");"); -- {103=>10}
+      -- Transition 10 is empty and skipped
+      Test_Line(T, 8, "   State_List : aliased constant State_List_Type :=");
+      Test_Line(T, 9, "   " & Expected_10);
+      Test_Line(T, 10, "   " & Expected_11);
+      Test_Line(T, 11, "   " & Expected_12);
+      Test_Line(T, 12, "   " & Expected_13);
+      Test_Line(T, 13, "   " & Expected_14);
+      Test_Line(T, 14, "   " & Expected_15);
+      Test_Line(T, 15, "   " & Expected_16);
+      Test_Line(T, 16, "   " & Expected_17);
+      Test_Line(T, 17, "   " & Expected_18);
+      Test_Line(T, 18, "   " & Expected_19);
+      Test_Line(T, 19, "   Nfa_Definition : aliased constant Nfa_Class := (Start => 1, States => State_List'ACCESS);");
    end Run;
 
 

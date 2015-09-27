@@ -150,13 +150,52 @@ package body kv.apg.lexgen is
 
 
    ----------------------------------------------------------------------------
+   function Img(Index : Positive) return String is
+      Image : String := Positive'IMAGE(Index);
+   begin
+      return Image(2..Image'LAST);
+   end Img;
+
+
+   ----------------------------------------------------------------------------
    procedure Source_Code_States
       (States : in     kv.apg.fast.State_List_Type;
        Tokens : in     kv.apg.enum.Enumeration_Class;
        Buffer : in out kv.apg.writer.buffer.Buffer_Writer_Class) is
+      use kv.apg.fast;
+
+      Index : Positive;
+      Final : Positive;
    begin
       --TODO
-      Buffer.Write_Line("-- This file is machine generated. Do not edit.");
+      Index := 1;
+      for S of States loop
+         if Get_Transitions(S) /= null then
+            Buffer.Write_Line("   T"&Img(Index)&" : aliased constant Transition_List_Type := ("&Source_Code(Get_Transitions(S).all)&");");
+         end if;
+         Index := Index + 1;
+      end loop;
+      Final := Index;
+      Buffer.Write_Line("   State_List : aliased constant State_List_Type :=");
+      Index := 1;
+      for S of States loop
+         Buffer.Write_Some( (if Index = 1 then "   (" else "    ") );
+         Buffer.Write_Some(Img(Index) & " => (");
+         if Is_Accepting(S) then
+            Buffer.Write_Some(Tokens.Get(Positive(Get_Key(S)+1)));
+         else
+            Buffer.Write_Some("Invalid");
+         end if;
+         Buffer.Write_Some(", ");
+         if Get_Transitions(S) = null then
+            Buffer.Write_Some("null)");
+         else
+            Buffer.Write_Some("T"&Img(Index)&"'ACCESS)");
+         end if;
+         Index := Index + 1;
+         Buffer.Write_Line( (if Index = Final then ");" else ",") );
+      end loop;
+      Buffer.Write_Line("   Nfa_Definition : aliased constant Nfa_Class := (Start => 1, States => State_List'ACCESS);");
    end Source_Code_States;
 
 

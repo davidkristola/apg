@@ -10,6 +10,7 @@ package kv.core.ut is
    type Test_Class is abstract tagged private;
    procedure Log(T : in out Test_Class; message : in String);
    procedure Assert(T : in out Test_Class; condition : in Boolean; fail_message : in String);
+   procedure Fail(T : in out Test_Class; fail_message : in String);
    procedure Set_Up(T : in out Test_Class) is null;
    procedure Tear_Down(T : in out Test_Class) is null;
    procedure Run(T : in out Test_Class) is abstract;

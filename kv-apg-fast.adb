@@ -321,6 +321,13 @@ package body kv.apg.fast is
 
 
    ----------------------------------------------------------------------------
+   function Get_Transitions(Self : State_Type) return Transition_List_Pointer_Type is
+   begin
+      return Self.Transitions;
+   end Get_Transitions;
+
+
+   ----------------------------------------------------------------------------
    function Trans_Img(Self : State_Type; Index : Natural) return String is
    begin
       if Index = 1 then
