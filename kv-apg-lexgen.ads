@@ -36,6 +36,10 @@ package kv.apg.lexgen is
       (Self   : in out Generator_Class;
        Buffer : in out kv.apg.writer.buffer.Buffer_Writer_Class);
 
+   not overriding procedure Insert_State_List -- "state_list"
+      (Self   : in out Generator_Class;
+       Buffer : in out kv.apg.writer.buffer.Buffer_Writer_Class);
+
    not overriding function Get_Cnfa(Self : Generator_Class) return kv.apg.fa.nfa.Nfa_Class;
    not overriding function Get_States(Self : Generator_Class) return kv.apg.fast.State_List_Type;
    not overriding function Get_Tokens(Self : Generator_Class) return kv.apg.enum.Enumeration_Class;

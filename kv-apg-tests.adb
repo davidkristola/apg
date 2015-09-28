@@ -19,6 +19,7 @@ with kv.apg.lexgen;
 with kv.apg.enum;
 with kv.apg.writer.buffer;
 with kv.apg.rewriter;
+with kv.apg.config;
 
 with kv.core.wwstr;
 
@@ -345,6 +346,12 @@ package body kv.apg.tests is
       record
          Parser : aliased kv.apg.parse.Parser_Class;
       end record;
+
+   ----------------------------------------------------------------------------
+   overriding procedure Tear_Down(T : in out Parser_Test_Class) is
+   begin
+      T.Parser.Delete_Directives;
+   end Tear_Down;
 
    ----------------------------------------------------------------------------
    procedure Parse_This(T : in out Parser_Test_Class'CLASS; S : in String) is
@@ -2003,12 +2010,6 @@ package body kv.apg.tests is
       end record;
 
    ----------------------------------------------------------------------------
-   overriding procedure Tear_Down(T : in out Base_Lexgen_Test_Class) is
-   begin
-      T.Parser.Delete_Directives;
-   end Tear_Down;
-
-   ----------------------------------------------------------------------------
    procedure Test_Line
       (T      : in out Base_Lexgen_Test_Class'CLASS;
        Number : in     Positive;
@@ -2266,16 +2267,16 @@ package body kv.apg.tests is
       Expected_6 : constant String := "(1 => (MATCH, 7, WWC'VAL(122)))";
       Expected_8 : constant String := "(1 => (MATCH, 9, WWC'VAL(102)))";
       Expected_9 : constant String := "(1 => (MATCH, 10, WWC'VAL(103)))";
-      Expected_10 : constant String := "(1 => (Invalid, T1'ACCESS),";
-      Expected_11 : constant String := " 2 => (Invalid, T2'ACCESS),";
-      Expected_12 : constant String := " 3 => (Invalid, T3'ACCESS),";
-      Expected_13 : constant String := " 4 => (One, null),";
-      Expected_14 : constant String := " 5 => (Invalid, T5'ACCESS),";
-      Expected_15 : constant String := " 6 => (Invalid, T6'ACCESS),";
-      Expected_16 : constant String := " 7 => (Two, null),";
-      Expected_17 : constant String := " 8 => (Invalid, T8'ACCESS),";
-      Expected_18 : constant String := " 9 => (Invalid, T9'ACCESS),";
-      Expected_19 : constant String := " 10 => (Three, null));";
+      Expected_10 : constant String := "1 => (Invalid, T1'ACCESS),";
+      Expected_11 : constant String := "2 => (Invalid, T2'ACCESS),";
+      Expected_12 : constant String := "3 => (Invalid, T3'ACCESS),";
+      Expected_13 : constant String := "4 => (One, null),";
+      Expected_14 : constant String := "5 => (Invalid, T5'ACCESS),";
+      Expected_15 : constant String := "6 => (Invalid, T6'ACCESS),";
+      Expected_16 : constant String := "7 => (Two, null),";
+      Expected_17 : constant String := "8 => (Invalid, T8'ACCESS),";
+      Expected_18 : constant String := "9 => (Invalid, T9'ACCESS),";
+      Expected_19 : constant String := "10 => (Three, null));";
    begin
       Parse_This(T, "token One = 'a' 'b' 'c';");
       Parse_This(T, "token Two = 'a' 'q' 'z';");
@@ -2292,7 +2293,7 @@ package body kv.apg.tests is
       Test_Line(T, 6, "   T8 : aliased constant Transition_List_Type := ("&Expected_8&");"); -- {102=>9}
       Test_Line(T, 7, "   T9 : aliased constant Transition_List_Type := ("&Expected_9&");"); -- {103=>10}
       -- Transition 10 is empty and skipped
-      Test_Line(T, 8, "   State_List : aliased constant State_List_Type :=");
+      Test_Line(T, 8, "   State_List : aliased constant State_List_Type := (");
       Test_Line(T, 9, "   " & Expected_10);
       Test_Line(T, 10, "   " & Expected_11);
       Test_Line(T, 11, "   " & Expected_12);
@@ -2304,6 +2305,55 @@ package body kv.apg.tests is
       Test_Line(T, 17, "   " & Expected_18);
       Test_Line(T, 18, "   " & Expected_19);
       Test_Line(T, 19, "   Nfa_Definition : aliased constant Nfa_Class := (Start => 1, States => State_List'ACCESS);");
+   end Run;
+
+
+   ----------------------------------------------------------------------------
+   type Lexgen_Insert_State_List_Test is new Base_Lexgen_Test_Class with null record;
+   procedure Run(T : in out Lexgen_Insert_State_List_Test) is
+   begin
+      Parse_This(T, "token One = 'a' 'b' 'c';");
+      Parse_This(T, "token Two = 'a' 'q' 'z';");
+      Parse_This(T, "token Three = 'e' 'f' 'g';");
+      T.Generator.Initialize(T.Parser'UNCHECKED_ACCESS, +"My_Package");
+      T.Generator.Insert_State_List(T.Buff);
+      Test_Line(T, 19, "   Nfa_Definition : aliased constant Nfa_Class := (Start => 1, States => State_List'ACCESS);");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Lexgen_With_Set_Test is new Base_Lexgen_Test_Class with null record;
+   procedure Run(T : in out Lexgen_With_Set_Test) is
+   begin
+      Parse_This(T, "set package_name = ""My_Package"";");
+      Parse_This(T, "token One = 'a' 'b' 'c';");
+      Parse_This(T, "token Two = 'a' 'q' 'z';");
+      Parse_This(T, "token Three = 'e' 'f' 'g';");
+      T.Assert(T.Parser.Error_Count = 0, "Parser error detected!");
+      T.Generator.Initialize(T.Parser'UNCHECKED_ACCESS, +"My_Package");
+      T.Generator.Insert_State_List(T.Buff);
+      Test_Line(T, 19, "   Nfa_Definition : aliased constant Nfa_Class := (Start => 1, States => State_List'ACCESS);");
+   end Run;
+
+
+   ----------------------------------------------------------------------------
+   type Base_Config_Test_Class is abstract new Parser_Test_Class with
+      record
+         -- part of base class: Lexer : kv.apg.lex.Lexer_Class;
+         -- part of base class: Parser : aliased kv.apg.parse.Parser_Class;
+         Config : kv.apg.config.Key_Value_Map_Class;
+      end record;
+
+   ----------------------------------------------------------------------------
+   type Basic_Config_Test is new Base_Config_Test_Class with null record;
+   procedure Run(T : in out Basic_Config_Test) is
+   begin
+      Parse_This(T, "set package_name = ""My_Package"";");
+      Parse_This(T, "token One = 'a' 'b' 'c';");
+      T.Assert(T.Parser.Error_Count = 0, "Parser error detected!");
+      T.Config.Initialize(T.Parser'UNCHECKED_ACCESS);
+      T.Assert(not T.Config.Has_Key("foo_bar"), "Has_Key(foo_bar) should be False!");
+      T.Assert(    T.Config.Has_Key("package_name"), "Has_Key(package_name) should be True!");
+      T.Assert(T.Config.Get_Value("package_name") = "My_Package", "Has_Value(package_name) should be My_Package, was <"&T.Config.Get_Value("package_name")&">!");
    end Run;
 
 
@@ -2358,7 +2408,6 @@ package body kv.apg.tests is
       suite.register(new Parse_Pattern_Token_Test, "Parse_Pattern_Token_Test");
       suite.register(new Parse_Skipover_Token_Test, "Parse_Skipover_Token_Test");
       suite.register(new Parse_Visitor_Test, "Parse_Visitor_Test");
---      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 
       suite.register(new Fast_Uninit_Test, "Fast_Uninit_Test");
@@ -2449,8 +2498,12 @@ package body kv.apg.tests is
       suite.register(new Lexgen_Token_Type_Test, "Lexgen_Token_Type_Test");
       suite.register(new Lexgen_State_List_Test, "Lexgen_State_List_Test");
       suite.register(new Lexgen_State_List_Source_Code_Test, "Lexgen_State_List_Source_Code_Test");
+      suite.register(new Lexgen_Insert_State_List_Test, "Lexgen_Insert_State_List_Test");
+      suite.register(new Lexgen_With_Set_Test, "Lexgen_With_Set_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
+
+      suite.register(new Basic_Config_Test, "Basic_Config_Test");
    end register;
 
 end kv.apg.tests;

@@ -1,0 +1,8 @@
+set package_name = "Lex_Test_1";
+set base_file_name = "lex_test_1";
+
+token Key_Actor = "actor";
+token Key_Assert = "assert";
+token Key_Attribute = "attribute";
+token Key_Case = "case";
+token Key_Constructor = "constructor";
