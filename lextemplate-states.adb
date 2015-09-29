@@ -46,14 +46,9 @@ package body «package_name».States is
       end loop;
    end Mark_Transitions;
 
-   function Get_Id(Self : State_Type) return State_Universe_Type is
-   begin
-      return Self.Id;
-   end Get_Id;
-
    function Is_Accepting(Self : State_Type) return Boolean is
    begin
-      return Self.Accepting;
+      return Self.Accepted_Token /= Invalid;
    end Is_Accepting;
 
    function Get_Token(Self : State_Type) return Token_Type is

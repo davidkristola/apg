@@ -77,33 +77,57 @@ procedure apg is
    end Process_Config;
 
    ----------------------------------------------------------------------------
-   procedure Zip(Template_Name : in     String) is
+   procedure Open_Or_Create
+      (File : in out File_Type;
+       Name : in     String) is
+   begin
+      Open(File, Out_File, Name);
+   exception
+      when others =>
+         Create(File, Out_File, Name);
+   end Open_Or_Create;
+
+   ----------------------------------------------------------------------------
+   procedure Zip
+      (Template_Name : in     String;
+       Outfile_Name  : in     String) is
+
       Template : kv.apg.writer.buffer.Buffer_Writer_Class;
       Source_Code : kv.apg.writer.buffer.Buffer_Writer_Class;
       Converter : kv.apg.rewriter.Rewriter_Class;
+      F : File_Type;
+
    begin
       Buffer_File(Template_Name, Template);
       Converter.Apply(Template, Generator, Source_Code);
+      Open_Or_Create(F, Outfile_Name);
       for I in 1 .. Source_Code.Line_Count loop
-         Put_Line(To_UTF(+Source_Code.Get_Line(I)));
+         Put_Line(F, To_UTF(+Source_Code.Get_Line(I)));
       end loop;
+      Close(F);
    end Zip;
+
+   ----------------------------------------------------------------------------
+   procedure Zip_Lex_File(Tail : in     String) is
+      Template_Head : constant String := "lextemplate";
+      Outfile_Head  : constant String := Config.Get_Value("base_file_name");
+   begin
+      Zip(Template_Head & Tail, Outfile_Head & Tail);
+   end Zip_Lex_File;
 
    ----------------------------------------------------------------------------
    procedure Generate_Lex is
       Package_Name : constant String := Config.Get_Value("package_name");
---      Template : kv.apg.writer.buffer.Buffer_Writer_Class;
---      Source_Code : kv.apg.writer.buffer.Buffer_Writer_Class;
---      Converter : kv.apg.rewriter.Rewriter_Class;
    begin
       Generator.Initialize(Parser'UNCHECKED_ACCESS, To_String_Type(Package_Name));
-      Zip("lextemplate.ads");
-      Zip("lextemplate-static_nfa_definition.ads");
---      Buffer_File("lextemplate.ads", Template);
---      Converter.Apply(Template, Generator, Source_Code);
---      for I in 1 .. Source_Code.Line_Count loop
---         Put_Line(To_UTF(+Source_Code.Get_Line(I)));
---      end loop;
+      Zip_Lex_File(".ads");
+      Zip_Lex_File("-static_nfa_definition.ads");
+      Zip_Lex_File("-states.ads");
+      Zip_Lex_File("-states.adb");
+      Zip_Lex_File("-nfa.ads");
+      Zip_Lex_File("-nfa.adb");
+      Zip_Lex_File("-lexer.ads");
+      Zip_Lex_File("-lexer.adb");
    end Generate_Lex;
 
 begin

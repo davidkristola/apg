@@ -6,3 +6,5 @@ token Key_Assert = "assert";
 token Key_Attribute = "attribute";
 token Key_Case = "case";
 token Key_Constructor = "constructor";
+token White_Space = (' ' | '   ') *;
+token New_Line = (U000A | U000D);

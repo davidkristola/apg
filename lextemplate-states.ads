@@ -41,15 +41,12 @@ package «package_name».States is
 
    type State_Type is
       record
-         Id             : State_Universe_Type := Invalid_State;
-         Accepting      : Boolean := False;
          Accepted_Token : Token_Type := Invalid;
          Transitions    : Transition_List_Pointer_Type;
       end record;
    type State_List_Type is array (State_Id_Type range <>) of State_Type;
    type State_List_Pointer_Type is access constant State_List_Type;
 
-   function Get_Id(Self : State_Type) return State_Universe_Type;
    function Is_Accepting(Self : State_Type) return Boolean;
    function Get_Token(Self : State_Type) return Token_Type;
    function Get_Transition_Count(Self : State_Type) return Natural;
