@@ -6,3 +6,21 @@ b~*
 my_example
 
 my_example
+
+lex_test_1_driver
+
+lex_test_1-lexer.adb
+
+lex_test_1-lexer.ads
+
+lex_test_1-nfa.adb
+
+lex_test_1-nfa.ads
+
+lex_test_1-states.adb
+
+lex_test_1-states.ads
+
+lex_test_1-static_nfa_definition.ads
+
+lex_test_1.ads
