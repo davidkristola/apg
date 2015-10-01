@@ -60,6 +60,7 @@ package body kv.apg.parse is
                Token_State.Initialize(Token.Get_Data_As_String);
                Self.Substate := State_Pointer_Type(Token_State);
             else
+               Self.Errors := Self.Errors + 1;
                Self.Action := Recover;
             end if;
          when Process =>

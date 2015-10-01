@@ -135,6 +135,11 @@ begin
    -- Process command line arguments (if any/can we have none? default input file?)
    -- Process the input file (singular and required; standard input from a pipe?)
    Process_Input_File(Argument(1));
+   if Parser.Error_Count > 0 then
+      Put_Line("Error parsing "&Argument(1));
+      Set_Exit_Status(Failure);
+      return;
+   end if;
    Process_Config;
    -- Generate output files
    Generate_Lex;

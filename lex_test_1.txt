@@ -6,5 +6,12 @@ token Key_Assert = "assert";
 token Key_Attribute = "attribute";
 token Key_Case = "case";
 token Key_Constructor = "constructor";
-token White_Space = (' ' | '   ') *;
-token New_Line = (U000A | U000D);
+skipover White_Space = (' ' | '   ') +;
+skipover New_Line = (U000A | U000D);
+
+token Id_Token = (('a'-'z') | ('A'-'Z')) * ('_'? (('a'-'z')|('A'-'Z')|('0'-'9'))*;
+token Integer_Literal = ('0'-'9') + ('_'? ('0'-'9'))*;
+
+token String_Literal = '"' (U000B | U0020 | U0021 | ( U0023 - UFFFF ) ) * '"';
+skipover EOL_Comment = '#' (U000E-UFFFF) * (U000A | U000D);
+
