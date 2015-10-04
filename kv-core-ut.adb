@@ -44,8 +44,10 @@ package body kv.core.ut is
 
    ----------------------------------------------------------------------------
    procedure run_all(self : in out Test_Suite_Class) is
+      Previous_Asserts : Natural;
    begin
       for B : Bundle_Type of self.tests loop
+         Previous_Asserts := self.Asserts;
          --Put_Line("Running " & (+B.Name));
          B.Test.Set_Up;
          begin
@@ -56,6 +58,10 @@ package body kv.core.ut is
                Put_Line((+B.Name) & " *** EXCEPTION!");
          end;
          B.Test.Tear_Down;
+         if self.Asserts = Previous_Asserts then
+            -- This test had no assertions
+            B.Test.Fail("Incomplete test!");
+         end if;
       end loop;
    end run_all;
 
