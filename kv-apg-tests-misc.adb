@@ -23,15 +23,16 @@ with kv.apg.writer.buffer;
 with kv.apg.rewriter;
 with kv.apg.config;
 with kv.apg.locations;
+with kv.apg.incidents;
 
 package body kv.apg.tests.misc is
 
    use Ada.Characters.Conversions;
    use Ada.Strings.Wide_Wide_Unbounded;
    use kv.core.wwstr;
-   use kv.apg.lex;
-   use kv.apg.tokens;
-   use kv.apg.fast;
+--   use kv.apg.lex;
+--   use kv.apg.tokens;
+--   use kv.apg.fast;
 
 
 
@@ -334,6 +335,26 @@ package body kv.apg.tests.misc is
    end Run;
 
 
+
+   ----------------------------------------------------------------------------
+   type Incident_Test_Class is abstract new Location_Test_Class with
+      record
+         null;
+      end record;
+
+   ----------------------------------------------------------------------------
+   type New_Incident_Test is new Incident_Test_Class with null record;
+   procedure Run(T : in out New_Incident_Test) is
+      Where : kv.apg.locations.Location_Type;
+      What  : kv.apg.incidents.Incident_Class(kv.apg.incidents.Warning);
+      Expected : constant String := "WARNING (File: foo, line 1, column 13): because (""citation"").";
+   begin
+      Where := T.Factory.New_Location(Line => 1, Column => 13);
+      What.Initialize(Where, To_String_Type("citation"), To_String_Type("because"));
+      T.Assert(What.Image = To_String_Type(Expected), "What.Image should be <"&Expected&">, but is <"&To_String(What.Image)&">.");
+   end Run;
+
+
    ----------------------------------------------------------------------------
    procedure register(suite : in kv.core.ut.Suite_Pointer_Type) is
    begin
@@ -354,6 +375,8 @@ package body kv.apg.tests.misc is
       suite.register(new Rewriter_Helper_Test, "Rewriter_Helper_Test");
 
       suite.register(new New_Location_Test, "New_Location_Test");
+
+      suite.register(new New_Incident_Test, "New_Incident_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;

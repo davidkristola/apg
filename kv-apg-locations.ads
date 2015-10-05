@@ -1,5 +1,3 @@
-with Ada.Finalization;
-
 with kv.core.wwstr; use kv.core.wwstr;
 
 package kv.apg.locations is
