@@ -25,4 +25,20 @@ package body kv.apg.incidents is
       return Answer;
    end Image;
 
+   ----------------------------------------------------------------------------
+   not overriding procedure Initialize
+      (Self   : in out Writer_Report_Class;
+       Writer : not null access kv.apg.writer.Writer_Class'CLASS) is
+   begin
+      Self.Writer := Writer;
+   end Initialize;
+
+   ----------------------------------------------------------------------------
+   overriding procedure Note
+      (Self     : in     Writer_Report_Class;
+       Incident : in     Incident_Class'CLASS) is
+   begin
+      Self.Writer.Write_Line(Incident.Image);
+   end Note;
+
 end kv.apg.incidents;

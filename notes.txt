@@ -1,0 +1,2 @@
+gnatmake -gnata test_apg.adb && ./test_apg
+gnatmake -gnata apg.adb && apg lex_test_1.txt && gnatmake -gnata lex_test_1_driver.adb && lex_test_1_driver lex_test_1_lex_me.txt

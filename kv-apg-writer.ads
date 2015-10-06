@@ -3,7 +3,7 @@ with kv.core.wwstr; use kv.core.wwstr;
 
 package kv.apg.writer is
 
-   type Writer_Class is abstract tagged null record;
+   type Writer_Class is interface;
 
    procedure Write_Line
       (Self : in out Writer_Class;
