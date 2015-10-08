@@ -34,11 +34,21 @@ package body kv.apg.incidents is
    end Initialize;
 
    ----------------------------------------------------------------------------
+   not overriding procedure Set_Filter_Level
+      (Self        : in out Writer_Report_Class;
+       Let_Through : in     Severity_Type) is
+   begin
+      Self.Level := Let_Through;
+   end Set_Filter_Level;
+
+   ----------------------------------------------------------------------------
    overriding procedure Note
       (Self     : in     Writer_Report_Class;
        Incident : in     Incident_Class'CLASS) is
    begin
-      Self.Writer.Write_Line(Incident.Image);
+      if Incident.Severity >= Self.Level then
+         Self.Writer.Write_Line(Incident.Image);
+      end if;
    end Note;
 
 end kv.apg.incidents;

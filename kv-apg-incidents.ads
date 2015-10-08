@@ -5,7 +5,7 @@ with kv.apg.writer;
 
 package kv.apg.incidents is
 
-   type Severity_Type is (Information, Warning, Error);
+   type Severity_Type is (Debug, Detail, Information, Warning, Error);
 
    type Incident_Class(Severity : Severity_Type) is tagged private;
 
@@ -31,6 +31,9 @@ package kv.apg.incidents is
    not overriding procedure Initialize
       (Self   : in out Writer_Report_Class;
        Writer : not null access kv.apg.writer.Writer_Class'CLASS);
+   not overriding procedure Set_Filter_Level
+      (Self        : in out Writer_Report_Class;
+       Let_Through : in     Severity_Type);
    overriding procedure Note
       (Self     : in     Writer_Report_Class;
        Incident : in     Incident_Class'CLASS);
@@ -48,6 +51,7 @@ private
    type Writer_Report_Class is new Report_Class with
       record
          Writer : access kv.apg.writer.Writer_Class'CLASS;
+         Level  : Severity_Type := Debug;
       end record;
 
 end kv.apg.incidents;

@@ -25,6 +25,7 @@ with kv.apg.config;
 with kv.apg.locations;
 with kv.apg.incidents;
 with kv.apg.writer.console;
+with kv.apg.logger.writer;
 
 package body kv.apg.tests.misc is
 
@@ -312,7 +313,7 @@ package body kv.apg.tests.misc is
    ----------------------------------------------------------------------------
    type Location_Test_Class is abstract new Buffer_Writer_Test_Class with
       record
-         Factory : kv.apg.locations.File_Location_Factory_Class;
+         Factory : aliased kv.apg.locations.File_Location_Factory_Class;
       end record;
 
    ----------------------------------------------------------------------------
@@ -337,7 +338,7 @@ package body kv.apg.tests.misc is
    ----------------------------------------------------------------------------
    type Incident_Test_Class is abstract new Location_Test_Class with
       record
-         Reporter : kv.apg.incidents.Writer_Report_Class;
+         Reporter : aliased kv.apg.incidents.Writer_Report_Class;
       end record;
 
    ----------------------------------------------------------------------------
@@ -366,6 +367,56 @@ package body kv.apg.tests.misc is
       Test_Line(T, 1, Expected);
    end Run;
 
+   ----------------------------------------------------------------------------
+   type Filter_Test is new Incident_Test_Class with null record;
+   procedure Run(T : in out Filter_Test) is
+      Where  : kv.apg.locations.Location_Type;
+      What_0 : kv.apg.incidents.Incident_Class(kv.apg.incidents.Debug);
+      What_1 : kv.apg.incidents.Incident_Class(kv.apg.incidents.Detail);
+      What_2 : kv.apg.incidents.Incident_Class(kv.apg.incidents.Information);
+      What_3 : kv.apg.incidents.Incident_Class(kv.apg.incidents.Warning);
+      What_4 : kv.apg.incidents.Incident_Class(kv.apg.incidents.Error);
+   begin
+      Where := T.Factory.New_Location(Line => 1, Column => 13);
+      What_0.Initialize(Where, To_String_Type("citation"), To_String_Type("Debug"));
+      What_1.Initialize(Where, To_String_Type("citation"), To_String_Type("Detail"));
+      What_2.Initialize(Where, To_String_Type("citation"), To_String_Type("Information"));
+      What_3.Initialize(Where, To_String_Type("citation"), To_String_Type("Warning"));
+      What_4.Initialize(Where, To_String_Type("citation"), To_String_Type("Error"));
+      T.Reporter.Initialize(T.Buff'UNCHECKED_ACCESS);
+      T.Reporter.Note(What_0);
+      T.Assert(T.Buff.Line_Count = 1, "Line count should have been 1 (pre-level)");
+      T.Reporter.Set_Filter_Level(kv.apg.incidents.Warning);
+      T.Reporter.Note(What_0);
+      T.Assert(T.Buff.Line_Count = 1, "Line count should still be 1 (level at warning, debug excluded)");
+      T.Reporter.Note(What_1);
+      T.Assert(T.Buff.Line_Count = 1, "Line count should still be 1 (level at warning, detail excluded)");
+      T.Reporter.Note(What_2);
+      T.Assert(T.Buff.Line_Count = 1, "Line count should still be 1 (level at warning, info excluded)");
+      T.Reporter.Note(What_3);
+      T.Assert(T.Buff.Line_Count = 2, "Line count should be 2 (level at warning, warning accepted)");
+      T.Reporter.Note(What_4);
+      T.Assert(T.Buff.Line_Count = 3, "Line count should be 3 (level at warning, error accepted)");
+   end Run;
+
+
+
+   ----------------------------------------------------------------------------
+   type Logger_Test_Class is abstract new Incident_Test_Class with
+      record
+         Logger : aliased kv.apg.logger.writer.Writer_Logger_Class;
+      end record;
+
+   ----------------------------------------------------------------------------
+   type Logger_Init_Test is new Logger_Test_Class with null record;
+   procedure Run(T : in out Logger_Init_Test) is
+      Citation : String_Type := To_String_Type("token");
+      Expected : constant String := "INFORMATION (File: bar, line 2, column 17): processed (""token"").";
+   begin
+      T.Logger.Initialize("bar", T.Buff'UNCHECKED_ACCESS, kv.apg.incidents.Debug);
+      T.Logger.Note_Info(2, 17, Citation, "processed");
+      Test_Line(T, 1, Expected);
+   end Run;
 
 
    ----------------------------------------------------------------------------
@@ -391,6 +442,10 @@ package body kv.apg.tests.misc is
 
       suite.register(new New_Incident_Test, "New_Incident_Test");
       suite.register(new Report_Incident_Test, "Report_Incident_Test");
+      suite.register(new Filter_Test, "Filter_Test");
+
+      suite.register(new Logger_Init_Test, "Logger_Init_Test");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;
 
