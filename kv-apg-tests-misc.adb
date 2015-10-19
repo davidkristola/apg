@@ -22,7 +22,7 @@ with kv.apg.enum;
 with kv.apg.writer.buffer;
 with kv.apg.rewriter;
 with kv.apg.config;
-with kv.apg.locations;
+with kv.apg.locations.factories;
 with kv.apg.incidents;
 with kv.apg.writer.console;
 with kv.apg.logger.writer;
@@ -313,7 +313,7 @@ package body kv.apg.tests.misc is
    ----------------------------------------------------------------------------
    type Location_Test_Class is abstract new Buffer_Writer_Test_Class with
       record
-         Factory : aliased kv.apg.locations.File_Location_Factory_Class;
+         Factory : aliased kv.apg.locations.factories.File_Location_Factory_Class;
       end record;
 
    ----------------------------------------------------------------------------
@@ -325,7 +325,7 @@ package body kv.apg.tests.misc is
    ----------------------------------------------------------------------------
    type New_Location_Test is new Location_Test_Class with null record;
    procedure Run(T : in out New_Location_Test) is
-      Where : kv.apg.locations.Location_Type;
+      Where : kv.apg.locations.File_Location_Type;
       Expected : constant String := "File: foo, line 1, column 13";
       use kv.apg.locations;
    begin
@@ -344,7 +344,7 @@ package body kv.apg.tests.misc is
    ----------------------------------------------------------------------------
    type New_Incident_Test is new Incident_Test_Class with null record;
    procedure Run(T : in out New_Incident_Test) is
-      Where : kv.apg.locations.Location_Type;
+      Where : kv.apg.locations.File_Location_Type;
       What  : kv.apg.incidents.Incident_Class(kv.apg.incidents.Warning);
       Expected : constant String := "WARNING (File: foo, line 1, column 13): because (""citation"").";
    begin
@@ -356,7 +356,7 @@ package body kv.apg.tests.misc is
    ----------------------------------------------------------------------------
    type Report_Incident_Test is new Incident_Test_Class with null record;
    procedure Run(T : in out Report_Incident_Test) is
-      Where : kv.apg.locations.Location_Type;
+      Where : kv.apg.locations.File_Location_Type;
       What  : kv.apg.incidents.Incident_Class(kv.apg.incidents.Warning);
       Expected : constant String := "WARNING (File: foo, line 1, column 13): because (""citation"").";
    begin
@@ -370,7 +370,7 @@ package body kv.apg.tests.misc is
    ----------------------------------------------------------------------------
    type Filter_Test is new Incident_Test_Class with null record;
    procedure Run(T : in out Filter_Test) is
-      Where  : kv.apg.locations.Location_Type;
+      Where  : kv.apg.locations.File_Location_Type;
       What_0 : kv.apg.incidents.Incident_Class(kv.apg.incidents.Debug);
       What_1 : kv.apg.incidents.Incident_Class(kv.apg.incidents.Detail);
       What_2 : kv.apg.incidents.Incident_Class(kv.apg.incidents.Information);

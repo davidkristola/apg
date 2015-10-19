@@ -1,8 +1,10 @@
 
 private with Ada.Containers.Doubly_Linked_Lists;
 
-with kv.apg.tokens;
 with kv.core.wwstr; use kv.core.wwstr;
+
+with kv.apg.tokens;
+with kv.apg.locations;
 
 package kv.apg.lex is
 
@@ -36,8 +38,8 @@ private
    type Lexer_Class is tagged
       record
          State : Lex_State_Type := Between;
-         Where : Positive;
-         Line  : Positive := 1;
+         Where : kv.apg.locations.Location_Type;
+         Line  : kv.apg.locations.Location_Type;
          Accum : String_Type;
          List  : Token_List.List;
       end record;

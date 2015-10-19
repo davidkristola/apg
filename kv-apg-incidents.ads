@@ -11,7 +11,7 @@ package kv.apg.incidents is
 
    procedure Initialize
       (Self     : in out Incident_Class;
-       Location : in     kv.apg.locations.Location_Type;
+       Location : in     kv.apg.locations.File_Location_Type;
        Citation : in     String_Type;
        Reason   : in     String_Type);
 
@@ -43,7 +43,7 @@ private
 
    type Incident_Class(Severity : Severity_Type) is tagged
       record
-         Location : kv.apg.locations.Location_Type;
+         Location : kv.apg.locations.File_Location_Type;
          Citation : String_Type;
          Reason   : String_Type;
       end record;

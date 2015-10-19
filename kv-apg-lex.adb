@@ -130,7 +130,9 @@ package body kv.apg.lex is
       end case;
       if Debug then Put_Line("State = " & Lex_State_Type'IMAGE(Self.State)); end if;
       if Next = Line_Feed then
-         Self.Line := Self.Line + 1;
+         Self.Line.Next_Line;
+      else
+         Self.Line.Next_Column;
       end if;
    end Ingest_Character;
 

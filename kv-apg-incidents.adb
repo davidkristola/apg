@@ -8,7 +8,7 @@ package body kv.apg.incidents is
    ----------------------------------------------------------------------------
    procedure Initialize
       (Self     : in out Incident_Class;
-       Location : in     kv.apg.locations.Location_Type;
+       Location : in     kv.apg.locations.File_Location_Type;
        Citation : in     String_Type;
        Reason   : in     String_Type) is
    begin

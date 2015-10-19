@@ -2,51 +2,42 @@ with kv.core.wwstr; use kv.core.wwstr;
 
 package kv.apg.locations is
 
-   type Location_Type is private;
+   type Location_Type is tagged private;
 
    procedure Initialize
       (Self   : in out Location_Type;
-       File   : in     String_Type;
        Line   : in     Natural;
        Column : in     Natural);
 
    function Image(Self : Location_Type) return String;
 
-   --TODO: add getters if needed
+   procedure Next_Line(Self : in out Location_Type);
+   procedure Next_Column(Self : in out Location_Type);
+   function Get_Line(Self : Location_Type) return Natural;
+   function Get_Column(Self : Location_Type) return Natural;
+   function "="(L, R : Location_Type) return Boolean;
 
 
+   type File_Location_Type is new Location_Type with private;
 
-
-
-   type Location_Factory_Class is interface;
-   function New_Location
-      (Self   : in     Location_Factory_Class;
-       Line   : in     Natural;
-       Column : in     Natural) return Location_Type is abstract;
-
-
-   -- Concrete factory encapsulating a pre-determined file name
-   type File_Location_Factory_Class is new Location_Factory_Class with private;
    not overriding procedure Initialize
-      (Self : in out File_Location_Factory_Class;
-       File : in     String);
-   overriding function New_Location
-      (Self   : in     File_Location_Factory_Class;
+      (Self   : in out File_Location_Type;
+       File   : in     String_Type;
        Line   : in     Natural;
-       Column : in     Natural) return Location_Type;
+       Column : in     Natural);
 
+   overriding function Image(Self : File_Location_Type) return String;
+   overriding function "="(L, R : File_Location_Type) return Boolean;
 
 private
 
-   type Location_Type is
+   type Location_Type is tagged
       record
-         File   : String_Type;
-         Line   : Natural := 0;
-         Column : Natural := 0;
+         Line   : Natural := 1;
+         Column : Natural := 1;
       end record;
 
-
-   type File_Location_Factory_Class is new Location_Factory_Class with
+   type File_Location_Type is new Location_Type with
       record
          File : String_Type;
       end record;

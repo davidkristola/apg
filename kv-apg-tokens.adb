@@ -14,15 +14,27 @@ package body kv.apg.tokens is
 
 
    ----------------------------------------------------------------------------
-   procedure Initialize
+   procedure Old_Initialize
       (Self : in out Token_Class;
        Kind : in     Token_Type;
        Line : in     Positive;
        Data : in     String_Type) is
    begin
       Self.Kind := Kind;
-      Self.Line := Line;
       Self.Data := Data;
+      Self.Location.Initialize(Line, 0);
+   end Old_Initialize;
+
+   ----------------------------------------------------------------------------
+   procedure Initialize
+      (Self  : in out Token_Class;
+       Kind  : in     Token_Type;
+       Where : in     kv.apg.locations.Location_Type;
+       Data  : in     String_Type) is
+   begin
+      Self.Kind := Kind;
+      Self.Data := Data;
+      Self.Location := Where;
    end Initialize;
 
    ----------------------------------------------------------------------------
@@ -34,7 +46,7 @@ package body kv.apg.tokens is
    ----------------------------------------------------------------------------
    function Get_Line(Self : Token_Class) return Positive is
    begin
-      return Self.Line;
+      return Self.Location.Get_Line;
    end Get_Line;
 
    ----------------------------------------------------------------------------
@@ -57,8 +69,9 @@ package body kv.apg.tokens is
 
    ----------------------------------------------------------------------------
    function "="(L, R : Token_Class) return Boolean is
+      use kv.apg.locations; -- "="
    begin
-      return (L.Kind = R.Kind) and then (L.Line = R.Line) and then (L.data = R.Data);
+      return (L.Kind = R.Kind) and then (L.Location = R.Location) and then (L.data = R.Data);
    end "=";
 
 end kv.apg.tokens;

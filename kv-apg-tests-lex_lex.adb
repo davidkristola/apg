@@ -6,9 +6,10 @@ with Ada.Tags; use Ada.Tags;
 with Ada.Strings.UTF_Encoding.Strings;
 with Ada.Text_IO; use Ada.Text_IO;
 
-with kv.apg.tokens;
-
 with kv.core.wwstr;
+
+with kv.apg.tokens;
+with kv.apg.locations;
 
 package body kv.apg.tests.lex_lex is
 
@@ -317,8 +318,9 @@ package body kv.apg.tests.lex_lex is
    procedure Run(T : in out Simple_Token_Test) is
       Token : kv.apg.tokens.Token_Class;
       Word : constant String := "hello";
+      Where : kv.apg.locations.Location_Type;
    begin
-      Token.Initialize(A_Word, 1, To_String_Type(Word));
+      Token.Initialize(A_Word, Where, To_String_Type(Word));
       T.Assert(Token.Get_Line = 1, "Line should be 1, is " & Positive'IMAGE(Token.Get_Line));
       T.Assert(Token.Get_Kind = A_Word, "Kind should be A_Word, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
       T.Assert(Token.Get_Data = To_String_Type(Word), "Data is wrong");

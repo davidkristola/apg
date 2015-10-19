@@ -21,7 +21,7 @@ package body kv.apg.logger.writer is
        Reason   : in     String;
        Level    : in     kv.apg.incidents.Severity_Type) is
 
-      Where : kv.apg.locations.Location_Type;
+      Where : kv.apg.locations.File_Location_Type;
       What  : kv.apg.incidents.Incident_Class(Level);
 
    begin

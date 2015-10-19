@@ -2,7 +2,7 @@ with kv.core.wwstr; use kv.core.wwstr;
 
 with kv.apg.writer;
 with kv.apg.incidents;
-private with kv.apg.locations;
+private with kv.apg.locations.factories;
 
 package kv.apg.logger.writer is
 
@@ -47,7 +47,7 @@ private
 
    type Writer_Logger_Class is new Logger_Class with
       record
-         Factory  : kv.apg.locations.File_Location_Factory_Class;
+         Factory  : kv.apg.locations.factories.File_Location_Factory_Class;
          Reporter : kv.apg.incidents.Writer_Report_Class;
       end record;
 
