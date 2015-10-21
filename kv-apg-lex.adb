@@ -19,13 +19,16 @@ package body kv.apg.lex is
    end Set_Debug;
 
 
-   Quotation : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Quotation);
-   Comment : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Number_Sign);
-   Apostrophe : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Apostrophe);
-   Open_Block : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Left_Angle_Quotation);
+   Quotation   : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Quotation);
+   Comment     : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Number_Sign);
+   Apostrophe  : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Apostrophe);
+   Open_Block  : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Left_Angle_Quotation);
    Close_Block : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Right_Angle_Quotation);
-   Underscore : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Low_Line);
-   Line_Feed : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.LF);
+   Underscore  : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Low_Line);
+   Line_Feed   : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.LF);
+   Eos         : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Semicolon);
+   Open_Paren  : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Left_Parenthesis);
+   Close_Paren : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Right_Parenthesis);
 
    ----------------------------------------------------------------------------
    function Character_State(Next : Wide_Wide_Character) return Lex_State_Type is
@@ -45,11 +48,6 @@ package body kv.apg.lex is
       end if;
       return In_Symbol;
    end Character_State;
-
-
-   Eos : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Semicolon);
-   Open_Paren : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Left_Parenthesis);
-   Close_Paren : constant Wide_Wide_Character := To_Wide_Wide_Character(Ada.Characters.Latin_1.Right_Parenthesis);
 
 
    ----------------------------------------------------------------------------
@@ -129,10 +127,10 @@ package body kv.apg.lex is
             end if;
       end case;
       if Debug then Put_Line("State = " & Lex_State_Type'IMAGE(Self.State)); end if;
-      if Next = Line_Feed then
-         Self.Line.Next_Line;
+      if Is_Line_Terminator(Next) then
+         Self.Current_Position.Next_Line;
       else
-         Self.Line.Next_Column;
+         Self.Current_Position.Next_Column;
       end if;
    end Ingest_Character;
 
@@ -172,7 +170,7 @@ package body kv.apg.lex is
       if Keep_First_Character(Self.State) then
          Self.Accumulate_Character(Next);
       end if;
-      Self.Where := Self.Line;
+      Self.Start_Of_Token := Self.Current_Position;
       if Is_Mono_Symbol(Next) then
          if Debug then Put_Line("Auto-completing mono-symbol " & To_Character(Next)); end if;
          Self.Complete_Token(kv.apg.tokens.A_Symbol);
@@ -186,7 +184,7 @@ package body kv.apg.lex is
       Token : kv.apg.tokens.Token_Class;
    begin
       if Debug then Put_Line("Completing token " & kv.apg.tokens.Token_Type'IMAGE(Kind)); end if;
-      Token.Initialize(Kind, Self.Where, Self.Accum);
+      Token.Initialize(Kind, Self.Start_Of_Token, Self.Accumulator);
       Self.List.Append(Token);
       Self.State := Between;
    end Complete_Token;
@@ -196,17 +194,16 @@ package body kv.apg.lex is
       (Self : in out Lexer_Class;
        Next : in     Wide_Wide_Character) is
    begin
-      if Debug then Put_Line("Adding '"&To_Character(Next)&"' to '"&To_String(+Self.Accum)&"'."); end if;
-      Self.Accum := Self.Accum & Next;
-      if Debug then Put_Line("Self.Accum is now '"&To_String(+Self.Accum)&"'."); end if;
+      if Debug then Put_Line("Adding '"&To_Character(Next)&"' to '"&To_String(+Self.Accumulator)&"'."); end if;
+      Self.Accumulator := Self.Accumulator & Next;
+      if Debug then Put_Line("Self.Accumulator is now '"&To_String(+Self.Accumulator)&"'."); end if;
    end Accumulate_Character;
 
    ----------------------------------------------------------------------------
    procedure Reset_Accumulator
       (Self : in out Lexer_Class) is
    begin
-      --Put_Line("Resetting Self.Accum.");
-      Self.Accum := Ada.Strings.Wide_Wide_Unbounded.Null_Unbounded_Wide_Wide_String;
+      Self.Accumulator := Ada.Strings.Wide_Wide_Unbounded.Null_Unbounded_Wide_Wide_String;
    end Reset_Accumulator;
 
 end kv.apg.lex;

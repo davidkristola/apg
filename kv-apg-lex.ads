@@ -37,11 +37,11 @@ private
 
    type Lexer_Class is tagged
       record
-         State : Lex_State_Type := Between;
-         Where : kv.apg.locations.Location_Type;
-         Line  : kv.apg.locations.Location_Type;
-         Accum : String_Type;
-         List  : Token_List.List;
+         State            : Lex_State_Type := Between;
+         Start_Of_Token   : kv.apg.locations.Location_Type;
+         Current_Position : kv.apg.locations.Location_Type;
+         Accumulator      : String_Type;
+         List             : Token_List.List;
       end record;
 
    procedure Begin_Token
