@@ -35,6 +35,7 @@ procedure apg is
    procedure Ingest_File(File_Name : in     String) is
       F : File_Type;
    begin
+      Lexer.Start_File(To_String_Type(File_Name));
       Open(F, In_File, File_Name);
       while not End_Of_File(F) loop
          Ingest_Line(Get_Line(F));

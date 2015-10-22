@@ -62,6 +62,16 @@ package body kv.apg.lex is
 
 
    ----------------------------------------------------------------------------
+   procedure Start_File
+      (Self : in out Lexer_Class;
+       File : in     String_Type) is
+   begin
+      Self.File := File;
+      Self.Current_Position.Initialize(File, 1, 1);
+   end Start_File;
+
+
+   ----------------------------------------------------------------------------
    procedure Ingest_Character
       (Self : in out Lexer_Class;
        Next : in     Wide_Wide_Character) is

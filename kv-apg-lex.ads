@@ -10,6 +10,10 @@ package kv.apg.lex is
 
    type Lexer_Class is tagged private;
 
+   procedure Start_File
+      (Self : in out Lexer_Class;
+       File : in     String_Type);
+
    procedure Ingest_Character
       (Self : in out Lexer_Class;
        Next : in     Wide_Wide_Character);
@@ -37,9 +41,10 @@ private
 
    type Lexer_Class is tagged
       record
+         File             : String_Type;
          State            : Lex_State_Type := Between;
-         Start_Of_Token   : kv.apg.locations.Location_Type;
-         Current_Position : kv.apg.locations.Location_Type;
+         Start_Of_Token   : kv.apg.locations.File_Location_Type;
+         Current_Position : kv.apg.locations.File_Location_Type;
          Accumulator      : String_Type;
          List             : Token_List.List;
       end record;

@@ -318,13 +318,27 @@ package body kv.apg.tests.lex_lex is
    procedure Run(T : in out Simple_Token_Test) is
       Token : kv.apg.tokens.Token_Class;
       Word : constant String := "hello";
-      Where : kv.apg.locations.Location_Type;
+      Where : kv.apg.locations.File_Location_Type;
    begin
       Token.Initialize(A_Word, Where, To_String_Type(Word));
       T.Assert(Token.Get_Line = 1, "Line should be 1, is " & Positive'IMAGE(Token.Get_Line));
       T.Assert(Token.Get_Kind = A_Word, "Kind should be A_Word, is " & kv.apg.tokens.Token_Type'IMAGE(Token.Get_Kind));
       T.Assert(Token.Get_Data = To_String_Type(Word), "Data is wrong");
       T.Assert(Token.Get_Data_As_String = Word, "Data as string is wrong");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type File_Loc_Token_Test is new kv.core.ut.Test_Class with null record;
+   procedure Run(T : in out File_Loc_Token_Test) is
+      Token : kv.apg.tokens.Token_Class;
+      Word  : constant String := "hello";
+      Where : kv.apg.locations.File_Location_Type;
+      Expected_Location : constant String := "File: my_file.txt, line 5, column 3";
+   begin
+      Where.Initialize(To_String_Type("my_file.txt"), 5, 3);
+      Token.Initialize(A_Word, Where, To_String_Type(Word));
+      T.Assert(Token.Get_Line = 5, "Line should be 5, is " & Positive'IMAGE(Token.Get_Line));
+      T.Assert(Token.Get_Location.Image = Expected_Location, "Location should be <"&Expected_Location&">, is " & Token.Get_Location.Image);
    end Run;
 
 
@@ -352,6 +366,7 @@ package body kv.apg.tests.lex_lex is
       suite.register(new Multi_Line_Test, "Multi_Line_Test");
 --      suite.register(new XXX, "XXX");
       suite.register(new Simple_Token_Test, "Simple_Token_Test");
+      suite.register(new File_Loc_Token_Test, "File_Loc_Token_Test");
    end register;
 
 end kv.apg.tests.lex_lex;

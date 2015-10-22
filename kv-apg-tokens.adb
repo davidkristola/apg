@@ -14,22 +14,10 @@ package body kv.apg.tokens is
 
 
    ----------------------------------------------------------------------------
-   procedure Old_Initialize
-      (Self : in out Token_Class;
-       Kind : in     Token_Type;
-       Line : in     Positive;
-       Data : in     String_Type) is
-   begin
-      Self.Kind := Kind;
-      Self.Data := Data;
-      Self.Location.Initialize(Line, 0);
-   end Old_Initialize;
-
-   ----------------------------------------------------------------------------
    procedure Initialize
       (Self  : in out Token_Class;
        Kind  : in     Token_Type;
-       Where : in     kv.apg.locations.Location_Type;
+       Where : in     kv.apg.locations.File_Location_Type;
        Data  : in     String_Type) is
    begin
       Self.Kind := Kind;
@@ -48,6 +36,12 @@ package body kv.apg.tokens is
    begin
       return Self.Location.Get_Line;
    end Get_Line;
+
+   ----------------------------------------------------------------------------
+   function Get_Location(Self : Token_Class) return kv.apg.locations.File_Location_Type is
+   begin
+      return Self.Location;
+   end Get_Location;
 
    ----------------------------------------------------------------------------
    function Get_Data(Self : Token_Class) return String_Type is
