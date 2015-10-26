@@ -2,6 +2,7 @@ private with Ada.Containers.Doubly_Linked_Lists;
 
 with kv.apg.tokens;
 with kv.apg.directives;
+with kv.apg.logger;
 
 package kv.apg.parse is
 
@@ -10,6 +11,10 @@ package kv.apg.parse is
 
    procedure Initialise
       (Self : in out Parser_Class);
+
+   procedure Set_Logger
+      (Self   : in out Parser_Class;
+       Logger : in     kv.apg.logger.Logger_Pointer);
 
    procedure Ingest_Token
       (Self  : in out Parser_Class;
@@ -66,6 +71,18 @@ private
          Directives : Directive_List.List;
          Substate   : State_Pointer_Type;
          Errors     : Natural := 0;
+         Logger     : kv.apg.logger.Logger_Pointer;
       end record;
+
+   -- Internal states/actions invoked by Ingest_Token
+   procedure Do_Action_Scan
+      (Self  : in out Parser_Class;
+       Token : in     kv.apg.tokens.Token_Class);
+   procedure Do_Action_Process
+      (Self  : in out Parser_Class;
+       Token : in     kv.apg.tokens.Token_Class);
+   procedure Do_Action_Recover
+      (Self  : in out Parser_Class;
+       Token : in     kv.apg.tokens.Token_Class);
 
 end kv.apg.parse;

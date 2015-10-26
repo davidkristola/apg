@@ -39,48 +39,126 @@ package body kv.apg.parse is
    end Initialise;
 
    ----------------------------------------------------------------------------
+   procedure Set_Logger
+      (Self   : in out Parser_Class;
+       Logger : in     kv.apg.logger.Logger_Pointer) is
+   begin
+      Self.Logger := Logger;
+   end Set_Logger;
+
+   ----------------------------------------------------------------------------
    procedure Ingest_Token
       (Self  : in out Parser_Class;
        Token : in     kv.apg.tokens.Token_Class) is
-      Token_State : kv.apg.parse.token.Token_State_Pointer_Type;
-      use kv.apg.tokens;
    begin
       if Token.Get_Kind = A_Comment then
          return; -- Skip comments
       end if;
       --Put_Line("Ingest_Token " & Token_Type'IMAGE(Token.Get_Kind) & " '" & To_String(+Token.Get_Data) & "'");
       case Self.Action is
-         when Scan =>
-            if Token.Get_Data_As_String = "set" then
-               Self.Action := Process;
-               Self.Substate := new kv.apg.parse.set.Set_State_Class;
-            elsif kv.apg.parse.token.Is_Token_Variant(Token.Get_Data_As_String) then
-               Self.Action := Process;
-               Token_State := new kv.apg.parse.token.Token_State_Class;
-               Token_State.Initialize(Token.Get_Data_As_String);
-               Self.Substate := State_Pointer_Type(Token_State);
-            else
-               Self.Errors := Self.Errors + 1;
-               Self.Action := Recover;
-            end if;
-         when Process =>
-            Self.Substate.Ingest_Token(Token);
-            if Self.Substate.Status in Done_Status_Type then
-               if Self.Substate.Status = Done_Good then
-                  Self.Directives.Append(Self.Substate.Get_Directive);
-                  Self.Action := Scan;
-               else
-                  Self.Errors := Self.Errors + 1;
-                  Self.Action := Recover;
-               end if;
-               Free(Self.Substate);
-            end if;
-         when Recover =>
-            if Token.Is_Eos then
-               Self.Action := Scan;
-            end if;
+         when Scan    => Self.Do_Action_Scan(Token);
+         when Process => Self.Do_Action_Process(Token);
+         when Recover => Self.Do_Action_Recover(Token);
       end case;
    end Ingest_Token;
+
+   ----------------------------------------------------------------------------
+   procedure Start_Processing_Set_Directive
+      (Self : in out Parser_Class) is
+   begin
+      Self.Action := Process;
+      Self.Substate := new kv.apg.parse.set.Set_State_Class;
+   end Start_Processing_Set_Directive;
+
+   ----------------------------------------------------------------------------
+   procedure Start_Processing_Token_Directive
+      (Self : in out Parser_Class;
+       Kind : in     String) is
+      Token_State : kv.apg.parse.token.Token_State_Pointer_Type;
+   begin
+      Self.Action := Process;
+      Token_State := new kv.apg.parse.token.Token_State_Class;
+      Token_State.Initialize(Kind);
+      Self.Substate := State_Pointer_Type(Token_State);
+   end Start_Processing_Token_Directive;
+
+   ----------------------------------------------------------------------------
+   procedure Handle_Scan_Error
+      (Self  : in out Parser_Class;
+       Token : in     kv.apg.tokens.Token_Class) is
+      use kv.apg.logger;
+   begin
+      Self.Errors := Self.Errors + 1;
+      Self.Action := Recover;
+      if Self.Logger /= null then
+         null;
+      end if;
+   end Handle_Scan_Error;
+
+   ----------------------------------------------------------------------------
+   procedure Handle_Process_Error
+      (Self  : in out Parser_Class;
+       Token : in     kv.apg.tokens.Token_Class) is
+   begin
+      Self.Errors := Self.Errors + 1;
+      Self.Action := Recover;
+   end Handle_Process_Error;
+
+   ----------------------------------------------------------------------------
+   procedure Do_Action_Scan
+      (Self  : in out Parser_Class;
+       Token : in     kv.apg.tokens.Token_Class) is
+   begin
+      if Token.Get_Data_As_String = "set" then
+         Start_Processing_Set_Directive(Self);
+      elsif kv.apg.parse.token.Is_Token_Variant(Token.Get_Data_As_String) then
+         Start_Processing_Token_Directive(Self, Token.Get_Data_As_String);
+      else
+         Handle_Scan_Error(Self, Token);
+      end if;
+   end Do_Action_Scan;
+
+   ----------------------------------------------------------------------------
+   procedure Save_Completed_Directive
+      (Self : in out Parser_Class) is
+   begin
+      Self.Directives.Append(Self.Substate.Get_Directive);
+   end Save_Completed_Directive;
+
+   ----------------------------------------------------------------------------
+   procedure Complete_Action_Process
+      (Self  : in out Parser_Class;
+       Token : in     kv.apg.tokens.Token_Class) is
+   begin
+      if Self.Substate.Status = Done_Good then
+         Save_Completed_Directive(Self);
+         Self.Action := Scan;
+      else
+         Handle_Process_Error(Self, Token);
+      end if;
+      Free(Self.Substate);
+   end Complete_Action_Process;
+
+   ----------------------------------------------------------------------------
+   procedure Do_Action_Process
+      (Self  : in out Parser_Class;
+       Token : in     kv.apg.tokens.Token_Class) is
+   begin
+      Self.Substate.Ingest_Token(Token);
+      if Self.Substate.Status in Done_Status_Type then
+         Complete_Action_Process(Self, Token);
+      end if;
+   end Do_Action_Process;
+
+   ----------------------------------------------------------------------------
+   procedure Do_Action_Recover
+      (Self  : in out Parser_Class;
+       Token : in     kv.apg.tokens.Token_Class) is
+   begin
+      if Token.Is_Eos then
+         Self.Action := Scan;
+      end if;
+   end Do_Action_Recover;
 
    ----------------------------------------------------------------------------
    function Inbetween_Directives

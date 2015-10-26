@@ -11,6 +11,9 @@ with kv.apg.tokens;
 with kv.apg.parse;
 with kv.apg.directives;
 with kv.apg.regex;
+with kv.apg.logger.writer;
+with kv.apg.writer.buffer;
+with kv.apg.incidents;
 
 with kv.core.wwstr;
 
@@ -22,6 +25,9 @@ package body kv.apg.tests.lex_parse is
    use kv.apg.lex;
    use kv.apg.tokens;
    use kv.apg.tests.lex_lex;
+   use kv.apg.logger.writer;
+   use kv.apg.writer.buffer;
+   use kv.apg.incidents;
 
    ----------------------------------------------------------------------------
    overriding procedure Tear_Down(T : in out Parser_Test_Class) is
@@ -89,9 +95,17 @@ package body kv.apg.tests.lex_parse is
    ----------------------------------------------------------------------------
    type Parse_Set_Error_1_Test is new Parser_Test_Class with null record;
    procedure Run(T : in out Parse_Set_Error_1_Test) is
+      Buffer : aliased Buffer_Writer_Class;
+      Logger : aliased Writer_Logger_Class;
    begin
+      Logger.Initialize
+         (File   => "my_file.txt",
+          Writer => Buffer'UNCHECKED_ACCESS,
+          Level  => Error);
+      T.Parser.Set_Logger(Logger'UNCHECKED_ACCESS);
       Parse_This(T, "set lex_spec **** ""test.ads"";");
       Check_States(T, Errors => 1, Directives => 0);
+      T.Assert(Buffer.Line_Count > 0, "Expected an error log entry.");
    end Run;
 
    ----------------------------------------------------------------------------
