@@ -46,7 +46,11 @@ private
    type State_Class is abstract tagged
       record
          Status : Status_Type := Working;
+         Logger : kv.apg.logger.Logger_Pointer;
       end record;
+   procedure Set_Logger
+      (Self   : in out State_Class;
+       Logger : in     kv.apg.logger.Logger_Pointer);
    procedure Ingest_Token
       (Self  : in out State_Class;
        Token : in     kv.apg.tokens.Token_Class) is abstract;

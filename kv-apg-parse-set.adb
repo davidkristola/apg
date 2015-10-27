@@ -5,9 +5,11 @@ with Ada.Characters.Conversions;
 with Ada.Strings.Wide_Wide_Unbounded;
 with Ada.Unchecked_Deallocation;
 
+with kv.core.wwstr;
+
 with kv.apg.tokens;
 with kv.apg.lex;
-with kv.core.wwstr;
+with kv.apg.logger;
 
 package body kv.apg.parse.set is
 
@@ -18,6 +20,7 @@ package body kv.apg.parse.set is
    use kv.apg.tokens;
    use kv.apg.lex;
    use kv.core.wwstr;
+   use kv.apg.logger;
 
    -------------------------------------------------------------------------
    procedure Ingest_Token
@@ -38,6 +41,13 @@ package body kv.apg.parse.set is
                Self.Expect := Set_Value;
             else
                Self.Status := Done_Error;
+               if Self.Logger /= null then
+                  Self.Logger.Note_Error
+                     (Line     => Token.Get_Location.Get_Line,
+                      Column   => Token.Get_Location.Get_Column,
+                      Citation => Token.Get_Data,
+                      Reason   => "Expected '='");
+               end if;
             end if;
          when Set_Value =>
             if Token.Get_Kind = A_String or else Token.Get_Kind = A_Block then

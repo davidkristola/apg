@@ -47,6 +47,14 @@ package body kv.apg.parse is
    end Set_Logger;
 
    ----------------------------------------------------------------------------
+   procedure Set_Logger
+      (Self   : in out State_Class;
+       Logger : in     kv.apg.logger.Logger_Pointer) is
+   begin
+      Self.Logger := Logger;
+   end Set_Logger;
+
+   ----------------------------------------------------------------------------
    procedure Ingest_Token
       (Self  : in out Parser_Class;
        Token : in     kv.apg.tokens.Token_Class) is
@@ -68,6 +76,7 @@ package body kv.apg.parse is
    begin
       Self.Action := Process;
       Self.Substate := new kv.apg.parse.set.Set_State_Class;
+      Self.Substate.Set_Logger(Self.Logger);
    end Start_Processing_Set_Directive;
 
    ----------------------------------------------------------------------------
@@ -80,6 +89,7 @@ package body kv.apg.parse is
       Token_State := new kv.apg.parse.token.Token_State_Class;
       Token_State.Initialize(Kind);
       Self.Substate := State_Pointer_Type(Token_State);
+      Self.Substate.Set_Logger(Self.Logger);
    end Start_Processing_Token_Directive;
 
    ----------------------------------------------------------------------------
