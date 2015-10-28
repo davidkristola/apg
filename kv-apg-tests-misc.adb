@@ -410,11 +410,13 @@ package body kv.apg.tests.misc is
    ----------------------------------------------------------------------------
    type Logger_Init_Test is new Logger_Test_Class with null record;
    procedure Run(T : in out Logger_Init_Test) is
+      Location : kv.apg.locations.File_Location_Type;
       Citation : String_Type := To_String_Type("token");
       Expected : constant String := "INFORMATION (File: bar, line 2, column 17): processed (""token"").";
    begin
-      T.Logger.Initialize("bar", T.Buff'UNCHECKED_ACCESS, kv.apg.incidents.Debug);
-      T.Logger.Note_Info(2, 17, Citation, "processed");
+      Location.Initialize(File => To_String_Type("bar"), Line => 2, Column => 17);
+      T.Logger.Initialize(T.Buff'UNCHECKED_ACCESS, kv.apg.incidents.Debug);
+      T.Logger.Note_Info(Location, Citation, "processed");
       Test_Line(T, 1, Expected);
    end Run;
 

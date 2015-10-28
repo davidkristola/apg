@@ -58,6 +58,19 @@ package body kv.apg.tests.lex_parse is
 
 
 
+   ----------------------------------------------------------------------------
+   procedure Test_Line
+      (T      : in out kv.core.ut.Test_Class'CLASS;
+       Buffer : in     Buffer_Writer_Class;
+       Number : in     Positive;
+       Line   : in     String) is
+   begin
+      if Buffer.Line_Count < Number then
+         T.Fail("Too few lines in the buffer!");
+      else
+         T.Assert(Buffer.Get_Line(Number) = To_String_Type(Line), "Should be '"&Line&"', is '" & To_UTF(+Buffer.Get_Line(Number)) & "'");
+      end if;
+   end Test_Line;
 
 
 
@@ -97,15 +110,17 @@ package body kv.apg.tests.lex_parse is
    procedure Run(T : in out Parse_Set_Error_1_Test) is
       Buffer : aliased Buffer_Writer_Class;
       Logger : aliased Writer_Logger_Class;
+      Expected : constant String := "ERROR (File: test.lex, line 1, column 14): Expected '=' (""****"").";
    begin
+      T.Lexer.Start_File(To_String_Type("test.lex"));
       Logger.Initialize
-         (File   => "my_file.txt",
-          Writer => Buffer'UNCHECKED_ACCESS,
+         (Writer => Buffer'UNCHECKED_ACCESS,
           Level  => Error);
       T.Parser.Set_Logger(Logger'UNCHECKED_ACCESS);
       Parse_This(T, "set lex_spec **** ""test.ads"";");
       Check_States(T, Errors => 1, Directives => 0);
       T.Assert(Buffer.Line_Count > 0, "Expected an error log entry.");
+      Test_Line(T, Buffer, 1, Expected);
    end Run;
 
    ----------------------------------------------------------------------------

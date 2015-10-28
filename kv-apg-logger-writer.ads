@@ -9,37 +9,31 @@ package kv.apg.logger.writer is
    type Writer_Logger_Class is new Logger_Class with private;
    not overriding procedure Initialize
       (Self   : in out Writer_Logger_Class;
-       File   : in     String;
        Writer : not null access kv.apg.writer.Writer_Class'CLASS;
        Level  : in     kv.apg.incidents.Severity_Type);
    overriding procedure Note_Debug
       (Self     : in out Writer_Logger_Class;
-       Line     : in     Natural;
-       Column   : in     Natural;
+       Location : in     kv.apg.locations.File_Location_Type;
        Citation : in     String_Type;
        Reason   : in     String);
    overriding procedure Note_Detail
       (Self     : in out Writer_Logger_Class;
-       Line     : in     Natural;
-       Column   : in     Natural;
+       Location : in     kv.apg.locations.File_Location_Type;
        Citation : in     String_Type;
        Reason   : in     String);
    overriding procedure Note_Info
       (Self     : in out Writer_Logger_Class;
-       Line     : in     Natural;
-       Column   : in     Natural;
+       Location : in     kv.apg.locations.File_Location_Type;
        Citation : in     String_Type;
        Reason   : in     String);
    overriding procedure Note_Warning
       (Self     : in out Writer_Logger_Class;
-       Line     : in     Natural;
-       Column   : in     Natural;
+       Location : in     kv.apg.locations.File_Location_Type;
        Citation : in     String_Type;
        Reason   : in     String);
    overriding procedure Note_Error
       (Self     : in out Writer_Logger_Class;
-       Line     : in     Natural;
-       Column   : in     Natural;
+       Location : in     kv.apg.locations.File_Location_Type;
        Citation : in     String_Type;
        Reason   : in     String);
 
@@ -47,7 +41,6 @@ private
 
    type Writer_Logger_Class is new Logger_Class with
       record
-         Factory  : kv.apg.locations.factories.File_Location_Factory_Class;
          Reporter : kv.apg.incidents.Writer_Report_Class;
       end record;
 

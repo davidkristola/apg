@@ -43,8 +43,7 @@ package body kv.apg.parse.set is
                Self.Status := Done_Error;
                if Self.Logger /= null then
                   Self.Logger.Note_Error
-                     (Line     => Token.Get_Location.Get_Line,
-                      Column   => Token.Get_Location.Get_Column,
+                     (Location => Token.Get_Location,
                       Citation => Token.Get_Data,
                       Reason   => "Expected '='");
                end if;
