@@ -101,7 +101,10 @@ package body kv.apg.parse is
       Self.Errors := Self.Errors + 1;
       Self.Action := Recover;
       if Self.Logger /= null then
-         null;
+         Self.Logger.Note_Error
+            (Location => Token.Get_Location,
+             Citation => Token.Get_Data,
+             Reason   => "Expected directive");
       end if;
    end Handle_Scan_Error;
 
@@ -112,6 +115,7 @@ package body kv.apg.parse is
    begin
       Self.Errors := Self.Errors + 1;
       Self.Action := Recover;
+      -- Processing error reporting is handled down in the appropriate code.
    end Handle_Process_Error;
 
    ----------------------------------------------------------------------------

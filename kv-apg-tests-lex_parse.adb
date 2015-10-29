@@ -126,17 +126,37 @@ package body kv.apg.tests.lex_parse is
    ----------------------------------------------------------------------------
    type Parse_Set_Error_2_Test is new Parser_Test_Class with null record;
    procedure Run(T : in out Parse_Set_Error_2_Test) is
+      Buffer : aliased Buffer_Writer_Class;
+      Logger : aliased Writer_Logger_Class;
+      Expected : constant String := "ERROR (File: test.lex, line 1, column 5): Expected an unquoted name (""lex_spec"").";
    begin
+      T.Lexer.Start_File(To_String_Type("test.lex"));
+      Logger.Initialize
+         (Writer => Buffer'UNCHECKED_ACCESS,
+          Level  => Error);
+      T.Parser.Set_Logger(Logger'UNCHECKED_ACCESS);
       Parse_This(T, "set ""lex_spec"" = ""test.ads"";");
       Check_States(T, Errors => 1, Directives => 0);
+      T.Assert(Buffer.Line_Count > 0, "Expected an error log entry.");
+      Test_Line(T, Buffer, 1, Expected);
    end Run;
 
    ----------------------------------------------------------------------------
    type Parse_Set_Error_3_Test is new Parser_Test_Class with null record;
    procedure Run(T : in out Parse_Set_Error_3_Test) is
+      Buffer : aliased Buffer_Writer_Class;
+      Logger : aliased Writer_Logger_Class;
+      Expected : constant String := "ERROR (File: test.lex, line 1, column 16): Expected a quoted string or block (""test"").";
    begin
+      T.Lexer.Start_File(To_String_Type("test.lex"));
+      Logger.Initialize
+         (Writer => Buffer'UNCHECKED_ACCESS,
+          Level  => Error);
+      T.Parser.Set_Logger(Logger'UNCHECKED_ACCESS);
       Parse_This(T, "set lex_spec = test;");
       Check_States(T, Errors => 1, Directives => 0);
+      T.Assert(Buffer.Line_Count > 0, "Expected an error log entry.");
+      Test_Line(T, Buffer, 1, Expected);
    end Run;
 
    ----------------------------------------------------------------------------
@@ -160,9 +180,19 @@ package body kv.apg.tests.lex_parse is
    ----------------------------------------------------------------------------
    type Parse_Set_Error_4_Test is new Parser_Test_Class with null record;
    procedure Run(T : in out Parse_Set_Error_4_Test) is
+      Buffer : aliased Buffer_Writer_Class;
+      Logger : aliased Writer_Logger_Class;
+      Expected : constant String := "ERROR (File: test.lex, line 1, column 23): Expected ';' (""foo"").";
    begin
+      T.Lexer.Start_File(To_String_Type("test.lex"));
+      Logger.Initialize
+         (Writer => Buffer'UNCHECKED_ACCESS,
+          Level  => Error);
+      T.Parser.Set_Logger(Logger'UNCHECKED_ACCESS);
       Parse_This(T, "set lex_spec = ""test"" foo ;");
       Check_States(T, Errors => 1, Directives => 0);
+      T.Assert(Buffer.Line_Count > 0, "Expected an error log entry.");
+      Test_Line(T, Buffer, 1, Expected);
    end Run;
 
 
@@ -401,6 +431,54 @@ package body kv.apg.tests.lex_parse is
    end Run;
 
 
+   ----------------------------------------------------------------------------
+   type Parse_Invalid_Token_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Invalid_Token_Test) is
+      Buffer : aliased Buffer_Writer_Class;
+      Logger : aliased Writer_Logger_Class;
+      Expected : constant String := "ERROR (File: token.lex, line 1, column 1): Expected directive (""nerk"").";
+   begin
+      T.Lexer.Start_File(To_String_Type("token.lex"));
+      Logger.Initialize
+         (Writer => Buffer'UNCHECKED_ACCESS,
+          Level  => Error);
+      T.Parser.Set_Logger(Logger'UNCHECKED_ACCESS);
+      Parse_This(T, "nerk pat2 = (' ' | U0009) + ;");
+      Check_States(T, Errors => 1, Directives => 0);
+      T.Assert(Buffer.Line_Count > 0, "Expected an error log entry.");
+      Test_Line(T, Buffer, 1, Expected);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   procedure Run_Broken_Token_Test
+      (T          : in out Parser_Test_Class'CLASS;
+       Definition : in String;
+       Expected   : in String) is
+
+      Buffer : aliased Buffer_Writer_Class;
+      Logger : aliased Writer_Logger_Class;
+
+   begin
+      T.Lexer.Start_File(To_String_Type("token.lex"));
+      Logger.Initialize
+         (Writer => Buffer'UNCHECKED_ACCESS,
+          Level  => Error);
+      T.Parser.Set_Logger(Logger'UNCHECKED_ACCESS);
+
+      Parse_This(T, "token bad = " & Definition);
+      Check_States(T, Errors => 1, Directives => 0);
+
+      Test_Line(T, Buffer, 1, Expected);
+   end Run_Broken_Token_Test;
+
+   ----------------------------------------------------------------------------
+   type Parse_Bad_Regex_1_Token_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Bad_Regex_1_Token_Test) is
+   begin
+      --kv.apg.regex.Set_Debug(True);
+      Run_Broken_Token_Test(T, "U0061-;", "ERROR (File: token.lex, line 1, column 1): Expected directive (""nerk"").");
+      --kv.apg.regex.Set_Debug(False);
+   end Run;
 
 
 
@@ -435,6 +513,9 @@ package body kv.apg.tests.lex_parse is
       suite.register(new Parse_Pattern_Token_Test, "Parse_Pattern_Token_Test");
       suite.register(new Parse_Skipover_Token_Test, "Parse_Skipover_Token_Test");
       suite.register(new Parse_Visitor_Test, "Parse_Visitor_Test");
+      suite.register(new Parse_Invalid_Token_Test, "Parse_Invalid_Token_Test");
+      suite.register(new Parse_Bad_Regex_1_Token_Test, "Parse_Bad_Regex_1_Token_Test");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;
