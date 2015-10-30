@@ -111,6 +111,25 @@ package body kv.apg.parse.token is
    end Expect_Value;
 
    -------------------------------------------------------------------------
+   procedure Process_Eos
+      (Self  : in out Token_State_Class;
+       Token : in     kv.apg.tokens.Token_Class) is
+      use kv.apg.logger;
+   begin
+      if Self.Tree.Is_Complete then
+         Self.Status := Done_Good;
+      else
+         Self.Status := Done_Error; --TODO
+         if Self.Logger /= null then
+            Self.Logger.Note_Error
+               (Location => Token.Get_Location,
+                Citation => Token.Get_Data,
+                Reason   => "Incomplete regular expression");
+         end if;
+      end if;
+   end Process_Eos;
+
+   -------------------------------------------------------------------------
    procedure Ingest_Token
       (Self  : in out Token_State_Class;
        Token : in     kv.apg.tokens.Token_Class) is
@@ -124,7 +143,7 @@ package body kv.apg.parse.token is
             Expect_Value(Self, Token);
          when Value_Or_Eos =>
             if Token.Is_Eos then
-               Self.Status := Done_Good;
+               Process_Eos(Self, Token);
             else
                Expect_Value(Self, Token);
             end if;

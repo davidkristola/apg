@@ -11,6 +11,10 @@ with kv.apg.lexgen;
 with kv.apg.config;
 with kv.apg.writer.buffer;
 with kv.apg.rewriter;
+with kv.apg.regex;
+with kv.apg.logger.writer;
+with kv.apg.writer.console;
+with kv.apg.incidents;
 
 procedure apg is
 
@@ -20,6 +24,8 @@ procedure apg is
    Parser    : aliased kv.apg.parse.Parser_Class;
    Generator : kv.apg.lexgen.Generator_Class;
    Config    : kv.apg.config.Key_Value_Map_Class;
+   Buffer    : aliased kv.apg.writer.console.Console_Writer_Class;
+   Logger    : aliased kv.apg.logger.writer.Writer_Logger_Class;
 
    ----------------------------------------------------------------------------
    procedure Ingest_Line(Line : in     String) is
@@ -67,6 +73,10 @@ procedure apg is
    ----------------------------------------------------------------------------
    procedure Process_Input_File(File_Name : in     String) is
    begin
+      Logger.Initialize
+         (Writer => Buffer'UNCHECKED_ACCESS,
+          Level  => kv.apg.incidents.Error);
+      Parser.Set_Logger(Logger'UNCHECKED_ACCESS);
       Ingest_File(File_Name);
       Parse_Tokens;
    end Process_Input_File;
@@ -135,6 +145,7 @@ begin
    -- Set default execution parameters
    -- Process command line arguments (if any/can we have none? default input file?)
    -- Process the input file (singular and required; standard input from a pipe?)
+   --kv.apg.regex.Set_Debug(True);
    Process_Input_File(Argument(1));
    if Parser.Error_Count > 0 then
       Put_Line("Error parsing "&Argument(1));

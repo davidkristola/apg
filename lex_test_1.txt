@@ -9,7 +9,7 @@ token Key_Constructor = "constructor";
 skipover White_Space = (' ' | '   ') +;
 skipover New_Line = (U000A | U000D);
 
-token Id_Token = (('a'-'z') | ('A'-'Z')) * ('_'? (('a'-'z')|('A'-'Z')|('0'-'9'))*;
+token Id_Token = (('a'-'z') | ('A'-'Z')) * ('_'? (('a'-'z')|('A'-'Z')|('0'-'9')))*;
 token Integer_Literal = ('0'-'9') + ('_'? ('0'-'9'))*;
 
 token String_Literal = '"' (U000B | U0020 | U0021 | ( U0023 - UFFFF ) ) * '"';

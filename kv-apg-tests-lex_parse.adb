@@ -476,7 +476,17 @@ package body kv.apg.tests.lex_parse is
    procedure Run(T : in out Parse_Bad_Regex_1_Token_Test) is
    begin
       --kv.apg.regex.Set_Debug(True);
-      Run_Broken_Token_Test(T, "U0061-;", "ERROR (File: token.lex, line 1, column 1): Expected directive (""nerk"").");
+      Run_Broken_Token_Test(T, "U0061-;", "ERROR (File: token.lex, line 1, column 19): Incomplete regular expression ("";"").");
+      --kv.apg.regex.Set_Debug(False);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parse_Bad_Regex_2_Token_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Bad_Regex_2_Token_Test) is
+   begin
+      -- This is a regular expression that seemed to work until beter error checking was added
+      --kv.apg.regex.Set_Debug(True);
+      Run_Broken_Token_Test(T, "(('a'-'z') | ('A'-'Z')) * ('_'? (('a'-'z')|('A'-'Z')|('0'-'9'))*;", "ERROR (File: token.lex, line 1, column 77): Incomplete regular expression ("";"").");
       --kv.apg.regex.Set_Debug(False);
    end Run;
 
@@ -515,7 +525,7 @@ package body kv.apg.tests.lex_parse is
       suite.register(new Parse_Visitor_Test, "Parse_Visitor_Test");
       suite.register(new Parse_Invalid_Token_Test, "Parse_Invalid_Token_Test");
       suite.register(new Parse_Bad_Regex_1_Token_Test, "Parse_Bad_Regex_1_Token_Test");
---      suite.register(new XXX, "XXX");
+      suite.register(new Parse_Bad_Regex_2_Token_Test, "Parse_Bad_Regex_2_Token_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;
