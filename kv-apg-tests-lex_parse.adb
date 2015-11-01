@@ -450,11 +450,14 @@ package body kv.apg.tests.lex_parse is
       Test_Line(T, Buffer, 1, Expected);
    end Run;
 
+
+   type String_Array_Type is array (Positive range <>) of String_Type;
+
    ----------------------------------------------------------------------------
    procedure Run_Broken_Token_Test
       (T          : in out Parser_Test_Class'CLASS;
-       Definition : in String;
-       Expected   : in String) is
+       Definition : in     String;
+       Expected   : in     String_Array_Type) is
 
       Buffer : aliased Buffer_Writer_Class;
       Logger : aliased Writer_Logger_Class;
@@ -469,7 +472,9 @@ package body kv.apg.tests.lex_parse is
       Parse_This(T, "token bad = " & Definition);
       Check_States(T, Errors => 1, Directives => 0);
 
-      Test_Line(T, Buffer, 1, Expected);
+      for I in Expected'RANGE loop
+         Test_Line(T, Buffer, I, To_UTF(Expected(I)));
+      end loop;
    end Run_Broken_Token_Test;
 
    ----------------------------------------------------------------------------
@@ -477,7 +482,9 @@ package body kv.apg.tests.lex_parse is
    procedure Run(T : in out Parse_Bad_Regex_1_Token_Test) is
    begin
       --kv.apg.regex.Set_Debug(True);
-      Run_Broken_Token_Test(T, "U0061-;", "ERROR (File: token.lex, line 1, column 19): Incomplete regular expression ("";"").");
+      Run_Broken_Token_Test(T, "U0061-;",
+         (1 => To_String_Type("ERROR (File: token.lex, line 1, column 19): Incomplete regular expression ("";"")."),
+          2 => To_String_Type("ERROR (File: token.lex, line 1, column 18): Upper end of range is empty (""-"").")));
       --kv.apg.regex.Set_Debug(False);
    end Run;
 
@@ -487,7 +494,9 @@ package body kv.apg.tests.lex_parse is
    begin
       -- This is a regular expression that seemed to work until beter error checking was added
       --kv.apg.regex.Set_Debug(True);
-      Run_Broken_Token_Test(T, "(('a'-'z') | ('A'-'Z')) * ('_'? (('a'-'z')|('A'-'Z')|('0'-'9'))*;", "ERROR (File: token.lex, line 1, column 77): Incomplete regular expression ("";"").");
+      Run_Broken_Token_Test(T, "(('a'-'z') | ('A'-'Z')) * ('_'? (('a'-'z')|('A'-'Z')|('0'-'9'))*;",
+         (1 => To_String_Type("ERROR (File: token.lex, line 1, column 77): Incomplete regular expression ("";"")."),
+          2 => To_String_Type("ERROR (File: token.lex, line 1, column 39): Incomplete subsequence (""("").")));
       --kv.apg.regex.Set_Debug(False);
    end Run;
 
@@ -496,7 +505,30 @@ package body kv.apg.tests.lex_parse is
    procedure Run(T : in out Parse_Bad_Regex_3_Token_Test) is
    begin
       --kv.apg.regex.Set_Debug(True);
-      Run_Broken_Token_Test(T, ");", "ERROR (File: token.lex, line 1, column 14): Incomplete regular expression ("";"").");
+      Run_Broken_Token_Test(T, ");",
+         (1 => To_String_Type("ERROR (File: token.lex, line 1, column 14): Incomplete regular expression ("";"")."),
+          2 => To_String_Type("ERROR (File: token.lex, line 1, column 13): Unmatched end of subsequence ("")"").")));
+      --kv.apg.regex.Set_Debug(False);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parse_Bad_Regex_4_Token_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Bad_Regex_4_Token_Test) is
+   begin
+      --kv.apg.regex.Set_Debug(True);
+      Run_Broken_Token_Test(T, ";", (1 => To_String_Type("ERROR (File: token.lex, line 1, column 13): Empty regular expression ("";"").")));
+      --kv.apg.regex.Set_Debug(False);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parse_Bad_Regex_5_Token_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Bad_Regex_5_Token_Test) is
+   begin
+      --kv.apg.regex.Set_Debug(True);
+      Run_Broken_Token_Test(T, "('a'|;",
+         (1 => To_String_Type("ERROR (File: token.lex, line 1, column 18): Incomplete regular expression ("";"")."),
+          2 => To_String_Type("ERROR (File: token.lex, line 1, column 17): Right-hand side of OR is empty (""|"")."),
+          3 => To_String_Type("ERROR (File: token.lex, line 1, column 13): Incomplete subsequence (""("").")));
       --kv.apg.regex.Set_Debug(False);
    end Run;
 
@@ -537,8 +569,8 @@ package body kv.apg.tests.lex_parse is
       suite.register(new Parse_Bad_Regex_1_Token_Test, "Parse_Bad_Regex_1_Token_Test");
       suite.register(new Parse_Bad_Regex_2_Token_Test, "Parse_Bad_Regex_2_Token_Test");
       suite.register(new Parse_Bad_Regex_3_Token_Test, "Parse_Bad_Regex_3_Token_Test");
---      suite.register(new XXX, "XXX");
---      suite.register(new XXX, "XXX");
+      suite.register(new Parse_Bad_Regex_4_Token_Test, "Parse_Bad_Regex_4_Token_Test");
+      suite.register(new Parse_Bad_Regex_5_Token_Test, "Parse_Bad_Regex_5_Token_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");

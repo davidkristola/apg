@@ -6,6 +6,8 @@ with Ada.Characters.Conversions;
 with Ada.Tags;
 with Interfaces;
 
+with kv.apg.locations;
+
 package body kv.apg.regex is
 
    use Ada.Strings.Wide_Wide_Unbounded; -- &
@@ -130,6 +132,14 @@ package body kv.apg.regex is
    end Is_Complete;
 
    -------------------------------------------------------------------------
+   procedure Diagnose_To_Log
+      (Self   : in out Node_Class;
+       Logger : in out kv.apg.logger.Logger_Pointer) is
+   begin
+      null; -- Default behavior
+   end Diagnose_To_Log;
+
+   -------------------------------------------------------------------------
    function Image_Tree(Self : in out Node_Class) return String_Type is
       Answer : String_Type := To_String_Type("");
    begin
@@ -213,6 +223,22 @@ package body kv.apg.regex is
    end Is_Complete;
 
    -------------------------------------------------------------------------
+   procedure Diagnose_To_Log
+      (Tree   : in     Regular_Expression_Tree_Type;
+       Logger : in out kv.apg.logger.Logger_Pointer) is
+      Location : kv.apg.locations.File_Location_Type;
+   begin
+      if Tree.Root = null then
+         Logger.Note_Error
+            (Location => Location,
+             Citation => To_String_Type("NA"),
+             Reason   => "Empty regular expression tree");
+      else
+         Tree.Root.Diagnose_To_Log(Logger);
+      end if;
+   end Diagnose_To_Log;
+
+   -------------------------------------------------------------------------
    function Image_Tree(Tree : in     Regular_Expression_Tree_Type) return String_Type is
    begin
       if Tree.Root = null then
@@ -266,14 +292,6 @@ package body kv.apg.regex is
 
 
 
-   -- TODO: I'm thinking of adding a diagnose method that will drill down and
-   -- report errors in an incomplete expression tree.
-   procedure Diagnose_To_Log
-      (Tree   : in     Regular_Expression_Tree_Type;
-       Logger : in out kv.apg.logger.Logger_Pointer) is
-   begin
-   null;
-   end Diagnose_To_Log;
 
 
 
@@ -397,6 +415,27 @@ package body kv.apg.regex is
       -- Both A and B must be set and then B is complete
       return (Self.A /= null) and ((Self.B /= null) and then (Self.B.Is_Complete));
    end Is_Complete;
+
+   -------------------------------------------------------------------------
+   procedure Diagnose_To_Log
+      (Self   : in out Or_Node_Class;
+       Logger : in out kv.apg.logger.Logger_Pointer) is
+   begin
+      if Debug then Put_Line("Diagnose_To_Log(Or_Node_Class): " & To_String(+Self.Image_Tree)); end if;
+      if Self.A = null then
+         Logger.Note_Error
+            (Location => Self.Token.Get_Location,
+             Citation => Self.Token.Get_Data,
+             Reason   => "Left-hand side of OR is empty");
+      elsif Self.B = null then
+         Logger.Note_Error
+            (Location => Self.Token.Get_Location,
+             Citation => Self.Token.Get_Data,
+             Reason   => "Right-hand side of OR is empty");
+      elsif not Self.B.Is_Complete then
+         Self.B.Diagnose_To_Log(Logger);
+      end if;
+   end Diagnose_To_Log;
 
    -------------------------------------------------------------------------
    overriding function Image_This(Self : in out Or_Node_Class) return String_Type is
@@ -642,6 +681,28 @@ package body kv.apg.regex is
    end Is_Complete;
 
    -------------------------------------------------------------------------
+   overriding procedure Diagnose_To_Log
+      (Self   : in out Subsequence_Node_Class;
+       Logger : in out kv.apg.logger.Logger_Pointer) is
+   begin
+      if Debug then Put_Line("Diagnose_To_Log(Subsequence_Node_Class): " & To_String(+Self.Image_Tree)); end if;
+      if (Self.A = null) then
+         Logger.Note_Error
+            (Location => Self.Token.Get_Location,
+             Citation => Self.Token.Get_Data,
+             Reason   => "Empty subsequence");
+      elsif (not Self.A.Is_Complete) then
+         Self.A.Diagnose_To_Log(Logger);
+      end if;
+      if Self.Complete = null then
+         Logger.Note_Error
+            (Location => Self.Token.Get_Location,
+             Citation => Self.Token.Get_Data,
+             Reason   => "Incomplete subsequence");
+      end if;
+   end Diagnose_To_Log;
+
+   -------------------------------------------------------------------------
    overriding function Image_This(Self : in out Subsequence_Node_Class) return String_Type is
    begin
       if Self.A = null then
@@ -726,6 +787,18 @@ package body kv.apg.regex is
    begin
       if Debug then Put_Line("End_Node_Class.Process_This"); end if;
    end Process_This;
+
+   -------------------------------------------------------------------------
+   overriding procedure Diagnose_To_Log
+      (Self   : in out End_Node_Class;
+       Logger : in out kv.apg.logger.Logger_Pointer) is
+   begin
+      if Debug then Put_Line("Diagnose_To_Log(End_Node_Class): " & To_String(+Self.Image_Tree)); end if;
+      Logger.Note_Error
+         (Location => Self.Token.Get_Location,
+          Citation => Self.Token.Get_Data,
+          Reason   => "Unmatched end of subsequence");
+   end Diagnose_To_Log;
 
    -------------------------------------------------------------------------
    overriding function Is_Complete(Self : End_Node_Class) return Boolean is
@@ -854,6 +927,25 @@ package body kv.apg.regex is
    begin
       return (Self.Lower /= null) and (Self.Upper /= null);
    end Is_Complete;
+
+   -------------------------------------------------------------------------
+   procedure Diagnose_To_Log
+      (Self   : in out Range_Node_Class;
+       Logger : in out kv.apg.logger.Logger_Pointer) is
+   begin
+      if Debug then Put_Line("Diagnose_To_Log(Range_Node_Class): " & To_String(+Self.Image_Tree)); end if;
+      if Self.Lower = null then
+         Logger.Note_Error
+            (Location => Self.Token.Get_Location,
+             Citation => Self.Token.Get_Data,
+             Reason   => "Lower end of range is empty");
+      elsif Self.Upper = null then
+         Logger.Note_Error
+            (Location => Self.Token.Get_Location,
+             Citation => Self.Token.Get_Data,
+             Reason   => "Upper end of range is empty");
+      end if;
+   end Diagnose_To_Log;
 
    -------------------------------------------------------------------------
    overriding function Image_This(Self : in out Range_Node_Class) return String_Type is

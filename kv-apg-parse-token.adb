@@ -18,6 +18,7 @@ package body kv.apg.parse.token is
    use kv.apg.tokens;
    use kv.apg.regex;
    use kv.apg.lex;
+   use kv.apg.logger;
    use kv.core.wwstr;
 
    -------------------------------------------------------------------------
@@ -106,6 +107,12 @@ package body kv.apg.parse.token is
          Self.Tree.Graft_To_Tree(Token);
       else
          Self.Status := Done_Error; --TODO
+         if Self.Logger /= null then
+            Self.Logger.Note_Error
+               (Location => Token.Get_Location,
+                Citation => Token.Get_Data,
+                Reason   => "Empty regular expression");
+         end if;
       end if;
       Self.Expect := Value_Or_Eos;
    end Expect_Value;
@@ -114,7 +121,6 @@ package body kv.apg.parse.token is
    procedure Process_Eos
       (Self  : in out Token_State_Class;
        Token : in     kv.apg.tokens.Token_Class) is
-      use kv.apg.logger;
    begin
       if Self.Tree.Is_Complete then
          Self.Status := Done_Good;
@@ -125,6 +131,7 @@ package body kv.apg.parse.token is
                (Location => Token.Get_Location,
                 Citation => Token.Get_Data,
                 Reason   => "Incomplete regular expression");
+            Self.Tree.Diagnose_To_Log(Self.Logger);
          end if;
       end if;
    end Process_Eos;

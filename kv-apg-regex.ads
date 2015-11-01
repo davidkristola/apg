@@ -29,6 +29,9 @@ package kv.apg.regex is
    procedure Process_This(Self : in out Node_Class) is abstract;
    procedure Process_Tree(Self : in out Node_Class); -- Template method
    function Is_Complete(Self : Node_Class) return Boolean; -- Default behavior
+   procedure Diagnose_To_Log
+      (Self   : in out Node_Class;
+       Logger : in out kv.apg.logger.Logger_Pointer); -- Default behavior
    function Image_This(Self : in out Node_Class) return String_Type is abstract;
    function Image_Tree(Self : in out Node_Class) return String_Type; -- Template method
    procedure Prepare_For_Graft
@@ -133,6 +136,9 @@ private
        Box   : in out Reg_Ex_Container_Class'CLASS);
    overriding procedure Process_This(Self : in out Or_Node_Class);
    overriding function Is_Complete(Self : Or_Node_Class) return Boolean;
+   overriding procedure Diagnose_To_Log
+      (Self   : in out Or_Node_Class;
+       Logger : in out kv.apg.logger.Logger_Pointer);
    overriding function Image_This(Self : in out Or_Node_Class) return String_Type;
    overriding procedure Graft_To_Tree
       (Self : in out Or_Node_Class;
@@ -189,6 +195,9 @@ private
    type Subsequence_Node_Pointer_Type is access all Subsequence_Node_Class;
    overriding procedure Process_This(Self : in out Subsequence_Node_Class);
    overriding function Is_Complete(Self : Subsequence_Node_Class) return Boolean;
+   overriding procedure Diagnose_To_Log
+      (Self   : in out Subsequence_Node_Class;
+       Logger : in out kv.apg.logger.Logger_Pointer);
    overriding function Image_This(Self : in out Subsequence_Node_Class) return String_Type;
    overriding procedure Graft_To_Tree
       (Self : in out Subsequence_Node_Class;
@@ -206,6 +215,9 @@ private
    type End_Node_Pointer_Type is access all End_Node_Class;
    overriding procedure Process_This(Self : in out End_Node_Class);
    overriding function Is_Complete(Self : End_Node_Class) return Boolean;
+   overriding procedure Diagnose_To_Log
+      (Self   : in out End_Node_Class;
+       Logger : in out kv.apg.logger.Logger_Pointer);
    overriding function Image_This(Self : in out End_Node_Class) return String_Type;
    overriding function Count_Nfa_Transition_Sets(Self : End_Node_Class) return Natural;
    overriding procedure Set_Nfa_Transitions
@@ -243,6 +255,9 @@ private
        Box   : in out Reg_Ex_Container_Class'CLASS);
    overriding procedure Process_This(Self : in out Range_Node_Class);
    overriding function Is_Complete(Self : Range_Node_Class) return Boolean;
+   overriding procedure Diagnose_To_Log
+      (Self   : in out Range_Node_Class;
+       Logger : in out kv.apg.logger.Logger_Pointer);
    overriding function Image_This(Self : in out Range_Node_Class) return String_Type;
    overriding procedure Graft_To_Tree
       (Self : in out Range_Node_Class;
