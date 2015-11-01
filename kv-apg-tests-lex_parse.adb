@@ -33,6 +33,7 @@ package body kv.apg.tests.lex_parse is
    overriding procedure Tear_Down(T : in out Parser_Test_Class) is
    begin
       T.Parser.Delete_Directives;
+      kv.apg.regex.Set_Debug(False);
    end Tear_Down;
 
    ----------------------------------------------------------------------------
@@ -490,6 +491,15 @@ package body kv.apg.tests.lex_parse is
       --kv.apg.regex.Set_Debug(False);
    end Run;
 
+   ----------------------------------------------------------------------------
+   type Parse_Bad_Regex_3_Token_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Bad_Regex_3_Token_Test) is
+   begin
+      --kv.apg.regex.Set_Debug(True);
+      Run_Broken_Token_Test(T, ");", "ERROR (File: token.lex, line 1, column 14): Incomplete regular expression ("";"").");
+      --kv.apg.regex.Set_Debug(False);
+   end Run;
+
 
 
 
@@ -526,6 +536,10 @@ package body kv.apg.tests.lex_parse is
       suite.register(new Parse_Invalid_Token_Test, "Parse_Invalid_Token_Test");
       suite.register(new Parse_Bad_Regex_1_Token_Test, "Parse_Bad_Regex_1_Token_Test");
       suite.register(new Parse_Bad_Regex_2_Token_Test, "Parse_Bad_Regex_2_Token_Test");
+      suite.register(new Parse_Bad_Regex_3_Token_Test, "Parse_Bad_Regex_3_Token_Test");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;

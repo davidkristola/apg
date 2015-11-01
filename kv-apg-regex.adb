@@ -3,6 +3,7 @@ with Ada.Strings.Wide_Wide_Unbounded;
 with Ada.Wide_Wide_Characters.Handling;
 with Ada.Characters.Latin_1;
 with Ada.Characters.Conversions;
+with Ada.Tags;
 with Interfaces;
 
 package body kv.apg.regex is
@@ -35,6 +36,7 @@ package body kv.apg.regex is
       Or_Node : Or_Node_Pointer_Type;
       Zoro_Node : Zoro_Node_Pointer_Type;
       Range_Node : Range_Node_Pointer_Type;
+      End_Node : End_Node_Pointer_Type;
 
       use Interfaces;
 
@@ -66,6 +68,9 @@ package body kv.apg.regex is
          elsif Token.Get_Data_As_String = "-" then
             Range_Node := new Range_Node_Class;
             return Node_Pointer_Type(Range_Node);
+         elsif Token.Get_Data_As_String = ")" then
+            End_Node := new End_Node_Class;
+            return Node_Pointer_Type(End_Node);
          end if;
       end if;
 
@@ -155,6 +160,13 @@ package body kv.apg.regex is
    end Graft_To_Tree;
 
 
+   -------------------------------------------------------------------------
+   procedure Set_Token
+      (Self  : in out Node_Class;
+       Token : in     kv.apg.tokens.Token_Class) is
+   begin
+      Self.Token := Token;
+   end Set_Token;
 
 
 
@@ -216,6 +228,11 @@ package body kv.apg.regex is
       Current : Node_Pointer_Type := Tree.Root;
       Addition : Node_Pointer_Type := Allocate_Node(Token);
    begin
+      if Addition /= null then
+         Addition.Set_Token(Token);
+      --else
+      --   Put_Line("Graft_To_Tree token <" & Token.Get_Data_As_String & "> generated a null node.");
+      end if;
       if Debug then Put_Line("Regular_Expression_Tree_Type.Graft_To_Tree"); end if;
       if Current = null then
          if Debug then Put_Line("Tree is empty, adding first node!"); end if;
@@ -249,7 +266,14 @@ package body kv.apg.regex is
 
 
 
-
+   -- TODO: I'm thinking of adding a diagnose method that will drill down and
+   -- report errors in an incomplete expression tree.
+   procedure Diagnose_To_Log
+      (Tree   : in     Regular_Expression_Tree_Type;
+       Logger : in out kv.apg.logger.Logger_Pointer) is
+   begin
+   null;
+   end Diagnose_To_Log;
 
 
 
@@ -613,7 +637,7 @@ package body kv.apg.regex is
       if (Self.A = null) or else (not Self.A.Is_Complete) then
          return False;
       else
-         return Self.Complete;
+         return Self.Complete /= null;
       end if;
    end Is_Complete;
 
@@ -623,7 +647,7 @@ package body kv.apg.regex is
       if Self.A = null then
          return To_String_Type("(...");
       end if;
-      if not Self.Complete then
+      if Self.Complete = null then
          return To_String_Type("(") & Self.A.Image_Tree & To_String_Type("...");
       end if;
       return To_String_Type("(") & Self.A.Image_Tree & To_String_Type(")");
@@ -633,6 +657,7 @@ package body kv.apg.regex is
    overriding procedure Graft_To_Tree
       (Self : in out Subsequence_Node_Class;
        Node : in     Node_Pointer_Type) is
+      use Ada.Tags;
    begin
       if Debug then Put_Line("Subsequence_Node_Class.Graft_To_Tree"); end if;
       if Self.A = null then
@@ -640,9 +665,9 @@ package body kv.apg.regex is
          Self.Linear_Attach(Node);
       elsif Self.A.Is_Complete then
          if Debug then Put_Line("A is complete"); end if;
-         if Node = null then
-            if Debug then Put_Line("null complete!"); end if;
-            Self.Complete := True; -- Must have been the non-token ')'
+         if Node.all'TAG = End_Node_Class'TAG then
+            if Debug then Put_Line("Subsequence complete!"); end if;
+            Self.Complete := Node;
          else
             if Debug then Put_Line("Self.Linear_Attach(Node) at this level"); end if;
             Self.Linear_Attach(Node);
@@ -692,6 +717,48 @@ package body kv.apg.regex is
       end if;
       Self.A.Set_Nfa_Transitions(NFA, Start);
    end Set_Nfa_Transitions;
+
+
+
+
+   -------------------------------------------------------------------------
+   procedure Process_This(Self : in out End_Node_Class) is
+   begin
+      if Debug then Put_Line("End_Node_Class.Process_This"); end if;
+   end Process_This;
+
+   -------------------------------------------------------------------------
+   overriding function Is_Complete(Self : End_Node_Class) return Boolean is
+   begin
+      return False; -- If you are looking here for completeness, you should never find it.
+   end Is_Complete;
+
+   -------------------------------------------------------------------------
+   overriding function Image_This(Self : in out End_Node_Class) return String_Type is
+   begin
+      return To_String_Type(")");
+   end Image_This;
+
+   -------------------------------------------------------------------------
+   overriding function Count_Nfa_Transition_Sets(Self : End_Node_Class) return Natural is
+   begin
+      return 0;
+   end Count_Nfa_Transition_Sets;
+
+   -------------------------------------------------------------------------
+   overriding procedure Set_Nfa_Transitions
+      (Self  : in out End_Node_Class;
+       NFA   : in out kv.apg.fa.nfa.Nfa_Class;
+       Start : in out State_Id_Type) is
+   begin
+      if Debug then Put_Line("End_Node_Class.Set_Nfa_Transitions starting at " & State_Id_Type'IMAGE(Start)); end if;
+   end Set_Nfa_Transitions;
+
+
+
+
+
+
 
 
 
