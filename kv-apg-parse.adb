@@ -11,6 +11,7 @@ with kv.core.wwstr;
 
 with kv.apg.parse.set;
 with kv.apg.parse.token;
+with kv.apg.parse.rule;
 
 package body kv.apg.parse is
 
@@ -20,6 +21,7 @@ package body kv.apg.parse is
    use Ada.Characters.Conversions;
    use kv.apg.tokens;
    use kv.apg.lex;
+   use kv.apg.logger;
    use kv.core.wwstr;
 
    procedure Free is new Ada.Unchecked_Deallocation(State_Class'CLASS, State_Pointer_Type);
@@ -32,6 +34,29 @@ package body kv.apg.parse is
    end Status;
 
    ----------------------------------------------------------------------------
+   procedure Set_Logger
+      (Self   : in out State_Class;
+       Logger : in     kv.apg.logger.Logger_Pointer) is
+   begin
+      Self.Logger := Logger;
+   end Set_Logger;
+
+   -------------------------------------------------------------------------
+   procedure Handle_Error
+      (Self   : in out State_Class;
+       Token  : in     kv.apg.tokens.Token_Class;
+       Reason : in     String) is
+   begin
+      Self.Status := Done_Error;
+      if Self.Logger /= null then
+         Self.Logger.Note_Error
+            (Location => Token.Get_Location,
+             Citation => Token.Get_Data,
+             Reason   => Reason);
+      end if;
+   end Handle_Error;
+
+   ----------------------------------------------------------------------------
    procedure Initialise
       (Self : in out Parser_Class) is
    begin
@@ -41,14 +66,6 @@ package body kv.apg.parse is
    ----------------------------------------------------------------------------
    procedure Set_Logger
       (Self   : in out Parser_Class;
-       Logger : in     kv.apg.logger.Logger_Pointer) is
-   begin
-      Self.Logger := Logger;
-   end Set_Logger;
-
-   ----------------------------------------------------------------------------
-   procedure Set_Logger
-      (Self   : in out State_Class;
        Logger : in     kv.apg.logger.Logger_Pointer) is
    begin
       Self.Logger := Logger;
@@ -93,6 +110,16 @@ package body kv.apg.parse is
    end Start_Processing_Token_Directive;
 
    ----------------------------------------------------------------------------
+   procedure Start_Processing_Rule_Directive
+      (Self : in out Parser_Class;
+       Kind : in     String) is
+   begin
+      Self.Action := Process;
+      Self.Substate := new kv.apg.parse.rule.Rule_State_Class;
+      Self.Substate.Set_Logger(Self.Logger);
+   end Start_Processing_Rule_Directive;
+
+   ----------------------------------------------------------------------------
    procedure Handle_Scan_Error
       (Self  : in out Parser_Class;
        Token : in     kv.apg.tokens.Token_Class) is
@@ -127,6 +154,8 @@ package body kv.apg.parse is
          Start_Processing_Set_Directive(Self);
       elsif kv.apg.parse.token.Is_Token_Variant(Token.Get_Data_As_String) then
          Start_Processing_Token_Directive(Self, Token.Get_Data_As_String);
+      elsif Token.Get_Data_As_String = "rule" then
+         Start_Processing_Rule_Directive(Self, Token.Get_Data_As_String);
       else
          Handle_Scan_Error(Self, Token);
       end if;

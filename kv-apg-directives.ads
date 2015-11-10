@@ -8,6 +8,9 @@ package kv.apg.directives is
    type Directive_Visitor_Class is abstract tagged null record;
 
 
+   --
+   -- Abstract base Directive_Class
+   --
 
    type Directive_Class is abstract tagged
       record
@@ -22,6 +25,9 @@ package kv.apg.directives is
    procedure Free(Directive : in out Directive_Pointer_Type);
 
 
+   --
+   -- Set_Class
+   --
 
    type Set_Class is new Directive_Class with private;
    not overriding procedure Initialize
@@ -32,6 +38,9 @@ package kv.apg.directives is
    not overriding function Get_Value(Self : in     Set_Class) return String_Type;
 
 
+   --
+   -- Token_Class
+   --
 
    type Token_Subtype is (Accepting, Pattern, Skipover);
 
@@ -46,6 +55,21 @@ package kv.apg.directives is
    not overriding function Get_Subtype(Self : in     Token_Class) return Token_Subtype;
 
 
+   --
+   -- Rule_Class
+   --
+
+   type Rule_Class is new Directive_Class with private;
+   not overriding procedure Initialize
+      (Self  : in out Rule_Class;
+       Name  : in     String_Type);
+   overriding procedure Process(Self : in out Rule_Class; Visitor : in out Directive_Visitor_Class'CLASS);
+
+
+   --
+   -- Class methods for Directive_Visitor_Class
+   --
+
    procedure Process_Set
       (Self      : in out Directive_Visitor_Class;
        Directive : in out Set_Class'CLASS) is null;
@@ -53,6 +77,10 @@ package kv.apg.directives is
    procedure Process_Token
       (Self      : in out Directive_Visitor_Class;
        Directive : in out Token_Class'CLASS) is null;
+
+   procedure Process_Rule
+      (Self      : in out Directive_Visitor_Class;
+       Directive : in out Rule_Class'CLASS) is null;
 
 private
 
@@ -65,6 +93,11 @@ private
       record
          Tree : kv.apg.regex.Regular_Expression_Tree_Type;
          Kind : Token_Subtype;
+      end record;
+
+   type Rule_Class is new Directive_Class with
+      record
+         null; -- TODO: add grammar tree
       end record;
 
 end kv.apg.directives;

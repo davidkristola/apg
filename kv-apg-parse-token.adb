@@ -125,13 +125,13 @@ package body kv.apg.parse.token is
       if Self.Tree.Is_Complete then
          Self.Status := Done_Good;
       else
-         Self.Status := Done_Error; --TODO
+         Self.Status := Done_Error;
          if Self.Logger /= null then
             Self.Logger.Note_Error
                (Location => Token.Get_Location,
                 Citation => Token.Get_Data,
                 Reason   => "Incomplete regular expression");
-            Self.Tree.Diagnose_To_Log(Self.Logger);
+            Self.Tree.Diagnose_To_Log(kv.apg.logger.Safe_Logger_Pointer(Self.Logger));
          end if;
       end if;
    end Process_Eos;

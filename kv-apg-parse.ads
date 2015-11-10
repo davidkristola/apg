@@ -56,6 +56,10 @@ private
        Token : in     kv.apg.tokens.Token_Class) is abstract;
    function Status(Self : State_Class) return Status_Type;
    function Get_Directive(Self : State_Class) return kv.apg.directives.Directive_Pointer_Type is abstract;
+   procedure Handle_Error
+      (Self   : in out State_Class;
+       Token  : in     kv.apg.tokens.Token_Class;
+       Reason : in     String);
 
    type State_Pointer_Type is access all State_Class'CLASS;
 

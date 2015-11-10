@@ -134,7 +134,7 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    procedure Diagnose_To_Log
       (Self   : in out Node_Class;
-       Logger : in out kv.apg.logger.Logger_Pointer) is
+       Logger : in out kv.apg.logger.Safe_Logger_Pointer) is
    begin
       null; -- Default behavior
    end Diagnose_To_Log;
@@ -225,7 +225,7 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    procedure Diagnose_To_Log
       (Tree   : in     Regular_Expression_Tree_Type;
-       Logger : in out kv.apg.logger.Logger_Pointer) is
+       Logger : in out kv.apg.logger.Safe_Logger_Pointer) is
       Location : kv.apg.locations.File_Location_Type;
    begin
       if Tree.Root = null then
@@ -419,7 +419,7 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    procedure Diagnose_To_Log
       (Self   : in out Or_Node_Class;
-       Logger : in out kv.apg.logger.Logger_Pointer) is
+       Logger : in out kv.apg.logger.Safe_Logger_Pointer) is
    begin
       if Debug then Put_Line("Diagnose_To_Log(Or_Node_Class): " & To_String(+Self.Image_Tree)); end if;
       if Self.A = null then
@@ -683,7 +683,7 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    overriding procedure Diagnose_To_Log
       (Self   : in out Subsequence_Node_Class;
-       Logger : in out kv.apg.logger.Logger_Pointer) is
+       Logger : in out kv.apg.logger.Safe_Logger_Pointer) is
    begin
       if Debug then Put_Line("Diagnose_To_Log(Subsequence_Node_Class): " & To_String(+Self.Image_Tree)); end if;
       if (Self.A = null) then
@@ -791,7 +791,7 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    overriding procedure Diagnose_To_Log
       (Self   : in out End_Node_Class;
-       Logger : in out kv.apg.logger.Logger_Pointer) is
+       Logger : in out kv.apg.logger.Safe_Logger_Pointer) is
    begin
       if Debug then Put_Line("Diagnose_To_Log(End_Node_Class): " & To_String(+Self.Image_Tree)); end if;
       Logger.Note_Error
@@ -931,7 +931,7 @@ package body kv.apg.regex is
    -------------------------------------------------------------------------
    procedure Diagnose_To_Log
       (Self   : in out Range_Node_Class;
-       Logger : in out kv.apg.logger.Logger_Pointer) is
+       Logger : in out kv.apg.logger.Safe_Logger_Pointer) is
    begin
       if Debug then Put_Line("Diagnose_To_Log(Range_Node_Class): " & To_String(+Self.Image_Tree)); end if;
       if Self.Lower = null then

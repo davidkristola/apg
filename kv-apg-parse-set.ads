@@ -29,9 +29,9 @@ private package kv.apg.parse.set is
       (Self  : in out Set_State_Class;
        Token : in     kv.apg.tokens.Token_Class);
 
-   not overriding procedure Handle_Error
-      (Self   : in out Set_State_Class;
-       Token  : in     kv.apg.tokens.Token_Class;
-       Reason : in     String);
+--   not overriding procedure Handle_Error
+--      (Self   : in out Set_State_Class;
+--       Token  : in     kv.apg.tokens.Token_Class;
+--       Reason : in     String);
 
 end kv.apg.parse.set;

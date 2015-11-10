@@ -6,6 +6,7 @@ package kv.apg.logger is
 
    type Logger_Class is interface;
    type Logger_Pointer is access all Logger_Class'CLASS;
+   type Safe_Logger_Pointer is not null access all Logger_Class'CLASS;
    procedure Note_Debug
       (Self     : in out Logger_Class;
        Location : in     kv.apg.locations.File_Location_Type;

@@ -76,4 +76,19 @@ package body kv.apg.directives is
       return Self.Kind;
    end Get_Subtype;
 
+
+   ----------------------------------------------------------------------------
+   not overriding procedure Initialize
+      (Self  : in out Rule_Class;
+       Name  : in     String_Type) is
+   begin
+      Self.Name := Name;
+   end Initialize;
+
+   ----------------------------------------------------------------------------
+   overriding procedure Process(Self : in out Rule_Class; Visitor : in out Directive_Visitor_Class'CLASS) is
+   begin
+      Visitor.Process_Rule(Self);
+   end Process;
+
 end kv.apg.directives;

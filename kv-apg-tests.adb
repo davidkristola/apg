@@ -4,6 +4,7 @@ with kv.apg.tests.lex_fast;
 with kv.apg.tests.lex_xfa;
 with kv.apg.tests.lex_gen;
 with kv.apg.tests.misc;
+with kv.apg.tests.parse;
 
 package body kv.apg.tests is
 
@@ -16,6 +17,7 @@ package body kv.apg.tests is
       kv.apg.tests.lex_xfa.register(suite);
       kv.apg.tests.lex_gen.register(suite);
       kv.apg.tests.misc.register(suite);
+      kv.apg.tests.parse.register(suite);
    end register;
 
 end kv.apg.tests;
