@@ -1,9 +1,10 @@
 with Ada.Containers.Vectors;
 
+with kv.core.wwstr; use kv.core.wwstr;
+
 with kv.apg.directives;
 with kv.apg.tokens;
-
-with kv.core.wwstr; use kv.core.wwstr;
+with kv.apg.rules;
 
 private package kv.apg.parse.rule is
 
