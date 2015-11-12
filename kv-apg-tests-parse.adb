@@ -60,11 +60,34 @@ package body kv.apg.tests.parse is
       kv.apg.directives.Free(Directive);
    end Run;
 
+   ----------------------------------------------------------------------------
+   type Multi_Line_Rule_Test is new Rule_Test_Class with null record;
+   procedure Run(T : in out Multi_Line_Rule_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      use kv.apg.directives;
+      use Ada.Strings.UTF_Encoding;
+      use Ada.Strings.UTF_Encoding.Strings;
+   begin
+      Parse_This(T, Decode("rule program = start", UTF_8));
+      Parse_This(T, Decode(" | import_list class_list  eos_token => «null;»", UTF_8));
+      Parse_This(T, Decode(" | pragma_token name_token eos_token => «null;»", UTF_8));
+      Parse_This(T, Decode(" | => «null;»;", UTF_8));
+      Check_States(T, Errors => 0, Directives => 1);
+      Directive := T.Parser.Next_Directive;
+      T.Assert(Directive.all'TAG = kv.apg.directives.Rule_Class'TAG, "Expected directive to be Rule_Class");
+      kv.apg.directives.Free(Directive);
+   end Run;
+
+
 
    ----------------------------------------------------------------------------
    procedure register(suite : in kv.core.ut.Suite_Pointer_Type) is
    begin
       suite.register(new One_Line_Rule_Test, "One_Line_Rule_Test");
+      suite.register(new Multi_Line_Rule_Test, "Multi_Line_Rule_Test");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;

@@ -115,7 +115,7 @@ package body kv.apg.parse.rule is
       (Self  : in out Rule_State_Class;
        Token : in     kv.apg.tokens.Token_Class) is
    begin
-      Self.Working.Elements.Append(Token);
+      Self.Working.Append(kv.apg.rules.New_Pre_Element(Token));
    end Process_Element;
 
    -------------------------------------------------------------------------
@@ -171,9 +171,11 @@ package body kv.apg.parse.rule is
    -------------------------------------------------------------------------
    function Get_Directive(Self : Rule_State_Class) return kv.apg.directives.Directive_Pointer_Type is
       Rule_Directive : access kv.apg.directives.Rule_Class;
+      Rule : kv.apg.rules.Rule_Class;
    begin
       Rule_Directive := new kv.apg.directives.Rule_Class;
-      Rule_Directive.Initialize(Name => Self.Name_Token.Get_Data);
+      Rule.Initialize(Self.Name_Token, Self.Productions);
+      Rule_Directive.Initialize(Name => Self.Name_Token.Get_Data, Rule => Rule);
       return kv.apg.directives.Directive_Pointer_Type(Rule_Directive);
    end Get_Directive;
 

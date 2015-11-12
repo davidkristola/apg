@@ -1,6 +1,7 @@
 with kv.core.wwstr; use kv.core.wwstr;
 
 with kv.apg.regex;
+with kv.apg.rules;
 
 package kv.apg.directives is
 
@@ -61,9 +62,11 @@ package kv.apg.directives is
 
    type Rule_Class is new Directive_Class with private;
    not overriding procedure Initialize
-      (Self  : in out Rule_Class;
-       Name  : in     String_Type);
+      (Self : in out Rule_Class;
+       Name : in     String_Type;
+       Rule : in     kv.apg.rules.Rule_Class);
    overriding procedure Process(Self : in out Rule_Class; Visitor : in out Directive_Visitor_Class'CLASS);
+   not overriding function Get_Rule(Self : Rule_Class) return kv.apg.rules.Rule_Class;
 
 
    --
@@ -97,7 +100,7 @@ private
 
    type Rule_Class is new Directive_Class with
       record
-         null; -- TODO: add grammar tree
+         Rule : kv.apg.rules.Rule_Class;
       end record;
 
 end kv.apg.directives;

@@ -79,10 +79,12 @@ package body kv.apg.directives is
 
    ----------------------------------------------------------------------------
    not overriding procedure Initialize
-      (Self  : in out Rule_Class;
-       Name  : in     String_Type) is
+      (Self : in out Rule_Class;
+       Name : in     String_Type;
+       Rule : in     kv.apg.rules.Rule_Class) is
    begin
       Self.Name := Name;
+      Self.Rule := Rule;
    end Initialize;
 
    ----------------------------------------------------------------------------
@@ -90,5 +92,11 @@ package body kv.apg.directives is
    begin
       Visitor.Process_Rule(Self);
    end Process;
+
+   ----------------------------------------------------------------------------
+   not overriding function Get_Rule(Self : Rule_Class) return kv.apg.rules.Rule_Class is
+   begin
+      return Self.Rule;
+   end Get_Rule;
 
 end kv.apg.directives;
