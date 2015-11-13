@@ -16,6 +16,16 @@ package body kv.apg.rules is
    end Append;
 
    ----------------------------------------------------------------------------
+   function Image(Self : in out Production_Class) return String_Type is
+      Answer : String_Type := To_String_Type("(");
+   begin
+      for Element of Self.Elements loop
+         Answer := Answer & To_String_Type(" ") & Element.Token.Get_Data;
+      end loop;
+      return Answer & To_String_Type(" ) => ") & Self.Code;
+   end Image;
+
+   ----------------------------------------------------------------------------
    procedure Initialize
       (Self        : in out Rule_Class;
        Name        : in     kv.apg.tokens.Token_Class;

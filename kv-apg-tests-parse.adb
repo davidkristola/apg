@@ -14,6 +14,7 @@ with kv.apg.regex;
 with kv.apg.logger.writer;
 with kv.apg.writer.buffer;
 with kv.apg.incidents;
+with kv.apg.rules;
 
 with kv.core.wwstr;
 
@@ -64,17 +65,25 @@ package body kv.apg.tests.parse is
    type Multi_Line_Rule_Test is new Rule_Test_Class with null record;
    procedure Run(T : in out Multi_Line_Rule_Test) is
       Directive : kv.apg.directives.Directive_Pointer_Type;
+      Rule : kv.apg.rules.Rule_Class;
       use kv.apg.directives;
       use Ada.Strings.UTF_Encoding;
       use Ada.Strings.UTF_Encoding.Strings;
+      Expected_1 : constant String := "( import_list class_list eos_token ) => null;";
+      Expected_2 : constant String := "( pragma_token name_token eos_token ) => jump;";
+      Expected_3 : constant String := "(  ) => pause;";
    begin
       Parse_This(T, Decode("rule program = start", UTF_8));
       Parse_This(T, Decode(" | import_list class_list  eos_token => «null;»", UTF_8));
-      Parse_This(T, Decode(" | pragma_token name_token eos_token => «null;»", UTF_8));
-      Parse_This(T, Decode(" | => «null;»;", UTF_8));
+      Parse_This(T, Decode(" | pragma_token name_token eos_token => «jump;»", UTF_8));
+      Parse_This(T, Decode(" | => «pause;»;", UTF_8));
       Check_States(T, Errors => 0, Directives => 1);
       Directive := T.Parser.Next_Directive;
       T.Assert(Directive.all'TAG = kv.apg.directives.Rule_Class'TAG, "Expected directive to be Rule_Class");
+      Rule := kv.apg.directives.Rule_Class'CLASS(Directive.all).Get_Rule;
+      T.Assert(Rule.Productions(1).Image = To_String_Type(Expected_1), "Expected '"&Expected_1&"', got '"&To_UTF(Rule.Productions(1).Image)&"'.");
+      T.Assert(Rule.Productions(2).Image = To_String_Type(Expected_2), "Expected '"&Expected_2&"', got '"&To_UTF(Rule.Productions(2).Image)&"'.");
+      T.Assert(Rule.Productions(3).Image = To_String_Type(Expected_3), "Expected '"&Expected_3&"', got '"&To_UTF(Rule.Productions(3).Image)&"'.");
       kv.apg.directives.Free(Directive);
    end Run;
 

@@ -2,6 +2,7 @@ with Ada.Containers.Vectors;
 with Ada.Containers.Indefinite_Hashed_Maps;
 with Ada.Strings;
 with Ada.Strings.Hash;
+with Ada.Strings.Wide_Wide_Unbounded;
 
 with kv.core.wwstr; use kv.core.wwstr;
 
@@ -11,6 +12,7 @@ with kv.apg.fast;
 package kv.apg.rules is
 
    use kv.apg.tokens;
+   use Ada.Strings.Wide_Wide_Unbounded;
 
    type Rule_Class;
    type Rule_Pointer is access all Rule_Class;
@@ -43,13 +45,15 @@ package kv.apg.rules is
 
    type Production_Class is tagged
       record
-         Elements : Element_Vector.Vector;
+         Elements : Element_Vector.Vector; -- predicates?
          Code     : String_Type;
       end record;
 
    procedure Append
       (Self    : in out Production_Class;
        Element : in     Element_Pointer);
+
+   function Image(Self : in out Production_Class) return String_Type;
 
 
    package Production_Vector is new Ada.Containers.Vectors
