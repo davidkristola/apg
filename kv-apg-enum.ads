@@ -23,6 +23,8 @@ package kv.apg.enum is
        Writer : in out kv.apg.writer.Writer_Class'CLASS);
 
    function Get(Self : Enumeration_Class; Index : Positive) return String_Type;
+   function Get(Self : Enumeration_Class; Name : String_Type) return Integer;
+   Not_Found_Error : constant Integer := -1;
 
 private
 

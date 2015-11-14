@@ -1,3 +1,4 @@
+with Ada.Strings.Wide_Wide_Unbounded; use Ada.Strings.Wide_Wide_Unbounded;
 
 package body kv.apg.enum is
 
@@ -60,6 +61,17 @@ package body kv.apg.enum is
          end if;
       end loop;
       return +"";
+   end Get;
+
+   ----------------------------------------------------------------------------
+   function Get(Self : Enumeration_Class; Name : String_Type) return Integer is
+   begin
+      for V of Self.Values loop
+         if V.Name = Name then
+            return V.Value;
+         end if;
+      end loop;
+      return Not_Found_Error;
    end Get;
 
 end kv.apg.enum;

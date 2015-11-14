@@ -8,6 +8,8 @@ with kv.core.wwstr; use kv.core.wwstr;
 
 with kv.apg.tokens;
 with kv.apg.fast;
+with kv.apg.enum;
+with kv.apg.logger;
 
 package kv.apg.rules is
 
@@ -37,9 +39,11 @@ package kv.apg.rules is
    function New_Pre_Element
       (Token : in     kv.apg.tokens.Token_Class) return Element_Pointer;
 
+   procedure Free
+      (Element : in out Element_Pointer);
 
    package Element_Vector is new Ada.Containers.Vectors
-      (Index_Type => Positive,
+      (Index_Type   => Positive,
        Element_Type => Element_Pointer);
 
 
@@ -55,6 +59,9 @@ package kv.apg.rules is
 
    function Image(Self : in out Production_Class) return String_Type;
 
+   procedure Clear
+      (Self : in out Production_Class);
+
 
    package Production_Vector is new Ada.Containers.Vectors
       (Index_Type => Positive,
@@ -67,6 +74,7 @@ package kv.apg.rules is
       record
          Name_Token  : kv.apg.tokens.Token_Class;
          Productions : Production_Vector.Vector;
+         Start_Rule  : Boolean := False;
       end record;
 
    procedure Initialize
@@ -74,12 +82,43 @@ package kv.apg.rules is
        Name        : in     kv.apg.tokens.Token_Class;
        Productions : in     Production_Vector.Vector);
 
+   procedure Set_Is_Start
+      (Self     : in out Rule_Class;
+       Is_Start : in     Boolean);
+
+   function Is_Start(Self : Rule_Class) return Boolean;
+
+   function Get_Name(Self : Rule_Class) return String_Type;
+
+
 
    package Rule_Maps is new Ada.Containers.Indefinite_Hashed_Maps
-      (Key_Type => String,
-       Element_Type => Rule_Class,
-       Hash => Ada.Strings.Hash,
+      (Key_Type        => String,
+       Element_Type    => Rule_Pointer,
+       Hash            => Ada.Strings.Hash,
        Equivalent_Keys => "=");
 
+
+   type Grammar_Class is tagged
+      record
+         Tokens : kv.apg.enum.Enumeration_Class;
+         Rules  : Rule_Maps.Map;
+         Start  : String_Type;
+      end record;
+
+   procedure Initialize
+      (Self   : in out Grammar_Class;
+       Tokens : in     kv.apg.enum.Enumeration_Class);
+
+   procedure Add_Rule
+      (Self : in out Grammar_Class;
+       Rule : in     Rule_Pointer);
+
+   procedure Validate
+      (Self   : in out Grammar_Class;
+       Logger : in out kv.apg.logger.Safe_Logger_Pointer);
+
+   function Find
+      (Self : Grammar_Class; Name : String_Type) return Rule_Pointer;
 
 end kv.apg.rules;

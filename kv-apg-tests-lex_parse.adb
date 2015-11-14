@@ -39,8 +39,10 @@ package body kv.apg.tests.lex_parse is
    ----------------------------------------------------------------------------
    procedure Parse_This(T : in out Parser_Test_Class'CLASS; S : in String) is
       Token : kv.apg.tokens.Token_Class;
+      use Ada.Strings.UTF_Encoding;
+      use Ada.Strings.UTF_Encoding.Strings;
    begin
-      Ingest_All(T, S & Ada.Characters.Latin_1.LF);
+      Ingest_All(T, Decode(S, UTF_8) & Ada.Characters.Latin_1.LF);
       while T.Lexer.Tokens_Available > 0 loop
          Token := T.Lexer.Get_Next_Token;
          T.Parser.Ingest_Token(Token);
@@ -165,11 +167,9 @@ package body kv.apg.tests.lex_parse is
    procedure Run(T : in out Parse_Block_Set_Test) is
       Directive : kv.apg.directives.Directive_Pointer_Type;
       use kv.apg.directives;
-      use Ada.Strings.UTF_Encoding;
-      use Ada.Strings.UTF_Encoding.Strings;
    begin
       T.Parser.Initialise; --TODO: make this OBE
-      Parse_This(T, Decode("set lex_spec = «test.ads»;", UTF_8));
+      Parse_This(T, "set lex_spec = «test.ads»;");
       Check_States(T, Errors => 0, Directives => 1);
       Directive := T.Parser.Next_Directive;
       T.Assert(Directive.all'TAG = kv.apg.directives.Set_Class'TAG, "wrong class");

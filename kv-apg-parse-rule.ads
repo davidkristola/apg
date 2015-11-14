@@ -14,6 +14,7 @@ private package kv.apg.parse.rule is
          Name_Token  : kv.apg.tokens.Token_Class;
          Productions : kv.apg.rules.Production_Vector.Vector;
          Working     : kv.apg.rules.Production_Class;
+         Start_Flag  : Boolean := False;
       end record;
 
    overriding procedure Ingest_Token

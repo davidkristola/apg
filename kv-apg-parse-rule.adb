@@ -57,7 +57,7 @@ package body kv.apg.parse.rule is
        Token : in     kv.apg.tokens.Token_Class) is
    begin
       Self.Expect := Element_Or_Causes; -- TODO
-      -- Clear Self.Working
+      Self.Working.Clear;
    end Process_Production;
 
    -------------------------------------------------------------------------
@@ -67,6 +67,9 @@ package body kv.apg.parse.rule is
    begin
       Self.Expect := Flag_Or_Production;
       -- TODO
+      if Token.Get_Data_As_String = "start" then
+         Self.Start_Flag := True;
+      end if;
    end Process_Flag;
 
    -------------------------------------------------------------------------
@@ -175,6 +178,7 @@ package body kv.apg.parse.rule is
    begin
       Rule_Directive := new kv.apg.directives.Rule_Class;
       Rule.Initialize(Self.Name_Token, Self.Productions);
+      Rule.Set_Is_Start(Self.Start_Flag);
       Rule_Directive.Initialize(Name => Self.Name_Token.Get_Data, Rule => Rule);
       return kv.apg.directives.Directive_Pointer_Type(Rule_Directive);
    end Get_Directive;

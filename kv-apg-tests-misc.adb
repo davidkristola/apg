@@ -147,6 +147,20 @@ package body kv.apg.tests.misc is
       T.Enum.Append(+"Beta");
       T.Enum.Append(+"Gamma");
       T.Enum.Append(+"Epsilon");
+      T.Assert(T.Enum.Get(+"Omega") = Not_Found_Error, "Get should return Not_Found_Error (-1), got <" & Integer'IMAGE(T.Enum.Get(+"Omega")) & ">");
+      T.Assert(T.Enum.Get(+"Gamma") = 3, "Get should return 3 (Gamma), got <" & Integer'IMAGE(T.Enum.Get(+"Gamma")) & ">");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Get_Enum_Number_Test is new Enum_Test_Class with null record;
+   procedure Run(T : in out Get_Enum_Number_Test) is
+      use kv.apg.enum;
+   begin
+      T.Enum.Initialize(+"Enum_Type");
+      T.Enum.Append(+"Alpha");
+      T.Enum.Append(+"Beta");
+      T.Enum.Append(+"Gamma");
+      T.Enum.Append(+"Epsilon");
       T.Assert(T.Enum.Get(3) = +"Gamma", "Get should return Gamma, got <" & To_UTF(+T.Enum.Get(3)) & ">");
    end Run;
 
@@ -432,6 +446,7 @@ package body kv.apg.tests.misc is
       suite.register(new Append_Count_Enum_Test, "Append_Count_Enum_Test");
       suite.register(new Write_Enum_Test, "Write_Enum_Test");
       suite.register(new Get_Enum_Test, "Get_Enum_Test");
+      suite.register(new Get_Enum_Number_Test, "Get_Enum_Number_Test");
 
       suite.register(new Rewriter_No_Change_Test, "Rewriter_No_Change_Test");
       suite.register(new Rewriter_Change_Test, "Rewriter_Change_Test");
@@ -447,6 +462,7 @@ package body kv.apg.tests.misc is
       suite.register(new Filter_Test, "Filter_Test");
 
       suite.register(new Logger_Init_Test, "Logger_Init_Test");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;
