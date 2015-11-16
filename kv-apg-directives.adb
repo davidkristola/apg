@@ -18,13 +18,19 @@ package body kv.apg.directives is
    ----------------------------------------------------------------------------
    function Get_Name(Self : in     Directive_Class) return String_Type is
    begin
-      return Self.Name;
+      return Self.Name.Get_Data;
    end Get_Name;
+
+   ----------------------------------------------------------------------------
+   function Get_Name_Token(Self : in     Directive_Class) return kv.apg.tokens.Token_Class is
+   begin
+      return Self.Name;
+   end Get_Name_Token;
 
    ----------------------------------------------------------------------------
    procedure Initialize
       (Self  : in out Set_Class;
-       Name  : in     String_Type;
+       Name  : in     kv.apg.tokens.Token_Class;
        Value : in     String_Type) is
    begin
       --Put_Line("Set_Class.Initialize Name = '" & To_String(+Name) & "', value = '" & To_String(+Value) & "'");
@@ -48,7 +54,7 @@ package body kv.apg.directives is
    ----------------------------------------------------------------------------
    procedure Initialize
       (Self : in out Token_Class;
-       Name : in     String_Type;
+       Name : in     kv.apg.tokens.Token_Class;
        Tree : in     kv.apg.regex.Regular_Expression_Tree_Type;
        Kind : in     Token_Subtype) is
    begin
@@ -80,8 +86,8 @@ package body kv.apg.directives is
    ----------------------------------------------------------------------------
    not overriding procedure Initialize
       (Self : in out Rule_Class;
-       Name : in     String_Type;
-       Rule : in     kv.apg.rules.Rule_Class) is
+       Name : in     kv.apg.tokens.Token_Class;
+       Rule : in     kv.apg.rules.Rule_Pointer) is
    begin
       Self.Name := Name;
       Self.Rule := Rule;
@@ -94,7 +100,7 @@ package body kv.apg.directives is
    end Process;
 
    ----------------------------------------------------------------------------
-   not overriding function Get_Rule(Self : Rule_Class) return kv.apg.rules.Rule_Class is
+   not overriding function Get_Rule(Self : Rule_Class) return kv.apg.rules.Rule_Pointer is
    begin
       return Self.Rule;
    end Get_Rule;

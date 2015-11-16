@@ -98,6 +98,18 @@ package body kv.apg.tests.misc is
          Buff : kv.apg.writer.buffer.Buffer_Writer_Class;
       end record;
 
+
+   ----------------------------------------------------------------------------
+   function "+"(Name : String) return kv.apg.tokens.Token_Class is
+      T : kv.apg.tokens.Token_Class;
+      Here : kv.apg.locations.File_Location_Type;
+   begin
+      Here.Initialize(+"test", 1, 1);
+      T.Initialize(kv.apg.tokens.A_Word, Here, kv.core.wwstr.To_String_Type(Name));
+      return T;
+   end "+";
+
+
    ----------------------------------------------------------------------------
    type Init_Enum_Test is new Enum_Test_Class with null record;
    procedure Run(T : in out Init_Enum_Test) is

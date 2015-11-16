@@ -64,7 +64,7 @@ package kv.apg.rules is
 
 
    package Production_Vector is new Ada.Containers.Vectors
-      (Index_Type => Positive,
+      (Index_Type   => Positive,
        Element_Type => Production_Class);
 
 
@@ -118,7 +118,6 @@ package kv.apg.rules is
       (Self   : in out Grammar_Class;
        Logger : in out kv.apg.logger.Safe_Logger_Pointer);
 
-   function Find
-      (Self : Grammar_Class; Name : String_Type) return Rule_Pointer;
+   function Find(Self : Grammar_Class; Name : String_Type) return Rule_Pointer;
 
 end kv.apg.rules;

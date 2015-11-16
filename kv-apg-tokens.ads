@@ -24,6 +24,8 @@ package kv.apg.tokens is
 
    function "="(L, R : Token_Class) return Boolean;
 
+   function Invalid_Token return Token_Class;
+
 private
 
    type Token_Class is tagged

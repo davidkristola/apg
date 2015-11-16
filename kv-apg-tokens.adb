@@ -9,6 +9,7 @@ package body kv.apg.tokens is
 
    use Ada.Characters.Conversions;
    use Ada.Strings.Wide_Wide_Unbounded;
+   use kv.core.wwstr;
 
    Eos : constant String_Type := +";";
 
@@ -67,5 +68,15 @@ package body kv.apg.tokens is
    begin
       return (L.Kind = R.Kind) and then (L.Location = R.Location) and then (L.data = R.Data);
    end "=";
+
+   ----------------------------------------------------------------------------
+   function Invalid_Token return Token_Class is
+      Here : kv.apg.locations.File_Location_Type;
+      Invalid : Token_Class;
+   begin
+      Here.Initialize(To_String_Type("n/a"), 0, 0);
+      Invalid.Initialize(A_Word, Here, To_String_Type("Invalid"));
+      return Invalid;
+   end Invalid_Token;
 
 end kv.apg.tokens;

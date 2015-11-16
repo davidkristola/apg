@@ -162,7 +162,7 @@ package body kv.apg.parse.token is
       Directive : access kv.apg.directives.Token_Class;
    begin
       Directive := new kv.apg.directives.Token_Class;
-      Directive.Initialize(Name => Self.Name_Token.Get_Data, Tree => Self.Tree, Kind => Self.Kind);
+      Directive.Initialize(Name => Self.Name_Token, Tree => Self.Tree, Kind => Self.Kind);
       return kv.apg.directives.Directive_Pointer_Type(Directive);
    end Get_Directive;
 

@@ -106,7 +106,7 @@ package body kv.apg.parse.set is
       Set_Directive : access kv.apg.directives.Set_Class;
    begin
       Set_Directive := new kv.apg.directives.Set_Class;
-      Set_Directive.Initialize(Name => Self.Name_Token.Get_Data, Value => Self.Value_Token.Get_Data);
+      Set_Directive.Initialize(Name => Self.Name_Token, Value => Self.Value_Token.Get_Data);
       return kv.apg.directives.Directive_Pointer_Type(Set_Directive);
    end Get_Directive;
 

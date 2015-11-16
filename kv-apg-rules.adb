@@ -1,5 +1,7 @@
 with Ada.Strings.Wide_Wide_Unbounded;
 with Ada.Unchecked_Deallocation;
+with Ada.Strings.UTF_Encoding;
+with Ada.Strings.UTF_Encoding.Strings;
 
 package body kv.apg.rules is
 
@@ -82,15 +84,17 @@ package body kv.apg.rules is
       (Self   : in out Grammar_Class;
        Tokens : in     kv.apg.enum.Enumeration_Class) is
    begin
-   null;
+      Self.Tokens := Tokens;
    end Initialize;
 
    ----------------------------------------------------------------------------
    procedure Add_Rule
       (Self : in out Grammar_Class;
        Rule : in     Rule_Pointer) is
+      use Ada.Strings.UTF_Encoding;
+      use Ada.Strings.UTF_Encoding.Strings;
    begin
-   null;
+      Self.Rules.Include(Decode(To_String(Rule.Get_Name), UTF_8), Rule);
    end Add_Rule;
 
    ----------------------------------------------------------------------------
@@ -102,9 +106,18 @@ package body kv.apg.rules is
    end Validate;
 
    ----------------------------------------------------------------------------
-   function Find
-      (Self : Grammar_Class; Name : String_Type) return Rule_Pointer is
+   ----------------------------------------------------------------------------
+
+   ----------------------------------------------------------------------------
+   function Find(Self : Grammar_Class; Name : String_Type) return Rule_Pointer is
+      use Ada.Strings.UTF_Encoding;
+      use Ada.Strings.UTF_Encoding.Strings;
+      Key : constant String := Decode(To_String(Name), UTF_8);
+      use Rule_Maps;
    begin
+      if Self.Rules.Find(Key) /= No_Element then
+         return Self.Rules.Element(Key);
+      end if;
       return null;
    end Find;
 

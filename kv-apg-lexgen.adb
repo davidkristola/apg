@@ -1,10 +1,13 @@
 
 with Ada.Strings.Wide_Wide_Unbounded;
 
+with kv.core.wwstr;
+
 with kv.apg.enum;
 with kv.apg.directives;
-with kv.core.wwstr;
 with kv.apg.fa.nfa.convert;
+with kv.apg.tokens;
+with kv.apg.locations;
 
 package body kv.apg.lexgen is
 
@@ -45,7 +48,7 @@ package body kv.apg.lexgen is
           Nfas : access kv.apg.fa.nfa.Nfa_Array_Type) is
       begin
          Self.Enumeration.Initialize(To_String_Type("Token_Type"));
-         Self.Enumeration.Append(To_String_Type("Invalid"));
+         Self.Enumeration.Append(kv.apg.tokens.Invalid_Token);
          Self.Token_Number := 0; -- Invalid is 0
          Self.Nfas := Nfas;
       end Initialize;
@@ -56,7 +59,7 @@ package body kv.apg.lexgen is
           Directive : in out kv.apg.directives.Token_Class'CLASS) is
       begin
          Self.Token_Number := Self.Token_Number + 1;
-         Self.Enumeration.Append(Directive.Get_Name);
+         Self.Enumeration.Append(Directive.Get_Name_Token);
          Self.Nfas(Self.Token_Number) := kv.apg.directives.Token_Class'CLASS(Directive).Get_Tree.To_Nfa(kv.apg.fast.Key_Type(Self.Token_Number));
       end Process_Token;
 

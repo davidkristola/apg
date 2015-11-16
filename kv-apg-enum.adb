@@ -15,7 +15,7 @@ package body kv.apg.enum is
    ----------------------------------------------------------------------------
    procedure Append
       (Self : in out Enumeration_Class;
-       Name : in     String_Type) is
+       Name : in     kv.apg.tokens.Token_Class) is
       V : Value_Type;
    begin
       Self.Last := Self.Last + 1;
@@ -42,11 +42,11 @@ package body kv.apg.enum is
       Writer.Write_Line("   type " & To_UTF(+Self.Name) & " is");
       for V of Self.Values loop
          if Count = 1 then
-            Writer.Write_Line("      (" & To_UTF(+V.Name) & ",");
+            Writer.Write_Line("      (" & To_UTF(+V.Name.Get_Data) & ",");
          elsif Count = Last then
-            Writer.Write_Line("       " & To_UTF(+V.Name) & ");");
+            Writer.Write_Line("       " & To_UTF(+V.Name.Get_Data) & ");");
          else
-            Writer.Write_Line("       " & To_UTF(+V.Name) & ",");
+            Writer.Write_Line("       " & To_UTF(+V.Name.Get_Data) & ",");
          end if;
          Count := Count + 1;
       end loop;
@@ -57,17 +57,28 @@ package body kv.apg.enum is
    begin
       for V of Self.Values loop
          if V.Value = Index then
-            return V.Name;
+            return V.Name.Get_Data;
          end if;
       end loop;
       return +"";
    end Get;
 
    ----------------------------------------------------------------------------
+   function Get(Self : Enumeration_Class; Index : Positive) return kv.apg.tokens.Token_Class is
+   begin
+      for V of Self.Values loop
+         if V.Value = Index then
+            return V.Name;
+         end if;
+      end loop;
+      return kv.apg.tokens.Invalid_Token;
+   end Get;
+
+   ----------------------------------------------------------------------------
    function Get(Self : Enumeration_Class; Name : String_Type) return Integer is
    begin
       for V of Self.Values loop
-         if V.Name = Name then
+         if V.Name.Get_Data = Name then
             return V.Value;
          end if;
       end loop;

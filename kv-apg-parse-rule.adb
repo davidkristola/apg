@@ -174,12 +174,13 @@ package body kv.apg.parse.rule is
    -------------------------------------------------------------------------
    function Get_Directive(Self : Rule_State_Class) return kv.apg.directives.Directive_Pointer_Type is
       Rule_Directive : access kv.apg.directives.Rule_Class;
-      Rule : kv.apg.rules.Rule_Class;
+      Rule : kv.apg.rules.Rule_Pointer;
    begin
       Rule_Directive := new kv.apg.directives.Rule_Class;
+      Rule := new kv.apg.rules.Rule_Class;
       Rule.Initialize(Self.Name_Token, Self.Productions);
       Rule.Set_Is_Start(Self.Start_Flag);
-      Rule_Directive.Initialize(Name => Self.Name_Token.Get_Data, Rule => Rule);
+      Rule_Directive.Initialize(Name => Self.Name_Token, Rule => Rule);
       return kv.apg.directives.Directive_Pointer_Type(Rule_Directive);
    end Get_Directive;
 
