@@ -104,20 +104,28 @@ package kv.apg.rules is
          Tokens : kv.apg.enum.Enumeration_Class;
          Rules  : Rule_Maps.Map;
          Start  : String_Type;
+         Errors : Natural := 0;
       end record;
 
    procedure Initialize
       (Self   : in out Grammar_Class;
        Tokens : in     kv.apg.enum.Enumeration_Class);
 
+   function Get_Error_Count(Self : Grammar_Class) return Natural;
+
    procedure Add_Rule
       (Self : in out Grammar_Class;
        Rule : in     Rule_Pointer);
 
+   procedure Resolve_Rules
+      (Self   : in out Grammar_Class;
+       Logger : in     kv.apg.logger.Safe_Logger_Pointer);
+
    procedure Validate
       (Self   : in out Grammar_Class;
-       Logger : in out kv.apg.logger.Safe_Logger_Pointer);
+       Logger : in     kv.apg.logger.Safe_Logger_Pointer);
 
-   function Find(Self : Grammar_Class; Name : String_Type) return Rule_Pointer;
+   function Find_Non_Terminal(Self : Grammar_Class; Name : String_Type) return Rule_Pointer;
+   function Find_Terminal(Self : Grammar_Class; Name : String_Type) return Integer;
 
 end kv.apg.rules;
