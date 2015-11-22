@@ -88,15 +88,6 @@ package body kv.apg.tests.parse is
 
 
 
-
-
-   type Grammar_Test_Class is abstract new Rule_Test_Class with
-      record
-         Grammar : aliased kv.apg.rules.Grammar_Class;
-         Enum : aliased kv.apg.enum.Enumeration_Class;
-      end record;
-
-
    ----------------------------------------------------------------------------
    -- TODO: this is a copy from another file; make just one copy
    function "+"(Name : String) return kv.apg.tokens.Token_Class is
@@ -109,10 +100,58 @@ package body kv.apg.tests.parse is
    end "+";
 
 
+
+
+   type Grammar_Test_Class is abstract new Rule_Test_Class with
+      record
+         Grammar : aliased kv.apg.rules.Grammar_Class;
+         Enum : aliased kv.apg.enum.Enumeration_Class;
+      end record;
+
+   ----------------------------------------------------------------------------
+   overriding procedure Set_Up(T : in out Grammar_Test_Class) is
+   begin
+      T.Logger.Initialize
+         (Writer => T.Buffer'UNCHECKED_ACCESS,
+          Level  => Error);
+      T.Enum.Initialize(+"Enum_Type");
+      T.Enum.Append(+"Alpha");
+      T.Enum.Append(+"Beta");
+      T.Enum.Append(+"Gamma");
+      T.Grammar.Initialize(T.Enum);
+   end Set_Up;
+
+
+   type String_Array_Type is array (Positive range <>) of String_Type;
+
+   ----------------------------------------------------------------------------
+   procedure Run_Basic_Grammar_Test
+      (T          : in out Grammar_Test_Class'CLASS;
+       Rule_Count : in     Natural;
+       Definition : in     String_Array_Type) is
+
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      Rule : kv.apg.rules.Rule_Pointer;
+
+   begin
+      for I in Definition'RANGE loop
+         Parse_This(T, To_String(Definition(I)));
+      end loop;
+
+      Check_States(T, Errors => 0, Directives => Rule_Count);
+      for X in 1..Rule_Count loop
+         Directive := T.Parser.Next_Directive;
+         T.Assert(Directive.all'TAG = kv.apg.directives.Rule_Class'TAG, "Expected directive to be Rule_Class");
+         Rule := kv.apg.directives.Rule_Class'CLASS(Directive.all).Get_Rule;
+         T.Grammar.Add_Rule(Rule);
+      end loop;
+   end Run_Basic_Grammar_Test;
+
+
    ----------------------------------------------------------------------------
    type Init_Gramar_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Init_Gramar_Test) is
-      Directive : kv.apg.directives.Directive_Pointer_Type;
+
       Rule : kv.apg.rules.Rule_Pointer;
 
       Expected_1 : constant String := "( Alpha Gamma ) => null;";
@@ -120,32 +159,17 @@ package body kv.apg.tests.parse is
       Expected_3 : constant String := "( import_list class_list Gamma ) => null;";
 
    begin
-      T.Enum.Initialize(+"Enum_Type");
-      T.Enum.Append(+"Alpha");
-      T.Enum.Append(+"Beta");
-      T.Enum.Append(+"Gamma");
-      T.Grammar.Initialize(T.Enum);
-
-      Parse_This(T, "rule program = start");
-      Parse_This(T, " | import_list class_list Gamma => «null;»");
-      Parse_This(T, " | class_list Gamma => «null;»");
-      Parse_This(T, " | => «pause;»;");
-
-      Parse_This(T, "rule import_list =");
-      Parse_This(T, " | Alpha Gamma => «null;»");
-      Parse_This(T, " ;");
-
-      Parse_This(T, "rule class_list =");
-      Parse_This(T, " | Beta Gamma => «null;»");
-      Parse_This(T, " ;");
-
-      Check_States(T, Errors => 0, Directives => 3);
-      for X in 1..3 loop
-         Directive := T.Parser.Next_Directive;
-         T.Assert(Directive.all'TAG = kv.apg.directives.Rule_Class'TAG, "Expected directive to be Rule_Class");
-         Rule := kv.apg.directives.Rule_Class'CLASS(Directive.all).Get_Rule;
-         T.Grammar.Add_Rule(Rule);
-      end loop;
+      Run_Basic_Grammar_Test(T, 3,
+         (01 => To_String_Type("rule program = start"),
+          02 => To_String_Type(" | import_list class_list Gamma => «null;»"),
+          03 => To_String_Type(" | class_list Gamma => «null;»"),
+          04 => To_String_Type(" | => «pause;»;"),
+          05 => To_String_Type("rule import_list ="),
+          06 => To_String_Type(" | Alpha Gamma => «null;»"),
+          07 => To_String_Type(" ;"),
+          08 => To_String_Type("rule class_list ="),
+          09 => To_String_Type(" | Beta Gamma => «null;»"),
+          10 => To_String_Type(" ;")));
 
       Rule := T.Grammar.Find_Non_Terminal(To_String_Type("import_list"));
       T.Assert(Rule.Productions(1).Image = To_String_Type(Expected_1), "Expected '"&Expected_1&"', got '"&To_UTF(Rule.Productions(1).Image)&"'.");
@@ -163,49 +187,78 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Resolve_Gramar_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Resolve_Gramar_Test) is
-      Directive : kv.apg.directives.Directive_Pointer_Type;
-      Rule : kv.apg.rules.Rule_Pointer;
-
-      --Buffer : aliased Buffer_Writer_Class;
-      Logger : aliased Writer_Logger_Class;
-
       Expected : constant String := "ERROR (File: , line 3, column 31): Element of production rule ""program"" not found. (""Epsilon"").";
    begin
-      Logger.Initialize
-         (Writer => T.Buffer'UNCHECKED_ACCESS,
-          Level  => Error);
-      T.Enum.Initialize(+"Enum_Type");
-      T.Enum.Append(+"Alpha");
-      T.Enum.Append(+"Beta");
-      T.Enum.Append(+"Gamma");
-      T.Grammar.Initialize(T.Enum);
+      Run_Basic_Grammar_Test(T, 3,
+         (01 => To_String_Type("rule program = start"),
+          02 => To_String_Type(" | alpha_list Gamma beta_list => «null;»"),
+          03 => To_String_Type(" | beta_list Gamma alpha_list Epsilon => «null;»"),
+          04 => To_String_Type(" ;"),
+          05 => To_String_Type("rule alpha_list ="),
+          06 => To_String_Type(" | Alpha alpha_list => «null;»"),
+          07 => To_String_Type(" | => «null;»"),
+          08 => To_String_Type(" ;"),
+          09 => To_String_Type("rule beta_list ="),
+          10 => To_String_Type(" | Beta beta_list => «null;»"),
+          11 => To_String_Type(" | => «null;»"),
+          12 => To_String_Type(" ;")));
 
-      Parse_This(T, "rule program = start");
-      Parse_This(T, " | alpha_list Gamma beta_list => «null;»");
-      Parse_This(T, " | beta_list Gamma alpha_list Epsilon => «null;»");
-      Parse_This(T, " ;");
-
-      Parse_This(T, "rule alpha_list =");
-      Parse_This(T, " | Alpha alpha_list => «null;»");
-      Parse_This(T, " | => «null;»");
-      Parse_This(T, " ;");
-
-      Parse_This(T, "rule beta_list =");
-      Parse_This(T, " | Beta beta_list => «null;»");
-      Parse_This(T, " | => «null;»");
-      Parse_This(T, " ;");
-
-      Check_States(T, Errors => 0, Directives => 3);
-      for X in 1..3 loop
-         Directive := T.Parser.Next_Directive;
-         T.Assert(Directive.all'TAG = kv.apg.directives.Rule_Class'TAG, "Expected directive to be Rule_Class");
-         Rule := kv.apg.directives.Rule_Class'CLASS(Directive.all).Get_Rule;
-         T.Grammar.Add_Rule(Rule);
-      end loop;
-
-      T.Grammar.Resolve_Rules(Logger'UNCHECKED_ACCESS);
-      -- TODO: need more testing
+      T.Grammar.Resolve_Rules(T.Logger'UNCHECKED_ACCESS);
       T.Assert(T.Buffer.Line_Count > 0, "Expected an error log entry.");
+      Test_Line(T, 1, Expected);
+      T.Assert(T.Grammar.Get_Error_Count = 1, "Expected error count of 1.");
+   end Run;
+
+
+   ----------------------------------------------------------------------------
+   procedure Set_Up_Start_Test
+      (T  : in out Grammar_Test_Class'CLASS;
+       S1 : in     String := "";
+       S2 : in     String := "";
+       S3 : in     String := "") is
+   begin
+      Run_Basic_Grammar_Test(T, 3,
+         (01 => To_String_Type("rule program =" & S1),
+          02 => To_String_Type(" | alpha_list Gamma beta_list Gamma => «null;»"),
+          03 => To_String_Type(" ;"),
+          04 => To_String_Type("rule alpha_list =" & S2),
+          05 => To_String_Type(" | alpha_list Alpha => «null;»"),
+          06 => To_String_Type(" | Alpha => «null;»"),
+          07 => To_String_Type(" ;"),
+          08 => To_String_Type("rule beta_list =" & S3),
+          09 => To_String_Type(" | beta_list Beta => «null;»"),
+          10 => To_String_Type(" | Beta => «null;»"),
+          11 => To_String_Type(" ;")));
+   end Set_Up_Start_Test;
+
+   ----------------------------------------------------------------------------
+   type No_Start_Gramar_Test is new Grammar_Test_Class with null record;
+   procedure Run(T : in out No_Start_Gramar_Test) is
+      Expected : constant String := "ERROR (File: , line 1, column 1): Expected one rule flagged as the start rule, found 0. (""start"").";
+   begin
+      Set_Up_Start_Test(T);
+
+      T.Grammar.Resolve_Rules(T.Logger'UNCHECKED_ACCESS);
+      T.Assert(T.Buffer.Line_Count = 0, "Expected no error log entries.");
+      T.Assert(T.Grammar.Get_Error_Count = 0, "Expected no error counts (yet).");
+
+      T.Grammar.Validate(T.Logger'UNCHECKED_ACCESS);
+      Test_Line(T, 1, Expected);
+      T.Assert(T.Grammar.Get_Error_Count = 1, "Expected error count of 1.");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Two_Start_Gramar_Test is new Grammar_Test_Class with null record;
+   procedure Run(T : in out Two_Start_Gramar_Test) is
+      Expected : constant String := "ERROR (File: , line 1, column 1): Expected one rule flagged as the start rule, found 2. (""start"").";
+   begin
+      Set_Up_Start_Test(T, " start", "", " start");
+
+      T.Grammar.Resolve_Rules(T.Logger'UNCHECKED_ACCESS);
+      T.Assert(T.Buffer.Line_Count = 0, "Expected no error log entries.");
+      T.Assert(T.Grammar.Get_Error_Count = 0, "Expected no error counts (yet).");
+
+      T.Grammar.Validate(T.Logger'UNCHECKED_ACCESS);
       Test_Line(T, 1, Expected);
       T.Assert(T.Grammar.Get_Error_Count = 1, "Expected error count of 1.");
    end Run;
@@ -220,7 +273,8 @@ package body kv.apg.tests.parse is
 
       suite.register(new Init_Gramar_Test, "Init_Gramar_Test");
       suite.register(new Resolve_Gramar_Test, "Resolve_Gramar_Test");
---      suite.register(new XXX, "XXX");
+      suite.register(new No_Start_Gramar_Test, "No_Start_Gramar_Test");
+      suite.register(new Two_Start_Gramar_Test, "Two_Start_Gramar_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;

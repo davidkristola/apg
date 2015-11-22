@@ -5,6 +5,8 @@ with Ada.Strings.UTF_Encoding.Strings;
 
 with Ada.Text_IO; use Ada.Text_IO;
 
+with kv.apg.locations;
+
 package body kv.apg.rules is
 
    procedure Free_Instance is new Ada.Unchecked_Deallocation(Element_Class'CLASS, Element_Pointer);
@@ -118,33 +120,30 @@ package body kv.apg.rules is
       use Ada.Strings.UTF_Encoding;
       use Ada.Strings.UTF_Encoding.Strings;
    begin
-      null;
-      -- for each rule
       for Rule of Self.Rules loop
-         -- for each production
-         Put_Line("Rule <" & Rule.Name_Token.Get_Data_As_String & ">");
+         Logger.Note_Info(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "Rule <" & Rule.Name_Token.Get_Data_As_String & ">");
          for Production of Rule.Productions loop
-            Put_Line("  Production <" & Decode(To_String(Production.Image), UTF_8) & ">");
-            -- for each element:
-            --for Element of Production.Elements loop
+            Logger.Note_Info(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "  Production <" & Decode(To_String(Production.Image), UTF_8) & ">");
             Current := First(Production.Elements);
             while Current /= No_Element loop
                Element := Element_Vector.Element(Current);
-               Put_Line("    Element <" & Element.Token.Get_Data_As_String & ">");
                -- update the element from a Pre_Element_Class to either a Terminal_Class (token) or a Non_Terminal_Class (rule)
                -- log an error if the element does not resolve
                if Self.Find_Non_Terminal(Element.Token.Get_Data) /= null then
+                  Logger.Note_Info(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "    Element <" & Element.Token.Get_Data_As_String & "> is a nonterminal (rule)");
                   To_Be_Deleted := Element;
                   Updated_Element := new Non_Terminal_Class'(Token => Element.Token, Rule => Self.Find_Non_Terminal(Element.Token.Get_Data));
                   Production.Elements.Replace_Element(Current, Updated_Element);
                   Free(To_Be_Deleted);
                elsif Self.Find_Terminal(Element.Token.Get_Data) /= kv.apg.enum.Not_Found_Error then
+                  Logger.Note_Info(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "    Element <" & Element.Token.Get_Data_As_String & "> is a terminal (token)");
                   Index := Self.Find_Terminal(Element.Token.Get_Data);
                   To_Be_Deleted := Element;
                   Updated_Element := new Terminal_Class'(Token => Self.Tokens.Get(Index), Key => kv.apg.fast.Key_Type(Index));
                   Production.Elements.Replace_Element(Current, Updated_Element);
                   Free(To_Be_Deleted);
                else
+                  Logger.Note_Info(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "    Element <" & Element.Token.Get_Data_As_String & "> is undefined (an error)");
                   Logger.Note_Error(Element.Token.Get_Location, Element.Token.Get_Data, "Element of production rule """ & Rule.Name_Token.Get_Data_As_String & """ not found.");
                   Self.Errors := Self.Errors + 1;
                end if;
@@ -158,8 +157,20 @@ package body kv.apg.rules is
    procedure Validate
       (Self   : in out Grammar_Class;
        Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
+
+      Start_Count : Natural := 0;
+      Location : kv.apg.locations.File_Location_Type;
+
    begin
-      Self.Resolve_Rules(Logger);
+      for Rule of Self.Rules loop
+         if Rule.Is_Start then
+            Start_Count := Start_Count + 1;
+         end if;
+      end loop;
+      if Start_Count /= 1 then
+         Self.Errors := Self.Errors + 1;
+         Logger.Note_Error(Location, To_String_Type("start"), "Expected one rule flagged as the start rule, found" & Natural'IMAGE(Start_Count) & ".");
+      end if;
       -- look for shift/shift errors
       -- look for shift/reduce errors
    end Validate;
