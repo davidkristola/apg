@@ -13,7 +13,7 @@ private package kv.apg.parse.rule is
          Expect      : Expectation_Type := Name;
          Name_Token  : kv.apg.tokens.Token_Class;
          Productions : kv.apg.rules.Production_Vector.Vector;
-         Working     : kv.apg.rules.Production_Class;
+         Working     : kv.apg.rules.Production_Pointer;
          Start_Flag  : Boolean := False;
       end record;
 

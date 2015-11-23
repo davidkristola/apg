@@ -79,9 +79,9 @@ package body kv.apg.tests.parse is
       Directive := T.Parser.Next_Directive;
       T.Assert(Directive.all'TAG = kv.apg.directives.Rule_Class'TAG, "Expected directive to be Rule_Class");
       Rule := kv.apg.directives.Rule_Class'CLASS(Directive.all).Get_Rule;
-      T.Assert(Rule.Productions(1).Image = To_String_Type(Expected_1), "Expected '"&Expected_1&"', got '"&To_UTF(Rule.Productions(1).Image)&"'.");
-      T.Assert(Rule.Productions(2).Image = To_String_Type(Expected_2), "Expected '"&Expected_2&"', got '"&To_UTF(Rule.Productions(2).Image)&"'.");
-      T.Assert(Rule.Productions(3).Image = To_String_Type(Expected_3), "Expected '"&Expected_3&"', got '"&To_UTF(Rule.Productions(3).Image)&"'.");
+      T.Assert(Rule.Get_Production(1).Image = To_String_Type(Expected_1), "Expected '"&Expected_1&"', got '"&To_UTF(Rule.Get_Production(1).Image)&"'.");
+      T.Assert(Rule.Get_Production(2).Image = To_String_Type(Expected_2), "Expected '"&Expected_2&"', got '"&To_UTF(Rule.Get_Production(2).Image)&"'.");
+      T.Assert(Rule.Get_Production(3).Image = To_String_Type(Expected_3), "Expected '"&Expected_3&"', got '"&To_UTF(Rule.Get_Production(3).Image)&"'.");
       T.Assert(Rule.Is_Start, "Expected the rule to be flagged as the start rule.");
       kv.apg.directives.Free(Directive);
    end Run;
@@ -114,12 +114,17 @@ package body kv.apg.tests.parse is
       T.Logger.Initialize
          (Writer => T.Buffer'UNCHECKED_ACCESS,
           Level  => Error);
+   end Set_Up;
+
+   ----------------------------------------------------------------------------
+   procedure Add_ABG_Enum(T : in out Grammar_Test_Class'CLASS) is
+   begin
       T.Enum.Initialize(+"Enum_Type");
       T.Enum.Append(+"Alpha");
       T.Enum.Append(+"Beta");
       T.Enum.Append(+"Gamma");
       T.Grammar.Initialize(T.Enum);
-   end Set_Up;
+   end Add_ABG_Enum;
 
 
    type String_Array_Type is array (Positive range <>) of String_Type;
@@ -159,6 +164,7 @@ package body kv.apg.tests.parse is
       Expected_3 : constant String := "( import_list class_list Gamma ) => null;";
 
    begin
+      Add_ABG_Enum(T);
       Run_Basic_Grammar_Test(T, 3,
          (01 => To_String_Type("rule program = start"),
           02 => To_String_Type(" | import_list class_list Gamma => «null;»"),
@@ -172,23 +178,27 @@ package body kv.apg.tests.parse is
           10 => To_String_Type(" ;")));
 
       Rule := T.Grammar.Find_Non_Terminal(To_String_Type("import_list"));
-      T.Assert(Rule.Productions(1).Image = To_String_Type(Expected_1), "Expected '"&Expected_1&"', got '"&To_UTF(Rule.Productions(1).Image)&"'.");
+      T.Assert(Rule.Get_Production(1).Image = To_String_Type(Expected_1), "Expected '"&Expected_1&"', got '"&To_UTF(Rule.Get_Production(1).Image)&"'.");
       T.Assert(not Rule.Is_Start, "Expected the rule to *NOT* be flagged as the start rule.");
 
       Rule := T.Grammar.Find_Non_Terminal(To_String_Type("class_list"));
-      T.Assert(Rule.Productions(1).Image = To_String_Type(Expected_2), "Expected '"&Expected_2&"', got '"&To_UTF(Rule.Productions(1).Image)&"'.");
+      T.Assert(Rule.Get_Production(1).Image = To_String_Type(Expected_2), "Expected '"&Expected_2&"', got '"&To_UTF(Rule.Get_Production(1).Image)&"'.");
       T.Assert(not Rule.Is_Start, "Expected the rule to *NOT* be flagged as the start rule.");
 
       Rule := T.Grammar.Find_Non_Terminal(To_String_Type("program"));
-      T.Assert(Rule.Productions(1).Image = To_String_Type(Expected_3), "Expected '"&Expected_3&"', got '"&To_UTF(Rule.Productions(1).Image)&"'.");
+      T.Assert(Rule.Get_Production(1).Image = To_String_Type(Expected_3), "Expected '"&Expected_3&"', got '"&To_UTF(Rule.Get_Production(1).Image)&"'.");
       T.Assert(Rule.Is_Start, "Expected the rule to be flagged as the start rule.");
    end Run;
 
    ----------------------------------------------------------------------------
    type Resolve_Gramar_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Resolve_Gramar_Test) is
+      Rule : kv.apg.rules.Rule_Pointer;
       Expected : constant String := "ERROR (File: , line 3, column 31): Element of production rule ""program"" not found. (""Epsilon"").";
+      Expected_1 : constant String := "beta_list -> ( Beta beta_list ) => null;";
+      use kv.apg.rules;
    begin
+      Add_ABG_Enum(T);
       Run_Basic_Grammar_Test(T, 3,
          (01 => To_String_Type("rule program = start"),
           02 => To_String_Type(" | alpha_list Gamma beta_list => «null;»"),
@@ -207,6 +217,16 @@ package body kv.apg.tests.parse is
       T.Assert(T.Buffer.Line_Count > 0, "Expected an error log entry.");
       Test_Line(T, 1, Expected);
       T.Assert(T.Grammar.Get_Error_Count = 1, "Expected error count of 1.");
+
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("program"));
+      T.Assert(Rule.Get_Production(1).Get_Rule = Rule, "Expected a resolved production to point to its rule.");
+      T.Assert(not Rule.Get_Production(1).Matches_An_Empty_Sequence, "Expected production to not match an empty sequence.");
+
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("alpha_list"));
+      T.Assert(Rule.Get_Production(2).Matches_An_Empty_Sequence, "Expected production to match an empty sequence.");
+
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("beta_list"));
+      T.Assert(Rule.Get_Production(1).Image = To_String_Type(Expected_1), "Expected '"&Expected_1&"', got '"&To_UTF(Rule.Get_Production(1).Image)&"'.");
    end Run;
 
 
@@ -217,6 +237,7 @@ package body kv.apg.tests.parse is
        S2 : in     String := "";
        S3 : in     String := "") is
    begin
+      Add_ABG_Enum(T);
       Run_Basic_Grammar_Test(T, 3,
          (01 => To_String_Type("rule program =" & S1),
           02 => To_String_Type(" | alpha_list Gamma beta_list Gamma => «null;»"),
@@ -230,6 +251,8 @@ package body kv.apg.tests.parse is
           10 => To_String_Type(" | Beta => «null;»"),
           11 => To_String_Type(" ;")));
    end Set_Up_Start_Test;
+
+
 
    ----------------------------------------------------------------------------
    type No_Start_Gramar_Test is new Grammar_Test_Class with null record;
@@ -263,6 +286,110 @@ package body kv.apg.tests.parse is
       T.Assert(T.Grammar.Get_Error_Count = 1, "Expected error count of 1.");
    end Run;
 
+
+
+   ----------------------------------------------------------------------------
+   procedure Add_ETF_Enum(T : in out Grammar_Test_Class'CLASS) is
+   begin
+      T.Enum.Initialize(+"Enum_Type");
+      T.Enum.Append(+"plus");
+      T.Enum.Append(+"times");
+      T.Enum.Append(+"id");
+      T.Enum.Append(+"open_paren");
+      T.Enum.Append(+"close_paren");
+      T.Enum.Append(+"eof");
+      T.Grammar.Initialize(T.Enum);
+   end Add_ETF_Enum;
+
+   ----------------------------------------------------------------------------
+   -- Grammar 4.19 from the Dragon Book (page 222)
+   procedure Set_Up_ETF_Grammar
+      (T : in out Grammar_Test_Class'CLASS) is
+   begin
+      Add_ETF_Enum(T);
+      Run_Basic_Grammar_Test(T, 3,
+         (01 => To_String_Type("rule E = start"),
+          02 => To_String_Type(" | E plus T => «null;»"),
+          03 => To_String_Type(" | T => «null;»"),
+          04 => To_String_Type(" ;"),
+          05 => To_String_Type("rule T ="),
+          06 => To_String_Type(" | T times F => «null;»"),
+          07 => To_String_Type(" | F => «null;»"),
+          08 => To_String_Type(" ;"),
+          09 => To_String_Type("rule F ="),
+          10 => To_String_Type(" | open_paren E close_paren => «null;»"),
+          11 => To_String_Type(" | id => «null;»"),
+          12 => To_String_Type(" ;")));
+   end Set_Up_ETF_Grammar;
+
+
+   ----------------------------------------------------------------------------
+   type Can_Disappear_1_Test is new Grammar_Test_Class with null record;
+   procedure Run(T : in out Can_Disappear_1_Test) is
+      Ep : kv.apg.rules.Constant_Element_Pointer;
+   begin
+      Set_Up_ETF_Grammar(T);
+      T.Grammar.Resolve_Rules(T.Logger'UNCHECKED_ACCESS);
+      T.Grammar.Validate(T.Logger'UNCHECKED_ACCESS);
+      T.Assert(T.Grammar.Get_Error_Count = 0, "Expected no Resolve/Validate error counts for ETF.");
+      T.Assert(T.Grammar.Production_Count(To_String_Type("E")) = 2, "Expected E to have 2 productions, got " & Positive'IMAGE(T.Grammar.Production_Count(To_String_Type("E"))));
+      T.Assert(T.Grammar.Element_Count(To_String_Type("E"), 1) = 3, "Expected E production 1 to have 3 elements, got " & Positive'IMAGE(T.Grammar.Element_Count(To_String_Type("E"), 1)));
+
+      Ep := T.Grammar.Get_Element(To_String_Type("F"), 1, 1);
+      T.Assert(Ep.Name = To_String_Type("open_paren"), "Expected Ep.Name to be open_paren, got " & To_UTF(Ep.Name));
+      T.Assert(not Ep.Can_Disappear, "Expected not Ep.Can_Disappear");
+
+      Ep := T.Grammar.Get_Element(To_String_Type("F"), 2, 1);
+      T.Assert(Ep.Name = To_String_Type("id"), "Expected Ep.Name to be id, got " & To_UTF(Ep.Name));
+      T.Assert(not Ep.Can_Disappear, "Expected not Ep.Can_Disappear"); -- Not a stressful test
+      T.Assert(Ep.Is_Terminal, "Expected id to be a terminal element.");
+
+      Ep := T.Grammar.Get_Element(To_String_Type("T"), 1, 3);
+      T.Assert(Ep.Name = To_String_Type("F"), "Expected Ep.Name to be F, got " & To_UTF(Ep.Name));
+      T.Assert(not Ep.Can_Disappear, "Expected not Ep.Can_Disappear");
+      T.Assert(not Ep.Is_Terminal, "Expected F to be a nonterminal element.");
+
+      Ep := T.Grammar.Get_Element(To_String_Type("E"), 1, 3);
+      T.Assert(Ep.Name = To_String_Type("T"), "Expected Ep.Name to be T, got " & To_UTF(Ep.Name));
+      T.Assert(not Ep.Can_Disappear, "Expected not Ep.Can_Disappear");
+      T.Assert(not Ep.Is_Terminal, "Expected T to be a nonterminal element.");
+      T.Assert(Ep.Is_Same_As(T.Grammar.Get_Element(To_String_Type("E"), 2, 1).all), "Expected two different T's to be 'Is_Same_As'.");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Can_Disappear_2_Test is new Grammar_Test_Class with null record;
+   procedure Run(T : in out Can_Disappear_2_Test) is
+      Ep : kv.apg.rules.Constant_Element_Pointer;
+   begin
+      Add_ABG_Enum(T);
+      Run_Basic_Grammar_Test(T, 4,
+         (01 => To_String_Type("rule program = start"),
+          02 => To_String_Type(" | alpha_list Gamma => «null;»"),
+          03 => To_String_Type(" ;"),
+          04 => To_String_Type("rule alpha_list ="),
+          05 => To_String_Type(" | alpha_list Alpha => «null;»"),
+          06 => To_String_Type(" | beta_list => «null;»"),
+          07 => To_String_Type(" ;"),
+          08 => To_String_Type("rule beta_list ="),
+          09 => To_String_Type(" | beta_list Beta => «null;»"),
+          10 => To_String_Type(" | gamma_list => «null;»"),
+          11 => To_String_Type(" ;"),
+          12 => To_String_Type("rule gamma_list ="),
+          13 => To_String_Type(" | gamma_list Gamma => «null;»"),
+          14 => To_String_Type(" | => «null;»"),
+          15 => To_String_Type(" ;")
+          ));
+      T.Grammar.Resolve_Rules(T.Logger'UNCHECKED_ACCESS);
+      T.Grammar.Validate(T.Logger'UNCHECKED_ACCESS);
+
+      Ep := T.Grammar.Get_Element(To_String_Type("program"), 1, 1);
+      T.Assert(Ep.Name = To_String_Type("alpha_list"), "Expected Ep.Name to be alpha_list, got " & To_UTF(Ep.Name));
+      T.Assert(not Ep.Is_Terminal, "Expected T to be a nonterminal element.");
+      T.Assert(Ep.Can_Disappear, "Expected alpha_list Ep.Can_Disappear");
+      T.Assert(Ep.Is_Same_As(T.Grammar.Get_Element(To_String_Type("alpha_list"), 1, 1).all), "Expected two different alpha_list's to be 'Is_Same_As'.");
+   end Run;
+
+
    ----------------------------------------------------------------------------
    procedure register(suite : in kv.core.ut.Suite_Pointer_Type) is
    begin
@@ -275,6 +402,9 @@ package body kv.apg.tests.parse is
       suite.register(new Resolve_Gramar_Test, "Resolve_Gramar_Test");
       suite.register(new No_Start_Gramar_Test, "No_Start_Gramar_Test");
       suite.register(new Two_Start_Gramar_Test, "Two_Start_Gramar_Test");
+      suite.register(new Can_Disappear_1_Test, "Can_Disappear_1_Test");
+      suite.register(new Can_Disappear_2_Test, "Can_Disappear_2_Test");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;

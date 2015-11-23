@@ -57,7 +57,7 @@ package body kv.apg.parse.rule is
        Token : in     kv.apg.tokens.Token_Class) is
    begin
       Self.Expect := Element_Or_Causes; -- TODO
-      Self.Working.Clear;
+      Self.Working := kv.apg.rules.New_Production_Class;
    end Process_Production;
 
    -------------------------------------------------------------------------
@@ -152,7 +152,7 @@ package body kv.apg.parse.rule is
    begin
       --Put_Line("Process_Code looking at <"&Token.Get_Data_As_String&">.");
       Self.Expect := Production_Or_Eos;
-      Self.Working.Code := Token.Get_Data;
+      Self.Working.Set_Code(Token);
       Self.Productions.Append(Self.Working);
    end Process_Code;
 

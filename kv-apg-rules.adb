@@ -25,6 +25,67 @@ package body kv.apg.rules is
       Free_Instance(Element);
    end Free;
 
+
+   ----------------------------------------------------------------------------
+   function Is_Same_As(Self : Terminal_Class; Other : Element_Class'CLASS) return Boolean is
+      use kv.apg.fast; -- "="
+   begin
+      return (Other.Is_Terminal) and then Terminal_Class(Other).Key = Self.Key;
+   end Is_Same_As;
+
+   ----------------------------------------------------------------------------
+   function Name(Self : Element_Class) return String_Type is
+   begin
+      return Self.Token.Get_Data;
+   end Name;
+
+   ----------------------------------------------------------------------------
+   function Can_Disappear(Self : Non_Terminal_Class) return Boolean is
+   begin
+      return Self.Rule.Can_Disappear;
+   end Can_Disappear;
+
+   ----------------------------------------------------------------------------
+   function Is_Same_As(Self : Non_Terminal_Class; Other : Element_Class'CLASS) return Boolean is
+   begin
+      return (not Other.Is_Terminal) and then Non_Terminal_Class(Other).Rule = Self.Rule;
+   end Is_Same_As;
+
+
+
+   ----------------------------------------------------------------------------
+   function Can_Disappear(Self : Pre_Element_Class) return Boolean is
+   begin
+      raise Unresolved_Error;
+      return False;
+   end Can_Disappear;
+
+   ----------------------------------------------------------------------------
+   function Is_Terminal(Self : Pre_Element_Class) return Boolean is
+   begin
+      raise Unresolved_Error;
+      return False;
+   end Is_Terminal;
+
+   ----------------------------------------------------------------------------
+   function Is_Same_As(Self : Pre_Element_Class; Other : Element_Class'CLASS) return Boolean is
+   begin
+      raise Unresolved_Error;
+      return False;
+   end Is_Same_As;
+
+
+
+
+   ----------------------------------------------------------------------------
+   function New_Production_Class return Production_Pointer is
+      Self : Production_Pointer;
+   begin
+      Self := new Production_Class;
+      Self.Clear;
+      return Self;
+   end New_Production_Class;
+
    ----------------------------------------------------------------------------
    procedure Append
       (Self    : in out Production_Class;
@@ -34,13 +95,31 @@ package body kv.apg.rules is
    end Append;
 
    ----------------------------------------------------------------------------
-   function Image(Self : in out Production_Class) return String_Type is
+   function Element_Count(Self : Production_Class) return Natural is
+   begin
+      return Natural(Element_Vector.Length(Self.Elements));
+   end Element_Count;
+
+   ----------------------------------------------------------------------------
+   function Get_Element(Self : Production_Class; Element : Positive) return Constant_Element_Pointer is
+      Ep : Element_Pointer;
+   begin
+      Ep := Self.Elements(Element);
+      return Constant_Element_Pointer(Ep);
+   end Get_Element;
+
+   ----------------------------------------------------------------------------
+   function Image(Self : Production_Class) return String_Type is
       Answer : String_Type := To_String_Type("(");
    begin
       for Element of Self.Elements loop
          Answer := Answer & To_String_Type(" ") & Element.Token.Get_Data;
       end loop;
-      return Answer & To_String_Type(" ) => ") & Self.Code;
+      if Self.Rule /= null then
+         return Self.Rule.Get_Name & To_String_Type(" -> ") & Answer & To_String_Type(" ) => ") & Self.Code;
+      else
+         return Answer & To_String_Type(" ) => ") & Self.Code;
+      end if;
    end Image;
 
    ----------------------------------------------------------------------------
@@ -50,6 +129,45 @@ package body kv.apg.rules is
       Self.Elements := Element_Vector.Empty_Vector;
       Self.Code := Ada.Strings.Wide_Wide_Unbounded.Null_Unbounded_Wide_Wide_String;
    end Clear;
+
+   ----------------------------------------------------------------------------
+   procedure Set_Code
+      (Self : in out Production_Class;
+       Code : in     kv.apg.tokens.Token_Class) is
+   begin
+      Self.Code := Code.Get_Data; --TODO: save whole token
+   end Set_Code;
+
+   ----------------------------------------------------------------------------
+   function Get_Code(Self : Production_Class) return String_Type is
+   begin
+      return Self.Code;
+   end Get_Code;
+
+   ----------------------------------------------------------------------------
+   procedure Set_Rule
+      (Self : in out Production_Class;
+       Rule : in     Rule_Pointer) is
+   begin
+      Self.Rule := Rule;
+   end Set_Rule;
+
+   ----------------------------------------------------------------------------
+   function Get_Rule(Self : Production_Class) return Rule_Pointer is
+   begin
+      return Self.Rule;
+   end Get_Rule;
+
+   ----------------------------------------------------------------------------
+   function Matches_An_Empty_Sequence(Self : Production_Class) return Boolean is
+   begin
+      return Element_Vector.Is_Empty(Self.Elements);
+   end Matches_An_Empty_Sequence;
+
+
+
+
+
 
    ----------------------------------------------------------------------------
    procedure Initialize
@@ -81,6 +199,71 @@ package body kv.apg.rules is
    begin
       return Self.Name_Token.Get_Data;
    end Get_Name;
+
+   ----------------------------------------------------------------------------
+   function Production_Count(Self : Rule_Class) return Natural is
+   begin
+      return Natural(Production_Vector.Length(Self.Productions));
+   end Production_Count;
+
+   ----------------------------------------------------------------------------
+   function Get_Production(Self : Rule_Class; Production : Positive) return Production_Pointer is
+      Pp : Production_Pointer;
+   begin
+      if Production > Self.Production_Count then
+         return null;
+      end if;
+      Pp := Self.Productions(Production);
+      return Pp;
+   end Get_Production;
+
+
+   ----------------------------------------------------------------------------
+   function Can_Disappear(Self : Rule_Class) return Boolean is
+      To_Be_Checked : Element_Vector.Vector;
+      Already_Checked : Element_Vector.Vector;
+      Element : Element_Pointer;
+      Check : Element_Pointer;
+      use Element_Vector;
+   begin
+      for Production of Self.Productions loop
+         if Production.Matches_An_Empty_Sequence then
+            return True;
+         end if;
+         Element := Production.Elements(1);
+         if not Element.Is_Terminal then
+            To_Be_Checked.Append(Element);
+            Put_Line("Pushing " & To_String(Element.Name) & " onto To_Be_Checked");
+         end if;
+      end loop;
+      --TODO: need to check the first element of each production
+      -- But can't simply use recursion because that could lead
+      -- to an infinite loop.
+      while not Is_Empty(To_Be_Checked) loop
+         Element := First_Element(To_Be_Checked);
+         Delete_First(To_Be_Checked);
+         Put_Line("Popping " & To_String(Element.Name) & " from To_Be_Checked");
+         --
+         Already_Checked.Append(Element);
+         --
+         Inner_Loop: for Production of Non_Terminal_Class(Element.all).Rule.Productions loop
+            if Production.Matches_An_Empty_Sequence then
+               return True;
+            end if;
+            Check := Production.Elements(1);
+            if Already_Checked.Contains(Check) then
+               exit Inner_Loop;
+            end if;
+            if not Check.Is_Terminal then
+               To_Be_Checked.Append(Check);
+               Put_Line("Pushing secondary " & To_String(Check.Name) & " onto To_Be_Checked");
+            end if;
+            --
+         end loop Inner_Loop;
+      end loop;
+      return False;
+   end Can_Disappear;
+
 
 
    ----------------------------------------------------------------------------
@@ -124,6 +307,7 @@ package body kv.apg.rules is
          Logger.Note_Info(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "Rule <" & Rule.Name_Token.Get_Data_As_String & ">");
          for Production of Rule.Productions loop
             Logger.Note_Info(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "  Production <" & Decode(To_String(Production.Image), UTF_8) & ">");
+            Production.Set_Rule(Rule);
             Current := First(Production.Elements);
             while Current /= No_Element loop
                Element := Element_Vector.Element(Current);
@@ -171,8 +355,6 @@ package body kv.apg.rules is
          Self.Errors := Self.Errors + 1;
          Logger.Note_Error(Location, To_String_Type("start"), "Expected one rule flagged as the start rule, found" & Natural'IMAGE(Start_Count) & ".");
       end if;
-      -- look for shift/shift errors
-      -- look for shift/reduce errors
    end Validate;
 
    ----------------------------------------------------------------------------
@@ -195,5 +377,45 @@ package body kv.apg.rules is
    begin
       return Self.Tokens.Get(Name);
    end Find_Terminal;
+
+   ----------------------------------------------------------------------------
+   function Production_Count(Self : Grammar_Class; Name : String_Type) return Natural is
+      Rule : Rule_Pointer;
+   begin
+      Rule := Self.Find_Non_Terminal(Name);
+      if Rule = null then
+         raise Rule_Not_Found_Error;
+      end if;
+      return Rule.Production_Count;
+   end Production_Count;
+
+   ----------------------------------------------------------------------------
+   function Element_Count(Self : Grammar_Class; Name : String_Type; Production : Positive) return Natural is
+      Rule : Rule_Pointer;
+   begin
+      Rule := Self.Find_Non_Terminal(Name);
+      if Rule = null then
+         raise Rule_Not_Found_Error;
+      end if;
+      if Production > Rule.Production_Count then
+         raise Production_Not_Found_Error;
+      end if;
+      return Rule.Get_Production(Production).Element_Count;
+   end Element_Count;
+
+
+   ----------------------------------------------------------------------------
+   function Get_Element(Self : Grammar_Class; Name : String_Type; Production : Positive; Element : Positive) return Constant_Element_Pointer is
+      Rule : Rule_Pointer;
+   begin
+      Rule := Self.Find_Non_Terminal(Name);
+      if Rule = null then
+         raise Rule_Not_Found_Error;
+      end if;
+      if Production > Rule.Production_Count then
+         raise Production_Not_Found_Error;
+      end if;
+      return Constant_Element_Pointer(Rule.Get_Production(Production).Get_Element(Element));
+   end ;
 
 end kv.apg.rules;
