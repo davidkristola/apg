@@ -164,6 +164,22 @@ package body kv.apg.rules is
       return Element_Vector.Is_Empty(Self.Elements);
    end Matches_An_Empty_Sequence;
 
+   ----------------------------------------------------------------------------
+   function Can_Disappear(Self : Production_Class) return Boolean is
+   begin
+      return Self.Vanishable;
+   end Can_Disappear;
+
+   ----------------------------------------------------------------------------
+   function Has_A_Terminal(Self : Production_Class) return Boolean is
+   begin
+      for Element of Self.Elements loop
+         if Element.Is_Terminal then
+            return True;
+         end if;
+      end loop;
+      return False;
+   end Has_A_Terminal;
 
 
 
@@ -220,6 +236,13 @@ package body kv.apg.rules is
 
    ----------------------------------------------------------------------------
    function Can_Disappear(Self : Rule_Class) return Boolean is
+--   begin
+--      for Production of Self.Productions loop
+--         if Production.Matches_An_Empty_Sequence or Production.Can_Disappear then
+--            return True;
+--         end if;
+--      end loop;
+--      return False;
       To_Be_Checked : Element_Vector.Vector;
       Already_Checked : Element_Vector.Vector;
       Element : Element_Pointer;
@@ -264,6 +287,17 @@ package body kv.apg.rules is
       return False;
    end Can_Disappear;
 
+   ----------------------------------------------------------------------------
+   function Has_An_Empty_Sequence(Self : Rule_Class) return Boolean is
+   begin
+      for Production of Self.Productions loop
+         if Production.Matches_An_Empty_Sequence then
+            return True;
+         end if;
+      end loop;
+      return False;
+   end Has_An_Empty_Sequence;
+
 
 
    ----------------------------------------------------------------------------
@@ -294,14 +328,17 @@ package body kv.apg.rules is
    procedure Resolve_Rules
       (Self   : in out Grammar_Class;
        Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
+
       Element : Element_Pointer;
       Current : Element_Vector.Cursor;
       To_Be_Deleted : Element_Pointer;
       Updated_Element : Element_Pointer;
       Index : Natural;
+
       use Element_Vector;
       use Ada.Strings.UTF_Encoding;
       use Ada.Strings.UTF_Encoding.Strings;
+
    begin
       for Rule of Self.Rules loop
          Logger.Note_Info(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "Rule <" & Rule.Name_Token.Get_Data_As_String & ">");
@@ -336,6 +373,89 @@ package body kv.apg.rules is
          end loop;
       end loop;
    end Resolve_Rules;
+
+   ----------------------------------------------------------------------------
+   procedure Resolve_Productions
+      (Self   : in out Grammar_Class;
+       Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
+
+      List_Of_Maybe : Production_Vector.Vector;
+      List_Of_No    : Production_Vector.Vector; -- can't vanish
+      List_Of_Yes   : Production_Vector.Vector; -- can vanish
+      Current : Production_Pointer;
+      All_Empty : Boolean; -- can vanish
+      No_For_Sure : Boolean; -- can't vanish
+
+      use Production_Vector;
+      use Ada.Containers;
+
+      function Rule_Is_All_Yes(Rule : Rule_Pointer) return Boolean is
+      begin
+         for Production of Rule.Productions loop
+            if not List_Of_Yes.Contains(Production) then
+               return False;
+            end if;
+         end loop;
+         return True;
+      end Rule_Is_All_Yes;
+
+      function Rule_Is_All_No(Rule : Rule_Pointer) return Boolean is
+      begin
+         for Production of Rule.Productions loop
+            if not List_Of_No.Contains(Production) then
+               return False;
+            end if;
+         end loop;
+         return True;
+      end Rule_Is_All_No;
+
+      function Rule_Of(Element : Element_Pointer) return Rule_Pointer is
+      begin
+         return Non_Terminal_Class(Element.all).Rule;
+      end Rule_Of;
+
+   begin
+      for Rule of Self.Rules loop
+         for Production of Rule.Productions loop
+            if Production.Matches_An_Empty_Sequence then
+               Production.Vanishable := True;
+               List_Of_Yes.Append(Production);
+            elsif Production.Has_A_Terminal then
+               Production.Vanishable := False;
+               List_Of_No.Append(Production);
+            else
+               List_Of_Maybe.Append(Production);
+            end if;
+         end loop;
+      end loop;
+      for I in 1 .. Production_Vector.Length(List_Of_Maybe) ** 2 loop
+         Current := First_Element(List_Of_Maybe);
+         Delete_First(List_Of_Maybe);
+         All_Empty := True;
+         No_For_Sure := False;
+         Element_Loop: for Element of Current.Elements loop
+            if Rule_Of(Element).Has_An_Empty_Sequence or else Rule_Is_All_Yes(Rule_Of(Element)) then
+               null; -- Need to check the rest of the elements
+            else
+               All_Empty := False;
+               No_For_Sure := Rule_Is_All_No(Rule_Of(Element));
+               exit Element_Loop;
+            end if;
+         end loop Element_Loop;
+         if All_Empty then
+            Current.Vanishable := True;
+            List_Of_Yes.Append(Current);
+         elsif No_For_Sure then
+            Current.Vanishable := False;
+            List_Of_No.Append(Current);
+         else
+            List_Of_Maybe.Append(Current);
+         end if;
+      end loop;
+      for Production of List_Of_Maybe loop
+         Production.Vanishable := False; -- Productions that cycle around without clearly resolving to true or false must be false (for lack of true).
+      end loop;
+   end Resolve_Productions;
 
    ----------------------------------------------------------------------------
    procedure Validate

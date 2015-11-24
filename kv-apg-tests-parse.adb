@@ -359,7 +359,10 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Can_Disappear_2_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Can_Disappear_2_Test) is
+      Rule : kv.apg.rules.Rule_Pointer;
       Ep : kv.apg.rules.Constant_Element_Pointer;
+      Pp : kv.apg.rules.Production_Pointer;
+      use kv.apg.rules;
    begin
       Add_ABG_Enum(T);
       Run_Basic_Grammar_Test(T, 4,
@@ -380,7 +383,19 @@ package body kv.apg.tests.parse is
           15 => To_String_Type(" ;")
           ));
       T.Grammar.Resolve_Rules(T.Logger'UNCHECKED_ACCESS);
+      T.Grammar.Resolve_Productions(T.Logger'UNCHECKED_ACCESS);
       T.Grammar.Validate(T.Logger'UNCHECKED_ACCESS);
+
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("program"));
+      T.Assert(Rule.Production_Count = 1, "Expected 1 production for rule 'program'");
+      T.Assert(not Rule.Has_An_Empty_Sequence, "Rule 'program' should not have an empty sequence");
+      T.Assert(not Rule.Can_Disappear, "Rule 'program' should not be able to disappear");
+      Pp := Rule.Get_Production(1);
+      T.Assert(not Pp.Can_Disappear, "Rule 'program' only production should not be able to disappear");
+      T.Assert(not Pp.Matches_An_Empty_Sequence, "Rule 'program' only production should not match an empty sequence");
+      T.Assert(Pp.Has_A_Terminal, "Rule 'program' only production should have a terminal");
+
+--TODO: check all the rest of the rules and productions
 
       Ep := T.Grammar.Get_Element(To_String_Type("program"), 1, 1);
       T.Assert(Ep.Name = To_String_Type("alpha_list"), "Expected Ep.Name to be alpha_list, got " & To_UTF(Ep.Name));

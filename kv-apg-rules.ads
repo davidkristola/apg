@@ -105,7 +105,11 @@ package kv.apg.rules is
 
    function Get_Rule(Self : Production_Class) return Rule_Pointer;
 
-   function Matches_An_Empty_Sequence(Self : Production_Class) return Boolean; -- ɛ
+   function Matches_An_Empty_Sequence(Self : Production_Class) return Boolean; -- Is ɛ
+
+   function Can_Disappear(Self : Production_Class) return Boolean; -- Could be ɛ if the correct terminal follows
+
+   function Has_A_Terminal(Self : Production_Class) return Boolean;
 
 
 
@@ -138,6 +142,8 @@ package kv.apg.rules is
 
    function Can_Disappear(Self : Rule_Class) return Boolean;
 
+   function Has_An_Empty_Sequence(Self : Rule_Class) return Boolean;
+
 
 
 
@@ -161,6 +167,10 @@ package kv.apg.rules is
        Rule : in     Rule_Pointer);
 
    procedure Resolve_Rules
+      (Self   : in out Grammar_Class;
+       Logger : in     kv.apg.logger.Safe_Logger_Pointer);
+
+   procedure Resolve_Productions
       (Self   : in out Grammar_Class;
        Logger : in     kv.apg.logger.Safe_Logger_Pointer);
 
@@ -197,9 +207,10 @@ private
 
    type Production_Class is tagged
       record
-         Elements : Element_Vector.Vector;
-         Code     : String_Type;
-         Rule     : Rule_Pointer;
+         Elements   : Element_Vector.Vector;
+         Code       : String_Type;
+         Rule       : Rule_Pointer;
+         Vanishable : Boolean;
       end record;
 
    type Rule_Class is tagged
