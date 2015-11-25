@@ -236,55 +236,55 @@ package body kv.apg.rules is
 
    ----------------------------------------------------------------------------
    function Can_Disappear(Self : Rule_Class) return Boolean is
---   begin
---      for Production of Self.Productions loop
---         if Production.Matches_An_Empty_Sequence or Production.Can_Disappear then
---            return True;
---         end if;
---      end loop;
---      return False;
-      To_Be_Checked : Element_Vector.Vector;
-      Already_Checked : Element_Vector.Vector;
-      Element : Element_Pointer;
-      Check : Element_Pointer;
-      use Element_Vector;
    begin
       for Production of Self.Productions loop
-         if Production.Matches_An_Empty_Sequence then
+         if Production.Matches_An_Empty_Sequence or Production.Can_Disappear then
             return True;
          end if;
-         Element := Production.Elements(1);
-         if not Element.Is_Terminal then
-            To_Be_Checked.Append(Element);
-            Put_Line("Pushing " & To_String(Element.Name) & " onto To_Be_Checked");
-         end if;
-      end loop;
-      --TODO: need to check the first element of each production
-      -- But can't simply use recursion because that could lead
-      -- to an infinite loop.
-      while not Is_Empty(To_Be_Checked) loop
-         Element := First_Element(To_Be_Checked);
-         Delete_First(To_Be_Checked);
-         Put_Line("Popping " & To_String(Element.Name) & " from To_Be_Checked");
-         --
-         Already_Checked.Append(Element);
-         --
-         Inner_Loop: for Production of Non_Terminal_Class(Element.all).Rule.Productions loop
-            if Production.Matches_An_Empty_Sequence then
-               return True;
-            end if;
-            Check := Production.Elements(1);
-            if Already_Checked.Contains(Check) then
-               exit Inner_Loop;
-            end if;
-            if not Check.Is_Terminal then
-               To_Be_Checked.Append(Check);
-               Put_Line("Pushing secondary " & To_String(Check.Name) & " onto To_Be_Checked");
-            end if;
-            --
-         end loop Inner_Loop;
       end loop;
       return False;
+--      To_Be_Checked : Element_Vector.Vector;
+--      Already_Checked : Element_Vector.Vector;
+--      Element : Element_Pointer;
+--      Check : Element_Pointer;
+--      use Element_Vector;
+--   begin
+--      for Production of Self.Productions loop
+--         if Production.Matches_An_Empty_Sequence then
+--            return True;
+--         end if;
+--         Element := Production.Elements(1);
+--         if not Element.Is_Terminal then
+--            To_Be_Checked.Append(Element);
+--            Put_Line("Pushing " & To_String(Element.Name) & " onto To_Be_Checked");
+--         end if;
+--      end loop;
+--      --TODO: need to check the first element of each production
+--      -- But can't simply use recursion because that could lead
+--      -- to an infinite loop.
+--      while not Is_Empty(To_Be_Checked) loop
+--         Element := First_Element(To_Be_Checked);
+--         Delete_First(To_Be_Checked);
+--         Put_Line("Popping " & To_String(Element.Name) & " from To_Be_Checked");
+--         --
+--         Already_Checked.Append(Element);
+--         --
+--         Inner_Loop: for Production of Non_Terminal_Class(Element.all).Rule.Productions loop
+--            if Production.Matches_An_Empty_Sequence then
+--               return True;
+--            end if;
+--            Check := Production.Elements(1);
+--            if Already_Checked.Contains(Check) then
+--               exit Inner_Loop;
+--            end if;
+--            if not Check.Is_Terminal then
+--               To_Be_Checked.Append(Check);
+--               Put_Line("Pushing secondary " & To_String(Check.Name) & " onto To_Be_Checked");
+--            end if;
+--            --
+--         end loop Inner_Loop;
+--      end loop;
+--      return False;
    end Can_Disappear;
 
    ----------------------------------------------------------------------------
@@ -379,30 +379,28 @@ package body kv.apg.rules is
       (Self   : in out Grammar_Class;
        Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
 
-      List_Of_Maybe : Production_Vector.Vector;
-      List_Of_No    : Production_Vector.Vector; -- can't vanish
-      List_Of_Yes   : Production_Vector.Vector; -- can vanish
-      Current : Production_Pointer;
-      All_Empty : Boolean; -- can vanish
-      No_For_Sure : Boolean; -- can't vanish
+      type Can_Vanish_Answer_Type is (Yes, No, Maybe);
+      type Candidate_List_Type is array (Can_Vanish_Answer_Type) of Production_Vector.Vector;
+
+      List_Of : Candidate_List_Type;
 
       use Production_Vector;
       use Ada.Containers;
 
-      function Rule_Is_All_Yes(Rule : Rule_Pointer) return Boolean is
+      function Rule_Has_A_Yes(Rule : Rule_Pointer) return Boolean is
       begin
          for Production of Rule.Productions loop
-            if not List_Of_Yes.Contains(Production) then
-               return False;
+            if List_Of(Yes).Contains(Production) then
+               return True;
             end if;
          end loop;
-         return True;
-      end Rule_Is_All_Yes;
+         return False;
+      end Rule_Has_A_Yes;
 
       function Rule_Is_All_No(Rule : Rule_Pointer) return Boolean is
       begin
          for Production of Rule.Productions loop
-            if not List_Of_No.Contains(Production) then
+            if not List_Of(No).Contains(Production) then
                return False;
             end if;
          end loop;
@@ -414,45 +412,65 @@ package body kv.apg.rules is
          return Non_Terminal_Class(Element.all).Rule;
       end Rule_Of;
 
+      function Cursory_Check(Production : Production_Pointer) return Can_Vanish_Answer_Type is
+      begin
+         if Production.Matches_An_Empty_Sequence then
+            return Yes;
+         elsif Production.Has_A_Terminal then
+            return No;
+         end if;
+         return Maybe;
+      end Cursory_Check;
+
+      function Element_By_Element_Check(Production : Production_Pointer) return Can_Vanish_Answer_Type is
+      begin
+         for Element of Production.Elements loop
+            if Rule_Of(Element).Has_An_Empty_Sequence or else Rule_Has_A_Yes(Rule_Of(Element)) then
+               null; -- Need to check the rest of the elements
+            else
+               if Rule_Is_All_No(Rule_Of(Element)) then
+                  return No;
+               else
+                  return Maybe; -- We need to resolve more non terminals before we can be sure
+               end if;
+            end if;
+         end loop;
+         return Yes;
+      end Element_By_Element_Check;
+
+      procedure Disposition
+         (Production : in     Production_Pointer;
+          Answer     : in     Can_Vanish_Answer_Type) is
+      begin
+         Production.Vanishable := (Answer = Yes);
+         List_Of(Answer).Append(Production);
+      end Disposition;
+
+      function Pop_Unresolved_Production return Production_Pointer is
+         Top : Production_Pointer;
+      begin
+         Top := First_Element(List_Of(Maybe));
+         Delete_First(List_Of(Maybe));
+         return Top;
+      end Pop_Unresolved_Production;
+
+      Current    : Production_Pointer;
+      Can_Vanish : Can_Vanish_Answer_Type;
+
    begin
       for Rule of Self.Rules loop
          for Production of Rule.Productions loop
-            if Production.Matches_An_Empty_Sequence then
-               Production.Vanishable := True;
-               List_Of_Yes.Append(Production);
-            elsif Production.Has_A_Terminal then
-               Production.Vanishable := False;
-               List_Of_No.Append(Production);
-            else
-               List_Of_Maybe.Append(Production);
-            end if;
+            Can_Vanish := Cursory_Check(Production);
+            Disposition(Production, Can_Vanish);
          end loop;
       end loop;
-      for I in 1 .. Production_Vector.Length(List_Of_Maybe) ** 2 loop
-         Current := First_Element(List_Of_Maybe);
-         Delete_First(List_Of_Maybe);
-         All_Empty := True;
-         No_For_Sure := False;
-         Element_Loop: for Element of Current.Elements loop
-            if Rule_Of(Element).Has_An_Empty_Sequence or else Rule_Is_All_Yes(Rule_Of(Element)) then
-               null; -- Need to check the rest of the elements
-            else
-               All_Empty := False;
-               No_For_Sure := Rule_Is_All_No(Rule_Of(Element));
-               exit Element_Loop;
-            end if;
-         end loop Element_Loop;
-         if All_Empty then
-            Current.Vanishable := True;
-            List_Of_Yes.Append(Current);
-         elsif No_For_Sure then
-            Current.Vanishable := False;
-            List_Of_No.Append(Current);
-         else
-            List_Of_Maybe.Append(Current);
-         end if;
+      for I in 1 .. Production_Vector.Length(List_Of(Maybe)) ** 2 loop
+         Current := Pop_Unresolved_Production;
+         Can_Vanish := Element_By_Element_Check(Current);
+         Disposition(Current, Can_Vanish);
+      exit when Production_Vector.Is_Empty(List_Of(Maybe));
       end loop;
-      for Production of List_Of_Maybe loop
+      for Production of List_Of(Maybe) loop
          Production.Vanishable := False; -- Productions that cycle around without clearly resolving to true or false must be false (for lack of true).
       end loop;
    end Resolve_Productions;

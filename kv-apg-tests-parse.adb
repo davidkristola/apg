@@ -330,6 +330,7 @@ package body kv.apg.tests.parse is
    begin
       Set_Up_ETF_Grammar(T);
       T.Grammar.Resolve_Rules(T.Logger'UNCHECKED_ACCESS);
+      T.Grammar.Resolve_Productions(T.Logger'UNCHECKED_ACCESS);
       T.Grammar.Validate(T.Logger'UNCHECKED_ACCESS);
       T.Assert(T.Grammar.Get_Error_Count = 0, "Expected no Resolve/Validate error counts for ETF.");
       T.Assert(T.Grammar.Production_Count(To_String_Type("E")) = 2, "Expected E to have 2 productions, got " & Positive'IMAGE(T.Grammar.Production_Count(To_String_Type("E"))));
@@ -395,7 +396,44 @@ package body kv.apg.tests.parse is
       T.Assert(not Pp.Matches_An_Empty_Sequence, "Rule 'program' only production should not match an empty sequence");
       T.Assert(Pp.Has_A_Terminal, "Rule 'program' only production should have a terminal");
 
---TODO: check all the rest of the rules and productions
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("alpha_list"));
+      T.Assert(Rule.Production_Count = 2, "Expected 2 productions for rule 'alpha_list'");
+      T.Assert(not Rule.Has_An_Empty_Sequence, "Rule 'alpha_list' should not have an empty sequence");
+      T.Assert(Rule.Can_Disappear, "Rule 'alpha_list' should be able to disappear");
+      Pp := Rule.Get_Production(1);
+      T.Assert(not Pp.Can_Disappear, "Rule 'alpha_list' production 1 should not be able to disappear");
+      T.Assert(not Pp.Matches_An_Empty_Sequence, "Rule 'alpha_list' production 1 should not match an empty sequence");
+      T.Assert(Pp.Has_A_Terminal, "Rule 'alpha_list' production 1 should have a terminal");
+      Pp := Rule.Get_Production(2);
+      T.Assert(Pp.Can_Disappear, "Rule 'alpha_list' production 2 should be able to disappear");
+      T.Assert(not Pp.Matches_An_Empty_Sequence, "Rule 'alpha_list' production 2 should not match an empty sequence");
+      T.Assert(not Pp.Has_A_Terminal, "Rule 'alpha_list' production 2 should not have a terminal");
+
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("beta_list"));
+      T.Assert(Rule.Production_Count = 2, "Expected 2 productions for rule 'beta_list'");
+      T.Assert(not Rule.Has_An_Empty_Sequence, "Rule 'beta_list' should not have an empty sequence");
+      T.Assert(Rule.Can_Disappear, "Rule 'beta_list' should be able to disappear");
+      Pp := Rule.Get_Production(1);
+      T.Assert(not Pp.Can_Disappear, "Rule 'beta_list' production 1 should not be able to disappear");
+      T.Assert(not Pp.Matches_An_Empty_Sequence, "Rule 'beta_list' production 1 should not match an empty sequence");
+      T.Assert(Pp.Has_A_Terminal, "Rule 'beta_list' production 1 should have a terminal");
+      Pp := Rule.Get_Production(2);
+      T.Assert(Pp.Can_Disappear, "Rule 'beta_list' production 2 should be able to disappear");
+      T.Assert(not Pp.Matches_An_Empty_Sequence, "Rule 'beta_list' production 2 should not match an empty sequence");
+      T.Assert(not Pp.Has_A_Terminal, "Rule 'beta_list' production 2 should not have a terminal");
+
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("gamma_list"));
+      T.Assert(Rule.Production_Count = 2, "Expected 2 productions for rule 'gamma_list'");
+      T.Assert(Rule.Has_An_Empty_Sequence, "Rule 'gamma_list' should have an empty sequence");
+      T.Assert(Rule.Can_Disappear, "Rule 'gamma_list' should be able to disappear");
+      Pp := Rule.Get_Production(1);
+      T.Assert(not Pp.Can_Disappear, "Rule 'gamma_list' production 1 should not be able to disappear");
+      T.Assert(not Pp.Matches_An_Empty_Sequence, "Rule 'gamma_list' production 1 should not match an empty sequence");
+      T.Assert(Pp.Has_A_Terminal, "Rule 'gamma_list' production 1 should have a terminal");
+      Pp := Rule.Get_Production(2);
+      T.Assert(Pp.Can_Disappear, "Rule 'gamma_list' production 2 should be able to disappear");
+      T.Assert(Pp.Matches_An_Empty_Sequence, "Rule 'gamma_list' production 2 should match an empty sequence");
+      T.Assert(not Pp.Has_A_Terminal, "Rule 'gamma_list' production 2 should not have a terminal");
 
       Ep := T.Grammar.Get_Element(To_String_Type("program"), 1, 1);
       T.Assert(Ep.Name = To_String_Type("alpha_list"), "Expected Ep.Name to be alpha_list, got " & To_UTF(Ep.Name));
