@@ -102,6 +102,8 @@ package body kv.apg.tests.parse is
 
 
 
+   ----------------------------------------------------------------------------
+   ----------------------------------------------------------------------------
    type Grammar_Test_Class is abstract new Rule_Test_Class with
       record
          Grammar : aliased kv.apg.rules.Grammar_Class;
@@ -194,7 +196,7 @@ package body kv.apg.tests.parse is
    type Resolve_Gramar_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Resolve_Gramar_Test) is
       Rule : kv.apg.rules.Rule_Pointer;
-      Expected : constant String := "ERROR (File: , line 3, column 31): Element of production rule ""program"" not found. (""Epsilon"").";
+      Expected : constant String := "ERROR (File: , line 3, column 31): Symbol of production rule ""program"" not found. (""Epsilon"").";
       Expected_1 : constant String := "beta_list -> ( Beta beta_list ) => null;";
       use kv.apg.rules;
    begin
@@ -326,7 +328,7 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Can_Disappear_1_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Can_Disappear_1_Test) is
-      Ep : kv.apg.rules.Constant_Element_Pointer;
+      Ep : kv.apg.rules.Constant_Symbol_Pointer;
    begin
       Set_Up_ETF_Grammar(T);
       T.Grammar.Resolve_Rules(T.Logger'UNCHECKED_ACCESS);
@@ -334,34 +336,34 @@ package body kv.apg.tests.parse is
       T.Grammar.Validate(T.Logger'UNCHECKED_ACCESS);
       T.Assert(T.Grammar.Get_Error_Count = 0, "Expected no Resolve/Validate error counts for ETF.");
       T.Assert(T.Grammar.Production_Count(To_String_Type("E")) = 2, "Expected E to have 2 productions, got " & Positive'IMAGE(T.Grammar.Production_Count(To_String_Type("E"))));
-      T.Assert(T.Grammar.Element_Count(To_String_Type("E"), 1) = 3, "Expected E production 1 to have 3 elements, got " & Positive'IMAGE(T.Grammar.Element_Count(To_String_Type("E"), 1)));
+      T.Assert(T.Grammar.Symbol_Count(To_String_Type("E"), 1) = 3, "Expected E production 1 to have 3 elements, got " & Positive'IMAGE(T.Grammar.Symbol_Count(To_String_Type("E"), 1)));
 
-      Ep := T.Grammar.Get_Element(To_String_Type("F"), 1, 1);
+      Ep := T.Grammar.Get_Symbol(To_String_Type("F"), 1, 1);
       T.Assert(Ep.Name = To_String_Type("open_paren"), "Expected Ep.Name to be open_paren, got " & To_UTF(Ep.Name));
       T.Assert(not Ep.Can_Disappear, "Expected not Ep.Can_Disappear");
 
-      Ep := T.Grammar.Get_Element(To_String_Type("F"), 2, 1);
+      Ep := T.Grammar.Get_Symbol(To_String_Type("F"), 2, 1);
       T.Assert(Ep.Name = To_String_Type("id"), "Expected Ep.Name to be id, got " & To_UTF(Ep.Name));
       T.Assert(not Ep.Can_Disappear, "Expected not Ep.Can_Disappear"); -- Not a stressful test
       T.Assert(Ep.Is_Terminal, "Expected id to be a terminal element.");
 
-      Ep := T.Grammar.Get_Element(To_String_Type("T"), 1, 3);
+      Ep := T.Grammar.Get_Symbol(To_String_Type("T"), 1, 3);
       T.Assert(Ep.Name = To_String_Type("F"), "Expected Ep.Name to be F, got " & To_UTF(Ep.Name));
       T.Assert(not Ep.Can_Disappear, "Expected not Ep.Can_Disappear");
       T.Assert(not Ep.Is_Terminal, "Expected F to be a nonterminal element.");
 
-      Ep := T.Grammar.Get_Element(To_String_Type("E"), 1, 3);
+      Ep := T.Grammar.Get_Symbol(To_String_Type("E"), 1, 3);
       T.Assert(Ep.Name = To_String_Type("T"), "Expected Ep.Name to be T, got " & To_UTF(Ep.Name));
       T.Assert(not Ep.Can_Disappear, "Expected not Ep.Can_Disappear");
       T.Assert(not Ep.Is_Terminal, "Expected T to be a nonterminal element.");
-      T.Assert(Ep.Is_Same_As(T.Grammar.Get_Element(To_String_Type("E"), 2, 1).all), "Expected two different T's to be 'Is_Same_As'.");
+      T.Assert(Ep.Is_Same_As(T.Grammar.Get_Symbol(To_String_Type("E"), 2, 1).all), "Expected two different T's to be 'Is_Same_As'.");
    end Run;
 
    ----------------------------------------------------------------------------
    type Can_Disappear_2_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Can_Disappear_2_Test) is
       Rule : kv.apg.rules.Rule_Pointer;
-      Ep : kv.apg.rules.Constant_Element_Pointer;
+      Sp : kv.apg.rules.Constant_Symbol_Pointer;
       Pp : kv.apg.rules.Production_Pointer;
       use kv.apg.rules;
    begin
@@ -386,6 +388,8 @@ package body kv.apg.tests.parse is
       T.Grammar.Resolve_Rules(T.Logger'UNCHECKED_ACCESS);
       T.Grammar.Resolve_Productions(T.Logger'UNCHECKED_ACCESS);
       T.Grammar.Validate(T.Logger'UNCHECKED_ACCESS);
+
+      T.Assert(T.Grammar.Get_Error_Count = 0, "Expected no resolve/validate errors.");
 
       Rule := T.Grammar.Find_Non_Terminal(To_String_Type("program"));
       T.Assert(Rule.Production_Count = 1, "Expected 1 production for rule 'program'");
@@ -435,11 +439,47 @@ package body kv.apg.tests.parse is
       T.Assert(Pp.Matches_An_Empty_Sequence, "Rule 'gamma_list' production 2 should match an empty sequence");
       T.Assert(not Pp.Has_A_Terminal, "Rule 'gamma_list' production 2 should not have a terminal");
 
-      Ep := T.Grammar.Get_Element(To_String_Type("program"), 1, 1);
-      T.Assert(Ep.Name = To_String_Type("alpha_list"), "Expected Ep.Name to be alpha_list, got " & To_UTF(Ep.Name));
-      T.Assert(not Ep.Is_Terminal, "Expected T to be a nonterminal element.");
-      T.Assert(Ep.Can_Disappear, "Expected alpha_list Ep.Can_Disappear");
-      T.Assert(Ep.Is_Same_As(T.Grammar.Get_Element(To_String_Type("alpha_list"), 1, 1).all), "Expected two different alpha_list's to be 'Is_Same_As'.");
+      Sp := T.Grammar.Get_Symbol(To_String_Type("program"), 1, 1);
+      T.Assert(Sp.Name = To_String_Type("alpha_list"), "Expected Ep.Name to be alpha_list, got " & To_UTF(Sp.Name));
+      T.Assert(not Sp.Is_Terminal, "Expected T to be a nonterminal element.");
+      T.Assert(Sp.Can_Disappear, "Expected alpha_list Ep.Can_Disappear");
+      T.Assert(Sp.Is_Same_As(T.Grammar.Get_Symbol(To_String_Type("alpha_list"), 1, 1).all), "Expected two different alpha_list's to be 'Is_Same_As'.");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Can_Disappear_3_Test is new Grammar_Test_Class with null record;
+   procedure Run(T : in out Can_Disappear_3_Test) is
+      Rule : kv.apg.rules.Rule_Pointer;
+      Pp : kv.apg.rules.Production_Pointer;
+      use kv.apg.rules;
+   begin
+      Add_ABG_Enum(T);
+      Run_Basic_Grammar_Test(T, 4,
+         (01 => To_String_Type("rule program = start"),
+          02 => To_String_Type(" | alpha_list Gamma => «null;»"),
+          03 => To_String_Type(" ;"),
+          04 => To_String_Type("rule alpha_list ="),
+          05 => To_String_Type(" | alpha_list Alpha => «null;»"),
+          06 => To_String_Type(" | beta_list => «null;»"),
+          07 => To_String_Type(" ;"),
+          08 => To_String_Type("rule beta_list ="),
+          09 => To_String_Type(" | beta_list Beta => «null;»"),
+          10 => To_String_Type(" | gamma_list => «null;»"),
+          11 => To_String_Type(" ;"),
+          12 => To_String_Type("rule gamma_list ="),
+          13 => To_String_Type(" | beta_list => «null;»"),
+          14 => To_String_Type(" ;")
+          ));
+      T.Grammar.Resolve_Rules(T.Logger'UNCHECKED_ACCESS);
+      T.Grammar.Resolve_Productions(T.Logger'UNCHECKED_ACCESS);
+      T.Grammar.Validate(T.Logger'UNCHECKED_ACCESS);
+
+      T.Assert(T.Grammar.Get_Error_Count = 3, "Expected 3 resolve/validate errors got" & Natural'IMAGE(T.Grammar.Get_Error_Count));
+      T.Assert(T.Buffer.Line_Count = 3, "Expected 3 error messages, got " & Natural'IMAGE(T.Buffer.Line_Count));
+
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("gamma_list"));
+      Pp := Rule.Get_Production(1);
+      T.Assert(not Pp.Can_Disappear, "Rule 'gamma_list' production 1 should not be able to disappear");
    end Run;
 
 
@@ -457,7 +497,7 @@ package body kv.apg.tests.parse is
       suite.register(new Two_Start_Gramar_Test, "Two_Start_Gramar_Test");
       suite.register(new Can_Disappear_1_Test, "Can_Disappear_1_Test");
       suite.register(new Can_Disappear_2_Test, "Can_Disappear_2_Test");
---      suite.register(new XXX, "XXX");
+      suite.register(new Can_Disappear_3_Test, "Can_Disappear_3_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;

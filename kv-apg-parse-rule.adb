@@ -118,7 +118,7 @@ package body kv.apg.parse.rule is
       (Self  : in out Rule_State_Class;
        Token : in     kv.apg.tokens.Token_Class) is
    begin
-      Self.Working.Append(kv.apg.rules.New_Pre_Element(Token));
+      Self.Working.Append(kv.apg.rules.New_Pre_Symbol(Token));
    end Process_Element;
 
    -------------------------------------------------------------------------

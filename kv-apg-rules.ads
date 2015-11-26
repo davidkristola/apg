@@ -25,44 +25,44 @@ package kv.apg.rules is
    Production_Not_Found_Error : exception;
 
 
-   type Element_Class is abstract tagged private;
-   type Element_Pointer is access all Element_Class'CLASS;
-   type Constant_Element_Pointer is access constant Element_Class'CLASS;
+   type Symbol_Class is abstract tagged private;
+   type Symbol_Pointer is access all Symbol_Class'CLASS;
+   type Constant_Symbol_Pointer is access constant Symbol_Class'CLASS;
 
-   function Can_Disappear(Self : Element_Class) return Boolean is abstract;
-   function Is_Terminal(Self : Element_Class) return Boolean is abstract;
-   function Is_Same_As(Self : Element_Class; Other : Element_Class'CLASS) return Boolean is abstract;
+   function Can_Disappear(Self : Symbol_Class) return Boolean is abstract;
+   function Is_Terminal(Self : Symbol_Class) return Boolean is abstract;
+   function Is_Same_As(Self : Symbol_Class; Other : Symbol_Class'CLASS) return Boolean is abstract;
 
-   function Name(Self : Element_Class) return String_Type;
+   function Name(Self : Symbol_Class) return String_Type;
 
 
-   type Terminal_Class is new Element_Class with private;
+   type Terminal_Class is new Symbol_Class with private;
 
    function Can_Disappear(Self : Terminal_Class) return Boolean is (False);
    function Is_Terminal(Self : Terminal_Class) return Boolean is (True);
-   function Is_Same_As(Self : Terminal_Class; Other : Element_Class'CLASS) return Boolean;
+   function Is_Same_As(Self : Terminal_Class; Other : Symbol_Class'CLASS) return Boolean;
 
 
-   type Non_Terminal_Class is new Element_Class with private;
+   type Non_Terminal_Class is new Symbol_Class with private;
 
    function Can_Disappear(Self : Non_Terminal_Class) return Boolean;
    function Is_Terminal(Self : Non_Terminal_Class) return Boolean is (False);
-   function Is_Same_As(Self : Non_Terminal_Class; Other : Element_Class'CLASS) return Boolean;
+   function Is_Same_As(Self : Non_Terminal_Class; Other : Symbol_Class'CLASS) return Boolean;
 
 
 
-   type Pre_Element_Class is new Element_Class with private;
+   type Pre_Symbol_Class is new Symbol_Class with private;
 
-   function New_Pre_Element
-      (Token : in     kv.apg.tokens.Token_Class) return Element_Pointer;
+   function New_Pre_Symbol
+      (Token : in     kv.apg.tokens.Token_Class) return Symbol_Pointer;
 
    procedure Free
-      (Element : in out Element_Pointer);
+      (Symbol : in out Symbol_Pointer);
 
    -- These will all raise Unresolved_Error
-   function Can_Disappear(Self : Pre_Element_Class) return Boolean;
-   function Is_Terminal(Self : Pre_Element_Class) return Boolean;
-   function Is_Same_As(Self : Pre_Element_Class; Other : Element_Class'CLASS) return Boolean;
+   function Can_Disappear(Self : Pre_Symbol_Class) return Boolean;
+   function Is_Terminal(Self : Pre_Symbol_Class) return Boolean;
+   function Is_Same_As(Self : Pre_Symbol_Class; Other : Symbol_Class'CLASS) return Boolean;
 
 
 
@@ -70,9 +70,9 @@ package kv.apg.rules is
 
 
 
-   package Element_Vector is new Ada.Containers.Vectors
+   package Symbol_Vector is new Ada.Containers.Vectors
       (Index_Type   => Positive,
-       Element_Type => Element_Pointer);
+       Element_Type => Symbol_Pointer);
 
 
    type Production_Class is tagged private;
@@ -81,12 +81,12 @@ package kv.apg.rules is
    function New_Production_Class return Production_Pointer;
 
    procedure Append
-      (Self    : in out Production_Class;
-       Element : in     Element_Pointer);
+      (Self   : in out Production_Class;
+       Symbol : in     Symbol_Pointer);
 
-   function Element_Count(Self : Production_Class) return Natural;
+   function Symbol_Count(Self : Production_Class) return Natural;
 
-   function Get_Element(Self : Production_Class; Element : Positive) return Constant_Element_Pointer;
+   function Get_Symbol(Self : Production_Class; Symbol : Positive) return Constant_Symbol_Pointer;
 
    function Image(Self : Production_Class) return String_Type;
 
@@ -182,32 +182,32 @@ package kv.apg.rules is
    function Find_Terminal(Self : Grammar_Class; Name : String_Type) return Integer;
 
    function Production_Count(Self : Grammar_Class; Name : String_Type) return Natural;
-   function Element_Count(Self : Grammar_Class; Name : String_Type; Production : Positive) return Natural;
-   function Get_Element(Self : Grammar_Class; Name : String_Type; Production : Positive; Element : Positive) return Constant_Element_Pointer;
+   function Symbol_Count(Self : Grammar_Class; Name : String_Type; Production : Positive) return Natural;
+   function Get_Symbol(Self : Grammar_Class; Name : String_Type; Production : Positive; Symbol : Positive) return Constant_Symbol_Pointer;
 
 
 private
 
-   type Element_Class is abstract tagged
+   type Symbol_Class is abstract tagged
       record
          Token : kv.apg.tokens.Token_Class;
       end record;
 
-   type Terminal_Class is new Element_Class with
+   type Terminal_Class is new Symbol_Class with
       record
          Key : kv.apg.fast.Key_Type;
       end record;
 
-   type Non_Terminal_Class is new Element_Class with
+   type Non_Terminal_Class is new Symbol_Class with
       record
          Rule : Rule_Pointer;
       end record;
 
-   type Pre_Element_Class is new Element_Class with null record;
+   type Pre_Symbol_Class is new Symbol_Class with null record;
 
    type Production_Class is tagged
       record
-         Elements   : Element_Vector.Vector;
+         Symbols    : Symbol_Vector.Vector;
          Code       : String_Type;
          Rule       : Rule_Pointer;
          Vanishable : Boolean;
