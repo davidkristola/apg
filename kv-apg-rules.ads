@@ -1,3 +1,4 @@
+with Ada.Containers.Ordered_Sets;
 with Ada.Containers.Vectors;
 with Ada.Containers.Indefinite_Hashed_Maps;
 with Ada.Strings;
@@ -25,15 +26,27 @@ package kv.apg.rules is
    Production_Not_Found_Error : exception;
 
 
+   End_Of_File : constant := -1;
+   Epsilon     : constant := 0;
+   Terminal_1  : constant := 1;
+
+   type Terminal_Type is range End_Of_File .. Integer'LAST;
+
+   package Terminal_Sets is new Ada.Containers.Ordered_Sets(Terminal_Type);
+
+
+
    type Symbol_Class is abstract tagged private;
    type Symbol_Pointer is access all Symbol_Class'CLASS;
    type Constant_Symbol_Pointer is access constant Symbol_Class'CLASS;
 
+   function Name(Self : Symbol_Class) return String_Type;
+
    function Can_Disappear(Self : Symbol_Class) return Boolean is abstract;
    function Is_Terminal(Self : Symbol_Class) return Boolean is abstract;
    function Is_Same_As(Self : Symbol_Class; Other : Symbol_Class'CLASS) return Boolean is abstract;
+   function First(Self : Symbol_Class) return Terminal_Sets.Set is abstract;
 
-   function Name(Self : Symbol_Class) return String_Type;
 
 
    type Terminal_Class is new Symbol_Class with private;
@@ -41,6 +54,7 @@ package kv.apg.rules is
    function Can_Disappear(Self : Terminal_Class) return Boolean is (False);
    function Is_Terminal(Self : Terminal_Class) return Boolean is (True);
    function Is_Same_As(Self : Terminal_Class; Other : Symbol_Class'CLASS) return Boolean;
+   function First(Self : Terminal_Class) return Terminal_Sets.Set;
 
 
    type Non_Terminal_Class is new Symbol_Class with private;
@@ -48,6 +62,7 @@ package kv.apg.rules is
    function Can_Disappear(Self : Non_Terminal_Class) return Boolean;
    function Is_Terminal(Self : Non_Terminal_Class) return Boolean is (False);
    function Is_Same_As(Self : Non_Terminal_Class; Other : Symbol_Class'CLASS) return Boolean;
+   function First(Self : Non_Terminal_Class) return Terminal_Sets.Set;
 
 
 
@@ -63,6 +78,7 @@ package kv.apg.rules is
    function Can_Disappear(Self : Pre_Symbol_Class) return Boolean;
    function Is_Terminal(Self : Pre_Symbol_Class) return Boolean;
    function Is_Same_As(Self : Pre_Symbol_Class; Other : Symbol_Class'CLASS) return Boolean;
+   function First(Self : Pre_Symbol_Class) return Terminal_Sets.Set;
 
 
 
@@ -111,6 +127,8 @@ package kv.apg.rules is
 
    function Has_A_Terminal(Self : Production_Class) return Boolean;
 
+   function First(Self : Production_Class) return Terminal_Sets.Set;
+
 
 
 
@@ -144,6 +162,7 @@ package kv.apg.rules is
 
    function Has_An_Empty_Sequence(Self : Rule_Class) return Boolean;
 
+   function First(Self : Rule_Class) return Terminal_Sets.Set;
 
 
 

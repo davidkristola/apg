@@ -34,6 +34,14 @@ package body kv.apg.rules is
    end Is_Same_As;
 
    ----------------------------------------------------------------------------
+   function First(Self : Terminal_Class) return Terminal_Sets.Set is
+      Answer : Terminal_Sets.Set;
+   begin
+      Answer.Insert(Terminal_Type(Self.Key));
+      return Answer;
+   end First;
+
+   ----------------------------------------------------------------------------
    function Name(Self : Symbol_Class) return String_Type is
    begin
       return Self.Token.Get_Data;
@@ -50,6 +58,13 @@ package body kv.apg.rules is
    begin
       return (not Other.Is_Terminal) and then Non_Terminal_Class(Other).Rule = Self.Rule;
    end Is_Same_As;
+
+   ----------------------------------------------------------------------------
+   function First(Self : Non_Terminal_Class) return Terminal_Sets.Set is
+   begin
+      return Self.Rule.First; --TODO: could be recursive loop
+   end First;
+
 
 
 
@@ -73,6 +88,14 @@ package body kv.apg.rules is
       raise Unresolved_Error;
       return False;
    end Is_Same_As;
+
+   ----------------------------------------------------------------------------
+   function First(Self : Pre_Symbol_Class) return Terminal_Sets.Set is
+      Answer : Terminal_Sets.Set;
+   begin
+      raise Unresolved_Error;
+      return Answer;
+   end First;
 
 
 
@@ -181,6 +204,21 @@ package body kv.apg.rules is
       return False;
    end Has_A_Terminal;
 
+   ----------------------------------------------------------------------------
+   function First(Self : Production_Class) return Terminal_Sets.Set is
+      Answer  : Terminal_Sets.Set;
+      Current : Terminal_Sets.Set;
+   begin
+      for Symbol of Self.Symbols loop
+         Current := Symbol.First;
+         Answer.Union(Current);
+         if not Current.Contains(Epsilon) then
+            exit;
+         end if;
+      end loop;
+      return Answer;
+   end First;
+
 
 
 
@@ -255,6 +293,19 @@ package body kv.apg.rules is
       end loop;
       return False;
    end Has_An_Empty_Sequence;
+
+   ----------------------------------------------------------------------------
+   function First(Self : Rule_Class) return Terminal_Sets.Set is
+      Answer : Terminal_Sets.Set;
+   begin
+      --TODO: need to reference grammar to get terminal count
+      for Production of Self.Productions loop
+         Answer.Union(Production.First);
+      end loop;
+      return Answer;
+   end First;
+
+
 
 
 

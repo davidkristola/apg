@@ -294,14 +294,20 @@ package body kv.apg.tests.parse is
    procedure Add_ETF_Enum(T : in out Grammar_Test_Class'CLASS) is
    begin
       T.Enum.Initialize(+"Enum_Type");
-      T.Enum.Append(+"plus");
-      T.Enum.Append(+"times");
-      T.Enum.Append(+"id");
-      T.Enum.Append(+"open_paren");
-      T.Enum.Append(+"close_paren");
+      T.Enum.Append(+"plus");        -- 1
+      T.Enum.Append(+"times");       -- 2
+      T.Enum.Append(+"id");          -- 3
+      T.Enum.Append(+"open_paren");  -- 4
+      T.Enum.Append(+"close_paren"); -- 5
       T.Enum.Append(+"eof");
       T.Grammar.Initialize(T.Enum);
    end Add_ETF_Enum;
+
+   Terminal_plus : constant := 1;
+   Terminal_times : constant := 2;
+   Terminal_id : constant := 3;
+   Terminal_open_paren : constant := 4;
+   Termianl_close_paren : constant := 5;
 
    ----------------------------------------------------------------------------
    -- Grammar 4.19 from the Dragon Book (page 222)
@@ -482,6 +488,74 @@ package body kv.apg.tests.parse is
       T.Assert(not Pp.Can_Disappear, "Rule 'gamma_list' production 1 should not be able to disappear");
    end Run;
 
+   ----------------------------------------------------------------------------
+   type First_1_Test is new Grammar_Test_Class with null record;
+   procedure Run(T : in out First_1_Test) is
+      -- Dragon book, page 190
+      use kv.apg.rules;
+      use kv.apg.rules.Terminal_Sets;
+      use Ada.Containers;
+
+      Rule : kv.apg.rules.Rule_Pointer;
+      Answer : Set;
+
+   begin
+      Add_ETF_Enum(T);
+      Run_Basic_Grammar_Test(T, 5,
+         (01 => To_String_Type("rule E = start"),
+          02 => To_String_Type(" | T E2 => «null;»"),
+          03 => To_String_Type(" ;"),
+          04 => To_String_Type("rule E2 ="),
+          05 => To_String_Type(" | plus T E2 => «null;»"),
+          06 => To_String_Type(" | => «null;»"),
+          07 => To_String_Type(" ;"),
+          08 => To_String_Type("rule T ="),
+          09 => To_String_Type(" | F T2 => «null;»"),
+          10 => To_String_Type(" ;"),
+          11 => To_String_Type("rule T2 ="),
+          12 => To_String_Type(" | times F T2 => «null;»"),
+          13 => To_String_Type(" | => «null;»"),
+          14 => To_String_Type(" ;"),
+          15 => To_String_Type("rule F ="),
+          16 => To_String_Type(" | open_paren E close_paren => «null;»"),
+          17 => To_String_Type(" | id => «null;»"),
+          18 => To_String_Type(" ;")));
+      T.Grammar.Resolve_Rules(T.Logger'UNCHECKED_ACCESS);
+      T.Grammar.Resolve_Productions(T.Logger'UNCHECKED_ACCESS);
+      T.Grammar.Validate(T.Logger'UNCHECKED_ACCESS);
+
+      T.Assert(T.Grammar.Get_Error_Count = 0, "Expected 0 resolve/validate errors got" & Natural'IMAGE(T.Grammar.Get_Error_Count));
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("E"));
+      Answer := Rule.First;
+      T.Assert(Answer.Length = 2, "Expected 2 terminals in the First of E, got" & Count_Type'IMAGE(Length(Answer)));
+      T.Assert(Answer.Contains(Terminal_open_paren), "Expected First of E to contain terminal open_paren");
+      T.Assert(Answer.Contains(Terminal_id), "Expected First of E to contain terminal id");
+
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("T"));
+      Answer := Rule.First;
+      T.Assert(Answer.Length = 2, "Expected 2 terminals in the First of T, got" & Count_Type'IMAGE(Length(Answer)));
+      T.Assert(Answer.Contains(Terminal_open_paren), "Expected First of T to contain terminal open_paren");
+      T.Assert(Answer.Contains(Terminal_id), "Expected First of T to contain terminal id");
+
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("F"));
+      Answer := Rule.First;
+      T.Assert(Answer.Length = 2, "Expected 2 terminals in the First of F, got" & Count_Type'IMAGE(Length(Answer)));
+      T.Assert(Answer.Contains(Terminal_open_paren), "Expected First of F to contain terminal open_paren");
+      T.Assert(Answer.Contains(Terminal_id), "Expected First of F to contain terminal id");
+
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("E2"));
+      Answer := Rule.First;
+      T.Assert(Answer.Length = 2, "Expected 2 terminals in the First of E2, got" & Count_Type'IMAGE(Length(Answer)));
+      T.Assert(Answer.Contains(Terminal_plus), "Expected First of E2 to contain terminal plus");
+      T.Assert(Answer.Contains(Epsilon), "Expected First of E2 to contain terminal epsilon");
+
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("T2"));
+      Answer := Rule.First;
+      T.Assert(Answer.Length = 2, "Expected 2 terminals in the First of T2, got" & Count_Type'IMAGE(Length(Answer)));
+      T.Assert(Answer.Contains(Terminal_times), "Expected First of T2 to contain terminal tomes");
+      T.Assert(Answer.Contains(Epsilon), "Expected First of T2 to contain terminal epsilon");
+   end Run;
+
 
    ----------------------------------------------------------------------------
    procedure register(suite : in kv.core.ut.Suite_Pointer_Type) is
@@ -498,6 +572,8 @@ package body kv.apg.tests.parse is
       suite.register(new Can_Disappear_1_Test, "Can_Disappear_1_Test");
       suite.register(new Can_Disappear_2_Test, "Can_Disappear_2_Test");
       suite.register(new Can_Disappear_3_Test, "Can_Disappear_3_Test");
+      suite.register(new First_1_Test, "First_1_Test");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;
