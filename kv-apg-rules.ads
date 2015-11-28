@@ -164,6 +164,8 @@ package kv.apg.rules is
 
    function First(Self : Rule_Class) return Terminal_Sets.Set;
 
+   function Hash(Self : Rule_Pointer) return Ada.Containers.Hash_Type;
+
 
 
    package Rule_Maps is new Ada.Containers.Indefinite_Hashed_Maps
@@ -190,6 +192,10 @@ package kv.apg.rules is
        Logger : in     kv.apg.logger.Safe_Logger_Pointer);
 
    procedure Resolve_Productions
+      (Self   : in out Grammar_Class;
+       Logger : in     kv.apg.logger.Safe_Logger_Pointer);
+
+   procedure Resolve_Firsts
       (Self   : in out Grammar_Class;
        Logger : in     kv.apg.logger.Safe_Logger_Pointer);
 
@@ -236,6 +242,8 @@ private
       record
          Name_Token  : kv.apg.tokens.Token_Class;
          Productions : Production_Vector.Vector;
+         Firsts      : Terminal_Sets.Set;
+         My_Hash     : Ada.Containers.Hash_Type;
          Start_Rule  : Boolean := False;
       end record;
 

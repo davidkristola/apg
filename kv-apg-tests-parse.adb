@@ -522,9 +522,10 @@ package body kv.apg.tests.parse is
           18 => To_String_Type(" ;")));
       T.Grammar.Resolve_Rules(T.Logger'UNCHECKED_ACCESS);
       T.Grammar.Resolve_Productions(T.Logger'UNCHECKED_ACCESS);
+      T.Grammar.Resolve_Firsts(T.Logger'UNCHECKED_ACCESS);
       T.Grammar.Validate(T.Logger'UNCHECKED_ACCESS);
-
       T.Assert(T.Grammar.Get_Error_Count = 0, "Expected 0 resolve/validate errors got" & Natural'IMAGE(T.Grammar.Get_Error_Count));
+
       Rule := T.Grammar.Find_Non_Terminal(To_String_Type("E"));
       Answer := Rule.First;
       T.Assert(Answer.Length = 2, "Expected 2 terminals in the First of E, got" & Count_Type'IMAGE(Length(Answer)));
@@ -556,6 +557,64 @@ package body kv.apg.tests.parse is
       T.Assert(Answer.Contains(Epsilon), "Expected First of T2 to contain terminal epsilon");
    end Run;
 
+   ----------------------------------------------------------------------------
+   type First_2_Test is new Grammar_Test_Class with null record;
+   procedure Run(T : in out First_2_Test) is
+
+      use kv.apg.rules;
+      use kv.apg.rules.Terminal_Sets;
+      use Ada.Containers;
+
+      Rule : kv.apg.rules.Rule_Pointer;
+      Answer : Set;
+
+   begin
+      Add_ABG_Enum(T);
+      Run_Basic_Grammar_Test(T, 4,
+         (01 => To_String_Type("rule program = start"),
+          02 => To_String_Type(" | alpha_list Gamma => «null;»"),
+          03 => To_String_Type(" ;"),
+          04 => To_String_Type("rule alpha_list ="),
+          05 => To_String_Type(" | alpha_list Alpha => «null;»"),
+          06 => To_String_Type(" | beta_list => «null;»"),
+          07 => To_String_Type(" ;"),
+          08 => To_String_Type("rule beta_list ="),
+          09 => To_String_Type(" | beta_list Beta => «null;»"),
+          10 => To_String_Type(" | gamma_list => «null;»"),
+          11 => To_String_Type(" ;"),
+          12 => To_String_Type("rule gamma_list ="),
+          13 => To_String_Type(" | gamma_list Gamma => «null;»"),
+          14 => To_String_Type(" | => «null;»"),
+          15 => To_String_Type(" ;")
+          ));
+      T.Grammar.Resolve_Rules(T.Logger'UNCHECKED_ACCESS);
+      T.Grammar.Resolve_Productions(T.Logger'UNCHECKED_ACCESS);
+      T.Grammar.Resolve_Firsts(T.Logger'UNCHECKED_ACCESS);
+      T.Grammar.Validate(T.Logger'UNCHECKED_ACCESS);
+      T.Assert(T.Grammar.Get_Error_Count = 0, "Expected no resolve/validate errors.");
+
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("program"));
+      Answer := Rule.First;
+      T.Assert(Answer.Length = 3, "Expected 3 terminals in the First of program, got" & Count_Type'IMAGE(Length(Answer)));
+      T.Assert(Answer.Contains(1), "Expected First of program to contain terminal Alpha");
+      T.Assert(Answer.Contains(2), "Expected First of program to contain terminal Beta");
+      T.Assert(Answer.Contains(3), "Expected First of program to contain terminal Gamma");
+
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("beta_list"));
+      Answer := Rule.First;
+      T.Assert(Answer.Length = 3, "Expected 3 terminals in the First of beta_list, got" & Count_Type'IMAGE(Length(Answer)));
+      T.Assert(Answer.Contains(0), "Expected First of beta_list to contain terminal Epsilon");
+      T.Assert(Answer.Contains(2), "Expected First of beta_list to contain terminal Beta");
+      T.Assert(Answer.Contains(3), "Expected First of beta_list to contain terminal Gamma");
+
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("gamma_list"));
+      Answer := Rule.First;
+      T.Assert(Answer.Length = 2, "Expected 2 terminals in the First of gamma_list, got" & Count_Type'IMAGE(Length(Answer)));
+      T.Assert(Answer.Contains(0), "Expected First of gamma_list to contain terminal Epsilon");
+      T.Assert(Answer.Contains(3), "Expected First of gamma_list to contain terminal Gamma");
+   end Run;
+
+
 
    ----------------------------------------------------------------------------
    procedure register(suite : in kv.core.ut.Suite_Pointer_Type) is
@@ -573,7 +632,7 @@ package body kv.apg.tests.parse is
       suite.register(new Can_Disappear_2_Test, "Can_Disappear_2_Test");
       suite.register(new Can_Disappear_3_Test, "Can_Disappear_3_Test");
       suite.register(new First_1_Test, "First_1_Test");
---      suite.register(new XXX, "XXX");
+      suite.register(new First_2_Test, "First_2_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;

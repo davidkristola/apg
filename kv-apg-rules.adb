@@ -1,3 +1,6 @@
+with Ada.Containers.Hashed_Sets;
+with Ada.Containers.Hashed_Maps;
+
 with Ada.Strings.Wide_Wide_Unbounded;
 with Ada.Unchecked_Deallocation;
 with Ada.Strings.UTF_Encoding;
@@ -8,6 +11,9 @@ with Ada.Text_IO; use Ada.Text_IO;
 with kv.apg.locations;
 
 package body kv.apg.rules is
+
+   use Ada.Strings.UTF_Encoding;
+   use Ada.Strings.UTF_Encoding.Strings;
 
    procedure Free_Instance is new Ada.Unchecked_Deallocation(Symbol_Class'CLASS, Symbol_Pointer);
 
@@ -209,8 +215,14 @@ package body kv.apg.rules is
       Answer  : Terminal_Sets.Set;
       Current : Terminal_Sets.Set;
    begin
+      Put_Line("First of " & Decode(To_String(Self.Image), UTF_8));
+      if Self.Vanishable then
+         Put_Line("   Add Epsilon");
+         Answer.Include(Epsilon);
+      end if;
       for Symbol of Self.Symbols loop
          Current := Symbol.First;
+         Put_Line("   Add First(" & Decode(To_String(Symbol.Name), UTF_8) & ")");
          Answer.Union(Current);
          if not Current.Contains(Epsilon) then
             exit;
@@ -296,14 +308,27 @@ package body kv.apg.rules is
 
    ----------------------------------------------------------------------------
    function First(Self : Rule_Class) return Terminal_Sets.Set is
-      Answer : Terminal_Sets.Set;
+--      Answer : Terminal_Sets.Set;
+--   begin
+--      for Production of Self.Productions loop
+--         Answer.Union(Production.First);
+--      end loop;
+--      return Answer;
    begin
-      --TODO: need to reference grammar to get terminal count
-      for Production of Self.Productions loop
-         Answer.Union(Production.First);
-      end loop;
-      return Answer;
+      return Self.Firsts;
    end First;
+
+   ----------------------------------------------------------------------------
+   function Hash(Self : Rule_Pointer) return Ada.Containers.Hash_Type is
+   begin
+      return Self.My_Hash;
+   end Hash;
+
+   ----------------------------------------------------------------------------
+   function Equivalent_Elements(Left, Right : Rule_Pointer) return Boolean is
+   begin
+      return Left = Right;
+   end Equivalent_Elements;
 
 
 
@@ -327,8 +352,6 @@ package body kv.apg.rules is
    procedure Add_Rule
       (Self : in out Grammar_Class;
        Rule : in     Rule_Pointer) is
-      use Ada.Strings.UTF_Encoding;
-      use Ada.Strings.UTF_Encoding.Strings;
    begin
       Self.Rules.Include(Decode(To_String(Rule.Get_Name), UTF_8), Rule);
    end Add_Rule;
@@ -343,13 +366,17 @@ package body kv.apg.rules is
       To_Be_Deleted : Symbol_Pointer;
       Updated_Symbol : Symbol_Pointer;
       Index : Natural;
+      Rule_Hash : Ada.Containers.Hash_Type := 1;
 
       use Symbol_Vector;
       use Ada.Strings.UTF_Encoding;
       use Ada.Strings.UTF_Encoding.Strings;
+      use Ada.Containers;
 
    begin
       for Rule of Self.Rules loop
+         Rule.My_Hash := Rule_Hash;
+         Rule_Hash := Rule_Hash + 1;
          Logger.Note_Info(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "Rule <" & Rule.Name_Token.Get_Data_As_String & ">");
          for Production of Rule.Productions loop
             Logger.Note_Info(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "  Production <" & Decode(To_String(Production.Image), UTF_8) & ">");
@@ -384,6 +411,13 @@ package body kv.apg.rules is
    end Resolve_Rules;
 
    ----------------------------------------------------------------------------
+   function Rule_Of(Symbol : Symbol_Pointer) return Rule_Pointer is
+   begin
+      return Non_Terminal_Class(Symbol.all).Rule;
+   end Rule_Of;
+
+
+   ----------------------------------------------------------------------------
    procedure Resolve_Productions
       (Self   : in out Grammar_Class;
        Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
@@ -396,6 +430,7 @@ package body kv.apg.rules is
       use Production_Vector;
       use Ada.Containers;
 
+      -------------------------------------------------------------------------
       function Rule_Has_A_Yes(Rule : Rule_Pointer) return Boolean is
       begin
          for Production of Rule.Productions loop
@@ -406,6 +441,7 @@ package body kv.apg.rules is
          return False;
       end Rule_Has_A_Yes;
 
+      -------------------------------------------------------------------------
       function Rule_Is_All_No(Rule : Rule_Pointer) return Boolean is
       begin
          for Production of Rule.Productions loop
@@ -416,11 +452,7 @@ package body kv.apg.rules is
          return True;
       end Rule_Is_All_No;
 
-      function Rule_Of(Symbol : Symbol_Pointer) return Rule_Pointer is
-      begin
-         return Non_Terminal_Class(Symbol.all).Rule;
-      end Rule_Of;
-
+      -------------------------------------------------------------------------
       function Cursory_Check(Production : Production_Pointer) return Can_Vanish_Answer_Type is
       begin
          if Production.Matches_An_Empty_Sequence then
@@ -431,6 +463,7 @@ package body kv.apg.rules is
          return Maybe;
       end Cursory_Check;
 
+      -------------------------------------------------------------------------
       function Symbol_By_Symbol_Check(Production : Production_Pointer) return Can_Vanish_Answer_Type is
       begin
          for Symbol of Production.Symbols loop
@@ -447,6 +480,7 @@ package body kv.apg.rules is
          return Yes;
       end Symbol_By_Symbol_Check;
 
+      -------------------------------------------------------------------------
       procedure Disposition
          (Production : in     Production_Pointer;
           Answer     : in     Can_Vanish_Answer_Type) is
@@ -455,6 +489,7 @@ package body kv.apg.rules is
          List_Of(Answer).Append(Production);
       end Disposition;
 
+      -------------------------------------------------------------------------
       function Pop_Unresolved_Production return Production_Pointer is
          Top : Production_Pointer;
       begin
@@ -485,6 +520,108 @@ package body kv.apg.rules is
          Logger.Note_Error(Production.Get_Rule.Name_Token.Get_Location, Production.Image, "Production could not be resolved!");
       end loop;
    end Resolve_Productions;
+
+
+   ----------------------------------------------------------------------------
+   function Image(Self : Terminal_Sets.Set) return String_Type is
+      Answer : String_Type := To_String_Type("{");
+      use Terminal_Sets;
+   begin
+      for Current of Self loop
+         Answer := Answer & To_String_Type(",") & To_String_Type(Terminal_Type'IMAGE(Current));
+      end loop;
+      return Answer & To_String_Type("}");
+   end Image;
+
+
+   ----------------------------------------------------------------------------
+   function To_S(St : String_Type) return String is
+   begin
+      return Decode(To_String(St), UTF_8);
+   end To_S;
+
+
+   ----------------------------------------------------------------------------
+   package Rule_Deps is new Ada.Containers.Hashed_Sets
+      (Element_Type => Rule_Pointer,
+       Hash => Hash,
+       Equivalent_Elements => Equivalent_Elements);
+
+   ----------------------------------------------------------------------------
+   package Dep_Maps is new Ada.Containers.Hashed_Maps
+      (Key_Type => Rule_Pointer,
+       Element_Type => Rule_Deps.Set,
+       Hash => Hash,
+       Equivalent_Keys => Equivalent_Elements,
+       "=" => Rule_Deps."=");
+
+   ----------------------------------------------------------------------------
+   procedure Resolve_Firsts
+      (Self   : in out Grammar_Class;
+       Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
+
+      Dependencies : Dep_Maps.Map;
+
+      -------------------------------------------------------------------------
+      procedure Add_Dependency
+         (Source      : in     Rule_Pointer;
+          Destination : in     Rule_Pointer) is
+         Working : Rule_Deps.Set;
+      begin
+         if Source = Destination then
+            return;
+         end if;
+         --Put_Line("Rule "&Decode(To_String(Source.Get_Name), UTF_8)&" passes its First terminals to rule " & Decode(To_String(Destination.Get_Name), UTF_8) & ".");
+         if Dependencies.Contains(Source) then
+            Working := Dependencies.Element(Source);
+         end if;
+         Working.Include(Destination);
+         Dependencies.Include(Source, Working);
+      end Add_Dependency;
+
+      Current : Dep_Maps.Cursor;
+      Source : Rule_Pointer;
+      use Dep_Maps;
+
+   begin
+      for Rule of Self.Rules loop
+         Production_Loop: for Production of Rule.Productions loop
+            --if Production.Vanishable then
+            --   Rule.Firsts.Include(Epsilon);
+            --end if;
+            Symbol_Loop: for Symbol of Production.Symbols loop
+               if Symbol.Is_Terminal then
+                  Rule.Firsts.Union(Symbol.First);
+                  exit Symbol_Loop;
+               else
+                  -- Point this rule back to Rule for the second phase
+                  Add_Dependency(Rule_Of(Symbol), Rule);
+                  if not Rule_Of(Symbol).Can_Disappear then
+                     exit Symbol_Loop;
+                  end if;
+               end if;
+            end loop Symbol_Loop;
+         end loop Production_Loop;
+      end loop;
+      for I in 1..2 loop -- Two passes will propagate all terminals
+         --for Source of Dependencies loop
+         Current := Dependencies.First;
+         while Current /= No_Element loop
+            Source := Key(Current);
+            for Destination of Dependencies.Element(Source) loop
+               --Put_Line("Union "&To_S(Source.Get_Name) & To_S(Image(Source.Firsts)) &" into " & To_S(Destination.Get_Name) & To_S(Image(Destination.Firsts)) & ".");
+               Destination.Firsts.Union(Source.Firsts);
+            end loop;
+            Current := Next(Current);
+         end loop;
+      end loop;
+      for Rule of Self.Rules loop
+         if Rule.Can_Disappear then
+            Rule.Firsts.Include(Epsilon);
+         end if;
+      end loop;
+   end Resolve_Firsts;
+
 
    ----------------------------------------------------------------------------
    procedure Validate
