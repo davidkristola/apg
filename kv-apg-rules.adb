@@ -308,15 +308,15 @@ package body kv.apg.rules is
 
    ----------------------------------------------------------------------------
    function First(Self : Rule_Class) return Terminal_Sets.Set is
---      Answer : Terminal_Sets.Set;
---   begin
---      for Production of Self.Productions loop
---         Answer.Union(Production.First);
---      end loop;
---      return Answer;
    begin
       return Self.Firsts;
    end First;
+
+   ----------------------------------------------------------------------------
+   function Follow(Self : Rule_Class) return Terminal_Sets.Set is
+   begin
+      return Self.Follows;
+   end Follow;
 
    ----------------------------------------------------------------------------
    function Hash(Self : Rule_Pointer) return Ada.Containers.Hash_Type is
@@ -556,71 +556,148 @@ package body kv.apg.rules is
        "=" => Rule_Deps."=");
 
    ----------------------------------------------------------------------------
+   procedure Add_Dependency
+      (Dependencies : in out Dep_Maps.Map;
+       Source       : in     Rule_Pointer;
+       Destination  : in     Rule_Pointer) is
+      Working : Rule_Deps.Set;
+   begin
+      if Source = Destination then
+         return;
+      end if;
+      --Put_Line("Rule "&Decode(To_String(Source.Get_Name), UTF_8)&" passes its First terminals to rule " & Decode(To_String(Destination.Get_Name), UTF_8) & ".");
+      if Dependencies.Contains(Source) then
+         Working := Dependencies.Element(Source);
+      end if;
+      Working.Include(Destination);
+      Dependencies.Include(Source, Working);
+   end Add_Dependency;
+
+
+   ----------------------------------------------------------------------------
    procedure Resolve_Firsts
       (Self   : in out Grammar_Class;
        Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
 
+      use Dep_Maps;
+
       Dependencies : Dep_Maps.Map;
 
       -------------------------------------------------------------------------
-      procedure Add_Dependency
-         (Source      : in     Rule_Pointer;
-          Destination : in     Rule_Pointer) is
-         Working : Rule_Deps.Set;
+      procedure Collect_Terminals_And_Non_Terminal_Dependencies is
       begin
-         if Source = Destination then
-            return;
-         end if;
-         --Put_Line("Rule "&Decode(To_String(Source.Get_Name), UTF_8)&" passes its First terminals to rule " & Decode(To_String(Destination.Get_Name), UTF_8) & ".");
-         if Dependencies.Contains(Source) then
-            Working := Dependencies.Element(Source);
-         end if;
-         Working.Include(Destination);
-         Dependencies.Include(Source, Working);
-      end Add_Dependency;
+         Rule_Loop: for Rule of Self.Rules loop
+            Production_Loop: for Production of Rule.Productions loop
+               Symbol_Loop: for Symbol of Production.Symbols loop
+                  if Symbol.Is_Terminal then
+                     Rule.Firsts.Union(Symbol.First);
+                     exit Symbol_Loop;
+                  else -- is nonterminal
+                     -- Rule depends on Symbol, but that can't be resolved just now.
+                     Add_Dependency(Dependencies, Rule_Of(Symbol), Rule);
+                     if not Rule_Of(Symbol).Can_Disappear then
+                        exit Symbol_Loop;
+                     end if;
+                  end if;
+               end loop Symbol_Loop;
+            end loop Production_Loop;
+         end loop Rule_Loop;
+      end Collect_Terminals_And_Non_Terminal_Dependencies;
 
-      Current : Dep_Maps.Cursor;
-      Source : Rule_Pointer;
-      use Dep_Maps;
+      -------------------------------------------------------------------------
+      procedure Propogate_Dependencies is
+         Current : Dep_Maps.Cursor;
+         Source : Rule_Pointer;
+      begin
+         for I in 1..2 loop -- Two passes will propagate all terminals -- TODO: is this correct?
+            Current := Dependencies.First;
+            while Current /= No_Element loop
+               Source := Key(Current);
+               for Destination of Dependencies.Element(Source) loop
+                  --Put_Line("Union "&To_S(Source.Get_Name) & To_S(Image(Source.Firsts)) &" into " & To_S(Destination.Get_Name) & To_S(Image(Destination.Firsts)) & ".");
+                  Destination.Firsts.Union(Source.Firsts);
+               end loop;
+               Current := Next(Current);
+            end loop;
+         end loop;
+      end Propogate_Dependencies;
+
+      -------------------------------------------------------------------------
+      procedure Add_Non_Propogatable_Terminals is
+      begin
+         for Rule of Self.Rules loop
+            if Rule.Can_Disappear then
+               Rule.Firsts.Include(Epsilon);
+            end if;
+         end loop;
+      end Add_Non_Propogatable_Terminals;
 
    begin
-      for Rule of Self.Rules loop
-         Production_Loop: for Production of Rule.Productions loop
-            --if Production.Vanishable then
-            --   Rule.Firsts.Include(Epsilon);
-            --end if;
-            Symbol_Loop: for Symbol of Production.Symbols loop
-               if Symbol.Is_Terminal then
-                  Rule.Firsts.Union(Symbol.First);
-                  exit Symbol_Loop;
-               else
-                  -- Point this rule back to Rule for the second phase
-                  Add_Dependency(Rule_Of(Symbol), Rule);
-                  if not Rule_Of(Symbol).Can_Disappear then
-                     exit Symbol_Loop;
-                  end if;
-               end if;
-            end loop Symbol_Loop;
-         end loop Production_Loop;
-      end loop;
-      for I in 1..2 loop -- Two passes will propagate all terminals
-         --for Source of Dependencies loop
-         Current := Dependencies.First;
-         while Current /= No_Element loop
-            Source := Key(Current);
-            for Destination of Dependencies.Element(Source) loop
-               --Put_Line("Union "&To_S(Source.Get_Name) & To_S(Image(Source.Firsts)) &" into " & To_S(Destination.Get_Name) & To_S(Image(Destination.Firsts)) & ".");
-               Destination.Firsts.Union(Source.Firsts);
-            end loop;
-            Current := Next(Current);
-         end loop;
-      end loop;
-      for Rule of Self.Rules loop
-         if Rule.Can_Disappear then
-            Rule.Firsts.Include(Epsilon);
-         end if;
-      end loop;
+      Collect_Terminals_And_Non_Terminal_Dependencies;
+      Propogate_Dependencies;
+      Add_Non_Propogatable_Terminals;
    end Resolve_Firsts;
+
+
+   ----------------------------------------------------------------------------
+   procedure Resolve_Follows
+      (Self   : in out Grammar_Class;
+       Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
+
+      use Dep_Maps;
+
+      Dependencies : Dep_Maps.Map;
+
+      procedure Add_Endmarkers is
+      begin
+         for Rule of Self.Rules loop
+            if Rule.Start_Rule then
+               Rule.Follows.Include(End_Of_File);
+            end if;
+         end loop;
+      end Add_Endmarkers;
+
+      procedure Add_Sans_Epsilon
+         (Receiver : in     Rule_Pointer;
+          Source   : in     Symbol_Pointer) is
+         Working : Terminal_Sets.Set;
+      begin
+         Working := Source.First;
+         -- Remove Epsilon
+         Receiver.Follows.Union(Working);
+      end Add_Sans_Epsilon;
+
+      procedure Collect_Following_Firsts is
+         Symbol_Count : Natural;
+         Symbol       : Symbol_Pointer;
+      begin
+         for Rule of Self.Rules loop
+            Production_Loop: for Production of Rule.Productions loop
+               Symbol_Count := Production.Symbol_Count;
+               if Symbol_Count = 0 then
+                  exit Production_Loop;
+               end if;
+               for Index in 1 .. Symbol_Count-1 loop
+                  Symbol := Production.Symbols(Index);
+                  if not Symbol.Is_Terminal then
+                     Add_Sans_Epsilon(Rule_Of(Symbol), Production.Symbols(Index + 1));
+                  end if;
+               end loop;
+            end loop Production_Loop;
+         end loop;
+      end Collect_Following_Firsts;
+
+      procedure Collect_Dependencies is begin null; end;
+         --Add_Dependency(Dependencies, Rule_Of(Symbol), Rule);
+
+      procedure Propogate_Dependencies is begin null; end;
+
+   begin
+      Add_Endmarkers;
+      Collect_Following_Firsts;
+      Collect_Dependencies;
+      Propogate_Dependencies;
+   end Resolve_Follows;
 
 
    ----------------------------------------------------------------------------

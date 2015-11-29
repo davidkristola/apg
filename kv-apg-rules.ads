@@ -164,6 +164,8 @@ package kv.apg.rules is
 
    function First(Self : Rule_Class) return Terminal_Sets.Set;
 
+   function Follow(Self : Rule_Class) return Terminal_Sets.Set;
+
    function Hash(Self : Rule_Pointer) return Ada.Containers.Hash_Type;
 
 
@@ -196,6 +198,10 @@ package kv.apg.rules is
        Logger : in     kv.apg.logger.Safe_Logger_Pointer);
 
    procedure Resolve_Firsts
+      (Self   : in out Grammar_Class;
+       Logger : in     kv.apg.logger.Safe_Logger_Pointer);
+
+   procedure Resolve_Follows
       (Self   : in out Grammar_Class;
        Logger : in     kv.apg.logger.Safe_Logger_Pointer);
 
@@ -243,6 +249,7 @@ private
          Name_Token  : kv.apg.tokens.Token_Class;
          Productions : Production_Vector.Vector;
          Firsts      : Terminal_Sets.Set;
+         Follows     : Terminal_Sets.Set;
          My_Hash     : Ada.Containers.Hash_Type;
          Start_Rule  : Boolean := False;
       end record;

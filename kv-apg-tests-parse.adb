@@ -366,12 +366,8 @@ package body kv.apg.tests.parse is
    end Run;
 
    ----------------------------------------------------------------------------
-   type Can_Disappear_2_Test is new Grammar_Test_Class with null record;
-   procedure Run(T : in out Can_Disappear_2_Test) is
-      Rule : kv.apg.rules.Rule_Pointer;
-      Sp : kv.apg.rules.Constant_Symbol_Pointer;
-      Pp : kv.apg.rules.Production_Pointer;
-      use kv.apg.rules;
+   procedure Set_Up_ABG_Grammar
+      (T : in out Grammar_Test_Class'CLASS) is
    begin
       Add_ABG_Enum(T);
       Run_Basic_Grammar_Test(T, 4,
@@ -393,9 +389,21 @@ package body kv.apg.tests.parse is
           ));
       T.Grammar.Resolve_Rules(T.Logger'UNCHECKED_ACCESS);
       T.Grammar.Resolve_Productions(T.Logger'UNCHECKED_ACCESS);
+      T.Grammar.Resolve_Firsts(T.Logger'UNCHECKED_ACCESS);
+      T.Grammar.Resolve_Follows(T.Logger'UNCHECKED_ACCESS);
       T.Grammar.Validate(T.Logger'UNCHECKED_ACCESS);
-
       T.Assert(T.Grammar.Get_Error_Count = 0, "Expected no resolve/validate errors.");
+   end Set_Up_ABG_Grammar;
+
+   ----------------------------------------------------------------------------
+   type Can_Disappear_2_Test is new Grammar_Test_Class with null record;
+   procedure Run(T : in out Can_Disappear_2_Test) is
+      Rule : kv.apg.rules.Rule_Pointer;
+      Sp : kv.apg.rules.Constant_Symbol_Pointer;
+      Pp : kv.apg.rules.Production_Pointer;
+      use kv.apg.rules;
+   begin
+      Set_Up_ABG_Grammar(T);
 
       Rule := T.Grammar.Find_Non_Terminal(To_String_Type("program"));
       T.Assert(Rule.Production_Count = 1, "Expected 1 production for rule 'program'");
@@ -488,17 +496,11 @@ package body kv.apg.tests.parse is
       T.Assert(not Pp.Can_Disappear, "Rule 'gamma_list' production 1 should not be able to disappear");
    end Run;
 
+
    ----------------------------------------------------------------------------
-   type First_1_Test is new Grammar_Test_Class with null record;
-   procedure Run(T : in out First_1_Test) is
-      -- Dragon book, page 190
-      use kv.apg.rules;
-      use kv.apg.rules.Terminal_Sets;
-      use Ada.Containers;
-
-      Rule : kv.apg.rules.Rule_Pointer;
-      Answer : Set;
-
+   -- Grammar 4.11 from the Dragon Book (page 189)
+   procedure Set_Up_Alternate_ETF_Grammar
+      (T : in out Grammar_Test_Class'CLASS) is
    begin
       Add_ETF_Enum(T);
       Run_Basic_Grammar_Test(T, 5,
@@ -523,43 +525,25 @@ package body kv.apg.tests.parse is
       T.Grammar.Resolve_Rules(T.Logger'UNCHECKED_ACCESS);
       T.Grammar.Resolve_Productions(T.Logger'UNCHECKED_ACCESS);
       T.Grammar.Resolve_Firsts(T.Logger'UNCHECKED_ACCESS);
+      T.Grammar.Resolve_Follows(T.Logger'UNCHECKED_ACCESS);
       T.Grammar.Validate(T.Logger'UNCHECKED_ACCESS);
       T.Assert(T.Grammar.Get_Error_Count = 0, "Expected 0 resolve/validate errors got" & Natural'IMAGE(T.Grammar.Get_Error_Count));
+   end Set_Up_Alternate_ETF_Grammar;
 
-      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("E"));
-      Answer := Rule.First;
-      T.Assert(Answer.Length = 2, "Expected 2 terminals in the First of E, got" & Count_Type'IMAGE(Length(Answer)));
-      T.Assert(Answer.Contains(Terminal_open_paren), "Expected First of E to contain terminal open_paren");
-      T.Assert(Answer.Contains(Terminal_id), "Expected First of E to contain terminal id");
 
-      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("T"));
-      Answer := Rule.First;
-      T.Assert(Answer.Length = 2, "Expected 2 terminals in the First of T, got" & Count_Type'IMAGE(Length(Answer)));
-      T.Assert(Answer.Contains(Terminal_open_paren), "Expected First of T to contain terminal open_paren");
-      T.Assert(Answer.Contains(Terminal_id), "Expected First of T to contain terminal id");
+   type Terminal_Tuple_Type is
+      record
+         V : kv.apg.rules.Terminal_Type;
+         N : String_Type;
+      end record;
 
-      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("F"));
-      Answer := Rule.First;
-      T.Assert(Answer.Length = 2, "Expected 2 terminals in the First of F, got" & Count_Type'IMAGE(Length(Answer)));
-      T.Assert(Answer.Contains(Terminal_open_paren), "Expected First of F to contain terminal open_paren");
-      T.Assert(Answer.Contains(Terminal_id), "Expected First of F to contain terminal id");
-
-      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("E2"));
-      Answer := Rule.First;
-      T.Assert(Answer.Length = 2, "Expected 2 terminals in the First of E2, got" & Count_Type'IMAGE(Length(Answer)));
-      T.Assert(Answer.Contains(Terminal_plus), "Expected First of E2 to contain terminal plus");
-      T.Assert(Answer.Contains(Epsilon), "Expected First of E2 to contain terminal epsilon");
-
-      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("T2"));
-      Answer := Rule.First;
-      T.Assert(Answer.Length = 2, "Expected 2 terminals in the First of T2, got" & Count_Type'IMAGE(Length(Answer)));
-      T.Assert(Answer.Contains(Terminal_times), "Expected First of T2 to contain terminal tomes");
-      T.Assert(Answer.Contains(Epsilon), "Expected First of T2 to contain terminal epsilon");
-   end Run;
+   type Terminal_Tuple_Array is array (Positive range <>) of Terminal_Tuple_Type;
 
    ----------------------------------------------------------------------------
-   type First_2_Test is new Grammar_Test_Class with null record;
-   procedure Run(T : in out First_2_Test) is
+   procedure Test_First
+      (T         : in out Grammar_Test_Class'CLASS;
+       Rule_Name : in     String;
+       Included  : in     Terminal_Tuple_Array) is
 
       use kv.apg.rules;
       use kv.apg.rules.Terminal_Sets;
@@ -569,49 +553,87 @@ package body kv.apg.tests.parse is
       Answer : Set;
 
    begin
-      Add_ABG_Enum(T);
-      Run_Basic_Grammar_Test(T, 4,
-         (01 => To_String_Type("rule program = start"),
-          02 => To_String_Type(" | alpha_list Gamma => «null;»"),
-          03 => To_String_Type(" ;"),
-          04 => To_String_Type("rule alpha_list ="),
-          05 => To_String_Type(" | alpha_list Alpha => «null;»"),
-          06 => To_String_Type(" | beta_list => «null;»"),
-          07 => To_String_Type(" ;"),
-          08 => To_String_Type("rule beta_list ="),
-          09 => To_String_Type(" | beta_list Beta => «null;»"),
-          10 => To_String_Type(" | gamma_list => «null;»"),
-          11 => To_String_Type(" ;"),
-          12 => To_String_Type("rule gamma_list ="),
-          13 => To_String_Type(" | gamma_list Gamma => «null;»"),
-          14 => To_String_Type(" | => «null;»"),
-          15 => To_String_Type(" ;")
-          ));
-      T.Grammar.Resolve_Rules(T.Logger'UNCHECKED_ACCESS);
-      T.Grammar.Resolve_Productions(T.Logger'UNCHECKED_ACCESS);
-      T.Grammar.Resolve_Firsts(T.Logger'UNCHECKED_ACCESS);
-      T.Grammar.Validate(T.Logger'UNCHECKED_ACCESS);
-      T.Assert(T.Grammar.Get_Error_Count = 0, "Expected no resolve/validate errors.");
-
-      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("program"));
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type(Rule_Name));
       Answer := Rule.First;
-      T.Assert(Answer.Length = 3, "Expected 3 terminals in the First of program, got" & Count_Type'IMAGE(Length(Answer)));
-      T.Assert(Answer.Contains(1), "Expected First of program to contain terminal Alpha");
-      T.Assert(Answer.Contains(2), "Expected First of program to contain terminal Beta");
-      T.Assert(Answer.Contains(3), "Expected First of program to contain terminal Gamma");
+      T.Assert(Answer.Length = Included'LENGTH, "Expected "&Positive'IMAGE(Included'LENGTH)&" terminals in the First of "&Rule_Name&", got" & Count_Type'IMAGE(Length(Answer)));
+      for TT of Included loop
+         T.Assert(Answer.Contains(TT.V), "Expected First of "&Rule_Name&" to contain terminal " & To_String(TT.N));
+      end loop;
+   end Test_First;
 
-      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("beta_list"));
-      Answer := Rule.First;
-      T.Assert(Answer.Length = 3, "Expected 3 terminals in the First of beta_list, got" & Count_Type'IMAGE(Length(Answer)));
-      T.Assert(Answer.Contains(0), "Expected First of beta_list to contain terminal Epsilon");
-      T.Assert(Answer.Contains(2), "Expected First of beta_list to contain terminal Beta");
-      T.Assert(Answer.Contains(3), "Expected First of beta_list to contain terminal Gamma");
+   Open_Tuple : constant Terminal_Tuple_Type := (Terminal_open_paren, To_String_Type("open_paren"));
+   Id_Tuple : constant Terminal_Tuple_Type := (Terminal_id, To_String_Type("id"));
+   Times_Tuple : constant Terminal_Tuple_Type := (Terminal_times, To_String_Type("times"));
+   Plus_Tuple : constant Terminal_Tuple_Type := (Terminal_plus, To_String_Type("plus"));
+   Epsilon_Tuple : constant Terminal_Tuple_Type := (kv.apg.rules.Epsilon, To_String_Type("Epsilon"));
 
-      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("gamma_list"));
-      Answer := Rule.First;
-      T.Assert(Answer.Length = 2, "Expected 2 terminals in the First of gamma_list, got" & Count_Type'IMAGE(Length(Answer)));
-      T.Assert(Answer.Contains(0), "Expected First of gamma_list to contain terminal Epsilon");
-      T.Assert(Answer.Contains(3), "Expected First of gamma_list to contain terminal Gamma");
+   ----------------------------------------------------------------------------
+   type First_1_Test is new Grammar_Test_Class with null record;
+   procedure Run(T : in out First_1_Test) is
+   begin
+      Set_Up_Alternate_ETF_Grammar(T);
+
+      Test_First(T, "E", (1 => Open_Tuple, 2 => Id_Tuple));
+      Test_First(T, "T", (1 => Open_Tuple, 2 => Id_Tuple));
+      Test_First(T, "F", (1 => Open_Tuple, 2 => Id_Tuple));
+      Test_First(T, "E2", (1 => Plus_Tuple, 2 => Epsilon_Tuple));
+      Test_First(T, "T2", (1 => Times_Tuple, 2 => Epsilon_Tuple));
+   end Run;
+
+   Alpha_Tuple : constant Terminal_Tuple_Type := (1, To_String_Type("Alpha"));
+   Beta_Tuple : constant Terminal_Tuple_Type := (2, To_String_Type("Beta"));
+   Gamma_Tuple : constant Terminal_Tuple_Type := (3, To_String_Type("Gamma"));
+
+   ----------------------------------------------------------------------------
+   type First_2_Test is new Grammar_Test_Class with null record;
+   procedure Run(T : in out First_2_Test) is
+   begin
+      Set_Up_ABG_Grammar(T);
+
+      Test_First(T, "program", (1 => Alpha_Tuple, 2 => Beta_Tuple, 3 => Gamma_Tuple));
+      Test_First(T, "beta_list", (1 => Epsilon_Tuple, 2 => Beta_Tuple, 3 => Gamma_Tuple));
+      Test_First(T, "gamma_list", (1 => Epsilon_Tuple, 2 => Gamma_Tuple));
+   end Run;
+
+   ----------------------------------------------------------------------------
+   procedure Test_Follow
+      (T         : in out Grammar_Test_Class'CLASS;
+       Rule_Name : in     String;
+       Included  : in     Terminal_Tuple_Array) is
+
+      use kv.apg.rules;
+      use kv.apg.rules.Terminal_Sets;
+      use Ada.Containers;
+
+      Rule : kv.apg.rules.Rule_Pointer;
+      Answer : Set;
+
+   begin
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type(Rule_Name));
+      Answer := Rule.Follow;
+      T.Assert(Answer.Length = Included'LENGTH, "Expected "&Positive'IMAGE(Included'LENGTH)&" terminals in the Follow of "&Rule_Name&", got" & Count_Type'IMAGE(Length(Answer)));
+      for TT of Included loop
+         T.Assert(Answer.Contains(TT.V), "Expected Follow of "&Rule_Name&" to contain terminal " & To_String(TT.N));
+      end loop;
+   end Test_Follow;
+
+
+   Close_Tuple : constant Terminal_Tuple_Type := (Termianl_close_paren, To_String_Type("close_paren"));
+   EOF_Tuple : constant Terminal_Tuple_Type := (kv.apg.rules.End_Of_File, To_String_Type("end_of_file"));
+
+   ----------------------------------------------------------------------------
+   type Follow_1_Test is new Grammar_Test_Class with null record;
+   procedure Run(T : in out Follow_1_Test) is
+   begin
+      Set_Up_Alternate_ETF_Grammar(T);
+
+      Test_Follow(T, "E", (1 => Close_Tuple, 2 => EOF_Tuple));
+      Test_Follow(T, "E2", (1 => Close_Tuple, 2 => EOF_Tuple));
+
+      Test_Follow(T, "T", (1 => Plus_Tuple, 2 => Close_Tuple, 3 => EOF_Tuple));
+      Test_Follow(T, "T2", (1 => Plus_Tuple, 2 => Close_Tuple, 3 => EOF_Tuple));
+
+      Test_Follow(T, "F", (1 => Plus_Tuple, 2 => Times_Tuple, 3 => Close_Tuple, 4 => EOF_Tuple));
    end Run;
 
 
@@ -633,6 +655,7 @@ package body kv.apg.tests.parse is
       suite.register(new Can_Disappear_3_Test, "Can_Disappear_3_Test");
       suite.register(new First_1_Test, "First_1_Test");
       suite.register(new First_2_Test, "First_2_Test");
+      suite.register(new Follow_1_Test, "Follow_1_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;
