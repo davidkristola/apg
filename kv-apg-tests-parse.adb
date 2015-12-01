@@ -636,6 +636,18 @@ package body kv.apg.tests.parse is
       Test_Follow(T, "F", (1 => Plus_Tuple, 2 => Times_Tuple, 3 => Close_Tuple, 4 => EOF_Tuple));
    end Run;
 
+   ----------------------------------------------------------------------------
+   type Follow_2_Test is new Grammar_Test_Class with null record;
+   procedure Run(T : in out Follow_2_Test) is
+   begin
+      Set_Up_ABG_Grammar(T);
+
+      Test_Follow(T, "program", (1 => EOF_Tuple));
+      Test_Follow(T, "alpha_list", (1 => Alpha_Tuple, 2 => Gamma_Tuple));
+      Test_Follow(T, "beta_list", (1 => Beta_Tuple));
+      Test_Follow(T, "gamma_list", (1 => Gamma_Tuple));
+   end Run;
+
 
 
    ----------------------------------------------------------------------------
@@ -656,6 +668,8 @@ package body kv.apg.tests.parse is
       suite.register(new First_1_Test, "First_1_Test");
       suite.register(new First_2_Test, "First_2_Test");
       suite.register(new Follow_1_Test, "Follow_1_Test");
+      suite.register(new Follow_2_Test, "Follow_2_Test");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;

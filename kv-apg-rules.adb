@@ -573,18 +573,69 @@ package body kv.apg.rules is
       Dependencies.Include(Source, Working);
    end Add_Dependency;
 
+   ----------------------------------------------------------------------------
+   generic
+      with procedure Transfer
+         (Source      : in     Rule_Pointer;
+          Destination : in     Rule_Pointer);
+   procedure Propogate_Dependencies
+      (Dependencies : in out Dep_Maps.Map);
+
+   ----------------------------------------------------------------------------
+   procedure Propogate_Dependencies
+      (Dependencies : in out Dep_Maps.Map) is
+
+      use Dep_Maps;
+
+      Current : Dep_Maps.Cursor;
+      Source  : Rule_Pointer;
+
+   begin
+      for I in 1..2 loop -- Two passes will propagate all terminals -- TODO: is this correct?
+         Current := Dependencies.First;
+         while Current /= No_Element loop
+            Source := Key(Current);
+            for Destination of Dependencies.Element(Source) loop
+               --Put_Line("Follows Union "&To_S(Source.Get_Name) & To_S(Image(Source.Follows)) &" and " & To_S(Destination.Get_Name) & To_S(Image(Destination.Follows)) & ".");
+               --Destination.Follows.Union(Source.Follows);
+               Transfer(Source, Destination);
+            end loop;
+            Current := Next(Current);
+         end loop;
+      end loop;
+   end Propogate_Dependencies;
+
+   ----------------------------------------------------------------------------
+   procedure Transfer_First
+      (Source      : in     Rule_Pointer;
+       Destination : in     Rule_Pointer) is
+   begin
+      Destination.Firsts.Union(Source.Firsts);
+   end Transfer_First;
+
+   ----------------------------------------------------------------------------
+   procedure Transfer_Follow
+      (Source      : in     Rule_Pointer;
+       Destination : in     Rule_Pointer) is
+   begin
+      Destination.Follows.Union(Source.Follows);
+   end Transfer_Follow;
+
+   ----------------------------------------------------------------------------
+   procedure Propogate_First_Dependencies is new Propogate_Dependencies(Transfer => Transfer_First);
+
+   ----------------------------------------------------------------------------
+   procedure Propogate_Follow_Dependencies is new Propogate_Dependencies(Transfer => Transfer_Follow);
+
 
    ----------------------------------------------------------------------------
    procedure Resolve_Firsts
       (Self   : in out Grammar_Class;
        Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
 
-      use Dep_Maps;
-
-      Dependencies : Dep_Maps.Map;
-
       -------------------------------------------------------------------------
-      procedure Collect_Terminals_And_Non_Terminal_Dependencies is
+      procedure Collect_Terminals_And_Non_Terminal_Dependencies
+         (Dependencies : in out Dep_Maps.Map) is
       begin
          Rule_Loop: for Rule of Self.Rules loop
             Production_Loop: for Production of Rule.Productions loop
@@ -605,24 +656,6 @@ package body kv.apg.rules is
       end Collect_Terminals_And_Non_Terminal_Dependencies;
 
       -------------------------------------------------------------------------
-      procedure Propogate_Dependencies is
-         Current : Dep_Maps.Cursor;
-         Source : Rule_Pointer;
-      begin
-         for I in 1..2 loop -- Two passes will propagate all terminals -- TODO: is this correct?
-            Current := Dependencies.First;
-            while Current /= No_Element loop
-               Source := Key(Current);
-               for Destination of Dependencies.Element(Source) loop
-                  --Put_Line("Union "&To_S(Source.Get_Name) & To_S(Image(Source.Firsts)) &" into " & To_S(Destination.Get_Name) & To_S(Image(Destination.Firsts)) & ".");
-                  Destination.Firsts.Union(Source.Firsts);
-               end loop;
-               Current := Next(Current);
-            end loop;
-         end loop;
-      end Propogate_Dependencies;
-
-      -------------------------------------------------------------------------
       procedure Add_Non_Propogatable_Terminals is
       begin
          for Rule of Self.Rules loop
@@ -632,9 +665,11 @@ package body kv.apg.rules is
          end loop;
       end Add_Non_Propogatable_Terminals;
 
+      Dependencies : Dep_Maps.Map;
+
    begin
-      Collect_Terminals_And_Non_Terminal_Dependencies;
-      Propogate_Dependencies;
+      Collect_Terminals_And_Non_Terminal_Dependencies(Dependencies);
+      Propogate_First_Dependencies(Dependencies);
       Add_Non_Propogatable_Terminals;
    end Resolve_Firsts;
 
@@ -644,10 +679,7 @@ package body kv.apg.rules is
       (Self   : in out Grammar_Class;
        Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
 
-      use Dep_Maps;
-
-      Dependencies : Dep_Maps.Map;
-
+      -------------------------------------------------------------------------
       procedure Add_Endmarkers is
       begin
          for Rule of Self.Rules loop
@@ -657,16 +689,19 @@ package body kv.apg.rules is
          end loop;
       end Add_Endmarkers;
 
+      -------------------------------------------------------------------------
       procedure Add_Sans_Epsilon
          (Receiver : in     Rule_Pointer;
           Source   : in     Symbol_Pointer) is
          Working : Terminal_Sets.Set;
       begin
          Working := Source.First;
-         -- Remove Epsilon
+         Working.Exclude(Epsilon); -- Remove Epsilon
+         --Put_Line("Adding First of " & To_S(Source.Name) & To_S(Image(Working)) & " to " & To_S(Receiver.Get_Name) & To_S(Image(Receiver.Follows)));
          Receiver.Follows.Union(Working);
       end Add_Sans_Epsilon;
 
+      -------------------------------------------------------------------------
       procedure Collect_Following_Firsts is
          Symbol_Count : Natural;
          Symbol       : Symbol_Pointer;
@@ -687,16 +722,45 @@ package body kv.apg.rules is
          end loop;
       end Collect_Following_Firsts;
 
-      procedure Collect_Dependencies is begin null; end;
-         --Add_Dependency(Dependencies, Rule_Of(Symbol), Rule);
+      -------------------------------------------------------------------------
+      procedure Collect_Dependencies
+         (Dependencies : in out Dep_Maps.Map) is
 
-      procedure Propogate_Dependencies is begin null; end;
+         Symbol_Count : Natural;
+         Symbol       : Symbol_Pointer;
+
+      begin
+         for Rule of Self.Rules loop
+            Production_Loop: for Production of Rule.Productions loop
+               Symbol_Count := Production.Symbol_Count;
+               if Symbol_Count = 0 then
+                  exit Production_Loop;
+               end if;
+               for Index in reverse 1 .. Symbol_Count loop
+                  Symbol := Production.Symbols(Index);
+                  if Symbol.Is_Terminal then
+                     exit Production_Loop;
+                  end if;
+                  if Rule_Of(Symbol) = Rule then
+                     exit Production_Loop; -- Recursive production
+                  end if;
+                  Add_Dependency(Dependencies, Rule, Rule_Of(Symbol));
+                  --Put_Line("Rule "&To_S(Rule.Get_Name)&" passes its Follow terminals to rule " & To_S(Symbol.Name) & ".");
+                  if not Symbol.Can_Disappear then
+                     exit Production_Loop;
+                  end if;
+               end loop;
+            end loop Production_Loop;
+         end loop;
+      end Collect_Dependencies;
+
+      Dependencies : Dep_Maps.Map;
 
    begin
       Add_Endmarkers;
       Collect_Following_Firsts;
-      Collect_Dependencies;
-      Propogate_Dependencies;
+      Collect_Dependencies(Dependencies);
+      Propogate_Follow_Dependencies(Dependencies);
    end Resolve_Follows;
 
 
