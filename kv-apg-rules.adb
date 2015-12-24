@@ -2,6 +2,7 @@ with Ada.Containers.Hashed_Sets;
 with Ada.Containers.Hashed_Maps;
 
 with Ada.Strings.Wide_Wide_Unbounded;
+with Ada.Unchecked_Conversion;
 with Ada.Unchecked_Deallocation;
 with Ada.Strings.UTF_Encoding;
 with Ada.Strings.UTF_Encoding.Strings;
@@ -15,7 +16,9 @@ package body kv.apg.rules is
    use Ada.Strings.UTF_Encoding;
    use Ada.Strings.UTF_Encoding.Strings;
 
-   procedure Free_Instance is new Ada.Unchecked_Deallocation(Symbol_Class'CLASS, Symbol_Pointer);
+   procedure Free_Symbol_Instance is new Ada.Unchecked_Deallocation(Symbol_Class'CLASS, Symbol_Pointer);
+   procedure Free_Item_Instance is new Ada.Unchecked_Deallocation(Item_Class'CLASS, Item_Pointer);
+   function Remove_Constant is new Ada.Unchecked_Conversion(Source => Constant_Item_Pointer, Target => Item_Pointer);
 
    ----------------------------------------------------------------------------
    function New_Pre_Symbol
@@ -28,7 +31,7 @@ package body kv.apg.rules is
    procedure Free
       (Symbol : in out Symbol_Pointer) is
    begin
-      Free_Instance(Symbol);
+      Free_Symbol_Instance(Symbol);
    end Free;
 
 
@@ -230,6 +233,88 @@ package body kv.apg.rules is
       end loop;
       return Answer;
    end First;
+
+
+
+
+   ----------------------------------------------------------------------------
+   function New_Item_Class
+      (Production   : Constant_Production_Pointer;
+       Dot_Position : Natural;
+       Terminal     : Constant_Symbol_Pointer) return Constant_Item_Pointer is
+      IP : Item_Pointer;
+   begin
+      if not Terminal.Is_Terminal then
+         raise Terminal_Expected_Error;
+      end if;
+      if Dot_Position > Production.Symbol_Count then
+         raise Dot_Position_Error;
+      end if;
+      IP := new Item_Class;
+      IP.Production := Production;
+      IP.Dot_Position := Dot_Position;
+      IP.Terminal := Terminal;
+      return Constant_Item_Pointer(IP);
+   end New_Item_Class;
+
+   ----------------------------------------------------------------------------
+   procedure Free
+      (Item : in out Constant_Item_Pointer) is
+      Free_Me : Item_Pointer := Remove_Constant(Item);
+   begin
+      Free_Item_Instance(Free_Me);
+      Item := null;
+   end Free;
+
+   ----------------------------------------------------------------------------
+   function Image(Self : Item_Class) return String_Type is
+      Answer  : String_Type := To_String_Type("[");
+      Symbols : Positive := Self.Production.Symbol_Count;
+      Dot_I   : Positive := Self.Dot_Position + 1;
+   begin
+      Answer := Answer & Self.Production.Get_Rule.Get_Name & To_String_Type(" →");
+      for I in 1 .. Symbols loop
+         if I = Dot_I then
+            Answer := Answer & To_String_Type(" •");
+         end if;
+         Answer := Answer & To_String_Type(" ") & Self.Production.Get_Symbol(I).Name;
+      end loop;
+      return Answer & To_String_Type(", ") & Self.Terminal.Name & To_String_Type("]");
+   end Image;
+
+   ----------------------------------------------------------------------------
+   function Get_Big_A(Self : Item_Class) return Rule_Pointer is
+   begin
+      return Self.Production.Get_Rule;
+   end Get_Big_A;
+
+   ----------------------------------------------------------------------------
+   function Get_Little_Alpha(Self : Item_Class) return Constant_Symbol_Pointer is
+   begin
+      return Self.Terminal; -- TODO: this is wrong and needs to be corrected!
+   end Get_Little_Alpha;
+
+   ----------------------------------------------------------------------------
+   function Get_Big_B(Self : Item_Class) return Constant_Symbol_Pointer is
+   begin
+      return Self.Terminal; -- TODO: this is wrong and needs to be corrected!
+   end Get_Big_B;
+
+   ----------------------------------------------------------------------------
+   function Get_Little_Beta(Self : Item_Class) return Constant_Symbol_Pointer is
+   begin
+      return Self.Terminal; -- TODO: this is wrong and needs to be corrected!
+   end Get_Little_Beta;
+
+   ----------------------------------------------------------------------------
+   function Get_Little_A(Self : Item_Class) return Constant_Symbol_Pointer is
+   begin
+      return Self.Terminal;
+   end Get_Little_A;
+
+
+
+
 
 
 

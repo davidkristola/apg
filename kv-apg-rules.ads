@@ -24,6 +24,8 @@ package kv.apg.rules is
    Unresolved_Error : exception;
    Rule_Not_Found_Error : exception;
    Production_Not_Found_Error : exception;
+   Dot_Position_Error : exception;
+   Terminal_Expected_Error : exception;
 
 
    End_Of_File : constant := -1;
@@ -93,6 +95,7 @@ package kv.apg.rules is
 
    type Production_Class is tagged private;
    type Production_Pointer is access Production_Class;
+   type Constant_Production_Pointer is access constant Production_Class;
 
    function New_Production_Class return Production_Pointer;
 
@@ -135,6 +138,29 @@ package kv.apg.rules is
    package Production_Vector is new Ada.Containers.Vectors
       (Index_Type   => Positive,
        Element_Type => Production_Pointer);
+
+
+
+
+   type Item_Class is tagged private;
+   type Item_Pointer is access Item_Class'CLASS;
+   type Constant_Item_Pointer is access constant Item_Class'CLASS;
+
+   function New_Item_Class
+      (Production   : Constant_Production_Pointer;
+       Dot_Position : Natural;
+       Terminal     : Constant_Symbol_Pointer) return Constant_Item_Pointer;
+
+   procedure Free
+      (Item : in out Constant_Item_Pointer);
+
+   function Image(Self : Item_Class) return String_Type;
+
+   function Get_Big_A(Self : Item_Class) return Rule_Pointer;
+   function Get_Little_Alpha(Self : Item_Class) return Constant_Symbol_Pointer;
+   function Get_Big_B(Self : Item_Class) return Constant_Symbol_Pointer;
+   function Get_Little_Beta(Self : Item_Class) return Constant_Symbol_Pointer;
+   function Get_Little_A(Self : Item_Class) return Constant_Symbol_Pointer;
 
 
 
@@ -243,6 +269,14 @@ private
          Rule       : Rule_Pointer;
          Vanishable : Boolean;
       end record;
+
+   type Item_Class is tagged
+      record
+         Production   : Constant_Production_Pointer;
+         Dot_Position : Natural;
+         Terminal     : Constant_Symbol_Pointer;
+      end record;
+
 
    type Rule_Class is tagged
       record

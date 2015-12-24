@@ -651,6 +651,91 @@ package body kv.apg.tests.parse is
 
 
    ----------------------------------------------------------------------------
+   type Item_Neg_1_Test is new Grammar_Test_Class with null record;
+   procedure Run(T : in out Item_Neg_1_Test) is
+      use kv.apg.rules;
+      Rule : Rule_Pointer;
+      Production : Production_Pointer;
+      Item : Constant_Item_Pointer;
+   begin
+      Set_Up_ABG_Grammar(T);
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("alpha_list"));
+      Production := Rule.Get_Production(1);
+      begin
+         Item := New_Item_Class(Constant_Production_Pointer(Production), 0, Production.Get_Symbol(1));
+         T.Fail("Expected Terminal_Expected_Error exception");
+      exception
+         when Terminal_Expected_Error =>
+            null; -- Expected path
+         when others =>
+            T.Fail("Incorrect exception");
+      end;
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Item_Neg_2_Test is new Grammar_Test_Class with null record;
+   procedure Run(T : in out Item_Neg_2_Test) is
+      use kv.apg.rules;
+      Rule : Rule_Pointer;
+      Production : Production_Pointer;
+      Item : Constant_Item_Pointer;
+   begin
+      Set_Up_ABG_Grammar(T);
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("alpha_list"));
+      Production := Rule.Get_Production(1);
+      begin
+         Item := New_Item_Class(Constant_Production_Pointer(Production), 3, Production.Get_Symbol(2));
+         T.Fail("Expected Dot_Position_Error exception");
+      exception
+         when Dot_Position_Error =>
+            null; -- Expected path
+         when others =>
+            T.Fail("Incorrect exception");
+      end;
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Item_1_Test is new Grammar_Test_Class with null record;
+   procedure Run(T : in out Item_1_Test) is
+      use kv.apg.rules;
+      Rule : Rule_Pointer;
+      Production : Production_Pointer;
+      Item : Constant_Item_Pointer;
+      Expected : constant String_Type := To_String_Type("[alpha_list → • alpha_list Alpha, Alpha]");
+   begin
+      Set_Up_ABG_Grammar(T);
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("alpha_list"));
+      Production := Rule.Get_Production(1);
+      Item := New_Item_Class(Constant_Production_Pointer(Production), 0, Production.Get_Symbol(2));
+      T.Assert(Item.Image = Expected, "Expected Item.Image to be <" &To_String(Expected)& ">, got <"&To_String(Item.Image)&">");
+      Free(Item);
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Item_2_Test is new Grammar_Test_Class with null record;
+   procedure Run(T : in out Item_2_Test) is
+      use kv.apg.rules;
+      Rule : Rule_Pointer;
+      Production : Production_Pointer;
+      Item : Constant_Item_Pointer;
+   begin
+      Set_Up_ABG_Grammar(T);
+      Rule := T.Grammar.Find_Non_Terminal(To_String_Type("alpha_list"));
+      Production := Rule.Get_Production(1);
+      Item := New_Item_Class(Constant_Production_Pointer(Production), 0, Production.Get_Symbol(2));
+      -- Item := "[alpha_list → • alpha_list Alpha, Alpha]"
+      T.Assert(Item.Get_Big_A = Rule, "Expected Big A of Item to be alpha_list, got " & To_String(Item.Get_Big_A.Get_Name));
+      T.Assert(Item.Get_Big_B = Production.Get_Symbol(1), "Expected Item.Get_Big_B to be " & To_String(Production.Get_Symbol(1).Name) & ", got " & To_String(Item.Get_Big_B.Name));
+      T.Assert(Item.Get_Little_A = Production.Get_Symbol(2), "Expected Item.Get_Little_A yo be Alpha terminal, got " & To_String(Item.Get_Little_A.Name));
+      T.Assert(Item.Get_Little_Alpha = null, "Expected Item.Get_Little_Alpha to be ɛ (null), got " & To_String(Item.Get_Little_Alpha.Name));
+      T.Assert(Item.Get_Little_Beta = null, "Expected Item.Get_Little_Beta to be ɛ (null), got " & To_String(Item.Get_Little_Beta.Name));
+      Free(Item);
+   end Run;
+
+
+
+
+   ----------------------------------------------------------------------------
    procedure register(suite : in kv.core.ut.Suite_Pointer_Type) is
    begin
       suite.register(new One_Line_Rule_Test, "One_Line_Rule_Test");
@@ -669,6 +754,10 @@ package body kv.apg.tests.parse is
       suite.register(new First_2_Test, "First_2_Test");
       suite.register(new Follow_1_Test, "Follow_1_Test");
       suite.register(new Follow_2_Test, "Follow_2_Test");
+      suite.register(new Item_Neg_1_Test, "Item_Neg_1_Test");
+      suite.register(new Item_Neg_2_Test, "Item_Neg_2_Test");
+      suite.register(new Item_1_Test, "Item_1_Test");
+      suite.register(new Item_2_Test, "Item_2_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
