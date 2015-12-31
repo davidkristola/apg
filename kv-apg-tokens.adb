@@ -75,8 +75,38 @@ package body kv.apg.tokens is
       Invalid : Token_Class;
    begin
       Here.Initialize(To_String_Type("n/a"), 0, 0);
-      Invalid.Initialize(A_Word, Here, To_String_Type("Invalid"));
+      Invalid.Initialize(A_Special, Here, To_String_Type("Invalid"));
       return Invalid;
    end Invalid_Token;
+
+   ----------------------------------------------------------------------------
+   function End_Of_File_Token return Token_Class is
+      Here : kv.apg.locations.File_Location_Type;
+      T : Token_Class;
+   begin
+      Here.Initialize(To_String_Type("n/a"), 0, 0);
+      T.Initialize(A_Special, Here, To_String_Type("End_Of_File"));
+      return T;
+   end End_Of_File_Token;
+
+   ----------------------------------------------------------------------------
+   function Epsilon_Token return Token_Class is
+      Here : kv.apg.locations.File_Location_Type;
+      T : Token_Class;
+   begin
+      Here.Initialize(To_String_Type("n/a"), 0, 0);
+      T.Initialize(A_Special, Here, To_String_Type("Epsilon"));
+      return T;
+   end Epsilon_Token;
+
+   ----------------------------------------------------------------------------
+   function Meta_Start_Rule_Token return Token_Class is
+      Here : kv.apg.locations.File_Location_Type;
+      T : Token_Class;
+   begin
+      Here.Initialize(To_String_Type("n/a"), 0, 0);
+      T.Initialize(A_Special, Here, To_String_Type("Meta_Start_Rule"));
+      return T;
+   end Meta_Start_Rule_Token;
 
 end kv.apg.tokens;

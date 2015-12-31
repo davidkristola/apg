@@ -5,7 +5,7 @@ with kv.apg.locations;
 
 package kv.apg.tokens is
 
-   type Token_Type is (A_Word, A_Symbol, A_Char, A_String, A_Block, A_Comment);
+   type Token_Type is (A_Word, A_Symbol, A_Char, A_String, A_Block, A_Comment, A_Special);
 
    type Token_Class is tagged private;
 
@@ -24,7 +24,11 @@ package kv.apg.tokens is
 
    function "="(L, R : Token_Class) return Boolean;
 
+   -- A few special tokens
    function Invalid_Token return Token_Class;
+   function End_Of_File_Token return Token_Class;
+   function Epsilon_Token return Token_Class;
+   function Meta_Start_Rule_Token return Token_Class;
 
 private
 

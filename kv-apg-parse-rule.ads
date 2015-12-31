@@ -12,7 +12,7 @@ private package kv.apg.parse.rule is
       record
          Expect      : Expectation_Type := Name;
          Name_Token  : kv.apg.tokens.Token_Class;
-         Productions : kv.apg.rules.Production_Vector.Vector;
+         Productions : kv.apg.rules.Production_Vectors.Vector;
          Working     : kv.apg.rules.Production_Pointer;
          Start_Flag  : Boolean := False;
       end record;
