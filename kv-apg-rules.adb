@@ -11,11 +11,14 @@ with Ada.Tags;
 with Ada.Text_IO; use Ada.Text_IO;
 
 with kv.apg.locations;
+with kv.apg.incidents;
 
 package body kv.apg.rules is
 
    use Ada.Strings.UTF_Encoding;
    use Ada.Strings.UTF_Encoding.Strings;
+
+   use kv.apg.incidents; -- Severity_Type
 
    procedure Free_Symbol_Instance is new Ada.Unchecked_Deallocation(Symbol_Class'CLASS, Symbol_Pointer);
    procedure Free_Item_Instance is new Ada.Unchecked_Deallocation(Kernel_Class'CLASS, Item_Pointer);
@@ -167,14 +170,17 @@ package body kv.apg.rules is
    end Get_Number;
 
    ----------------------------------------------------------------------------
-   function "="(L, R : Constant_Symbol_Pointer) return Boolean is
+   function Equal(L, R : Constant_Symbol_Pointer) return Boolean is
       use Ada.Tags;
    begin
+      if (L = null) or (R = null) then
+         return False;
+      end if;
       if L.all'TAG = R.all'TAG then
          return L.all.Is_Same_As(R.all);
       end if;
       return False; -- not the same tag, can't be equal
-   end "=";
+   end Equal;
 
 
 
@@ -232,7 +238,7 @@ package body kv.apg.rules is
    begin
       Self.Symbols := Symbol_Vectors.Empty_Vector;
       Self.Code := Ada.Strings.Wide_Wide_Unbounded.Null_Unbounded_Wide_Wide_String;
-      Self.Number := Predicate_Index_Type'LAST;
+      Self.Number := Production_Index_Type'LAST;
    end Clear;
 
    ----------------------------------------------------------------------------
@@ -308,9 +314,9 @@ package body kv.apg.rules is
    end First;
 
    ----------------------------------------------------------------------------
-   function Get_Number(Self : Production_Class) return Predicate_Index_Type is
+   function Get_Number(Self : Production_Class) return Production_Index_Type is
    begin
-      if Self.Number = Predicate_Index_Type'LAST then
+      if Self.Number = Production_Index_Type'LAST then
          raise Unresolved_Error;
       end if;
       return Self.Number;
@@ -417,6 +423,12 @@ package body kv.apg.rules is
    begin
       return (Self.Dot_Position < Self.Production.Symbol_Count);
    end Has_Next;
+
+   ----------------------------------------------------------------------------
+   function Get_Production_Number(Self : Kernel_Class) return Production_Index_Type is
+   begin
+      return Self.Production.Get_Number;
+   end Get_Production_Number;
 
    ----------------------------------------------------------------------------
    function Get_Big_A(Self : Kernel_Class) return Rule_Pointer is
@@ -633,6 +645,14 @@ package body kv.apg.rules is
       return Self.Number;
    end Get_Number;
 
+   ----------------------------------------------------------------------------
+   function Get_Symbol(Self : Rule_Class) return Constant_Symbol_Pointer is
+      Symbol : access Non_Terminal_Class;
+   begin
+      Symbol := new Non_Terminal_Class'(Token => Self.Name_Token, Rule => Self.Me);
+      return Constant_Symbol_Pointer(Symbol);
+   end Get_Symbol;
+
 
 
 
@@ -659,6 +679,7 @@ package body kv.apg.rules is
       Self.Rules.Include(Decode(To_String(Rule.Get_Name), UTF_8), Rule);
       Self.Count := Self.Count + 1;
       Rule.Number := Non_Terminal_Index_Type(Self.Count);
+      Rule.Me := Rule;
    end Add_Rule;
 
    ----------------------------------------------------------------------------
@@ -677,20 +698,18 @@ package body kv.apg.rules is
       (Self   : in out Grammar_Class;
        Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
 
-      Location : kv.apg.locations.File_Location_Type;
-      Citation : constant String_Type := To_String_Type("Add_Meta_Rule");
-
       P : Production_Pointer;
       P_V : Production_Vectors.Vector;
       S : Rule_Pointer;
       R : Rule_Pointer := new Rule_Class;
+
    begin
-      Logger.Note_Debug(Location, Citation, "starting");
+      Logger.Note_By_Severity(Debug, "Add_Meta_Rule");
       S := Find_Start(Self);
       if S = null then
-         Logger.Note_Error(Location, Citation, "No start rule found!");
+         Logger.Note_By_Severity(Error, "Add_Meta_Rule: No start rule found!");
       end if;
-      Logger.Note_Debug(S.Name_Token.Get_Location, S.Name_Token.Get_Data, "Is a start rule");
+      Logger.Note_By_Severity(Debug, S.Name_Token.Cite("Is a start rule"));
       P := New_Production_Class;
       P.Append(New_Non_Terminal_From_Rule(S));
       P.Append(New_End_Of_File_Terminal);
@@ -747,14 +766,14 @@ package body kv.apg.rules is
                -- update the element from a Pre_Symbol_Class to either a Terminal_Class (token) or a Non_Terminal_Class (rule)
                -- log an error if the element does not resolve
                if Self.Find_Non_Terminal(Symbol.Token.Get_Data) /= null then
-                  Logger.Note_Info(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "    Symbol <" & Symbol.Token.Get_Data_As_String & "> is a nonterminal (rule)");
+                  Logger.Note_Debug(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "    Symbol <" & Symbol.Token.Get_Data_As_String & "> is a nonterminal (rule)");
                   To_Be_Deleted := Symbol;
                   Updated_Symbol := new Non_Terminal_Class'(Token => Symbol.Token, Rule => Self.Find_Non_Terminal(Symbol.Token.Get_Data));
                   Collect_Grammar_Symbol(Self, Updated_Symbol);
                   Production.Symbols.Replace_Element(Current, Updated_Symbol);
                   Free(To_Be_Deleted);
                elsif Self.Find_Terminal(Symbol.Token.Get_Data) /= kv.apg.enum.Not_Found_Error then
-                  Logger.Note_Info(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "    Symbol <" & Symbol.Token.Get_Data_As_String & "> is a terminal (token)");
+                  Logger.Note_Debug(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "    Symbol <" & Symbol.Token.Get_Data_As_String & "> is a terminal (token)");
                   Index := Self.Find_Terminal(Symbol.Token.Get_Data);
                   To_Be_Deleted := Symbol;
                   Updated_Symbol := new Terminal_Class'(Token => Self.Tokens.Get(Index), Key => kv.apg.fast.Key_Type(Index));
@@ -763,12 +782,13 @@ package body kv.apg.rules is
                   Free(To_Be_Deleted);
                else
                   if Symbol.all'TAG = Pre_Symbol_Class'TAG then
-                     Logger.Note_Info(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "    Symbol <" & Symbol.Token.Get_Data_As_String & "> is undefined (an error)");
+                     Logger.Note_Debug(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "    Symbol <" & Symbol.Token.Get_Data_As_String & "> is undefined (an error)");
                      Logger.Note_Error(Symbol.Token.Get_Location, Symbol.Token.Get_Data, "Symbol of production rule """ & Rule.Name_Token.Get_Data_As_String & """ not found.");
                      Self.Errors := Self.Errors + 1;
                   else
-                     Logger.Note_Info(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "    Symbol <" & Symbol.Token.Get_Data_As_String & "> was previously defined in place.");
-                     --Collect_Grammar_Symbol(Self, Symbol);
+                     Logger.Note_Debug(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "    Symbol <" & Symbol.Token.Get_Data_As_String & "> was previously defined in place.");
+                     -- Including the following line will cause the End_Of_File symbol to be in the collection
+                     Collect_Grammar_Symbol(Self, Symbol);
                   end if;
                end if;
                Next(Current);
@@ -874,7 +894,7 @@ package body kv.apg.rules is
          --Production.Number := Production_Number;
          --Production_Number := Production_Number + 1;
          Self.Max_P := Self.Max_P + 1;
-         Production.Number := Predicate_Index_Type(Self.Max_P);
+         Production.Number := Production_Index_Type(Self.Max_P);
       end Number;
 
       Current    : Production_Pointer;
@@ -1154,7 +1174,6 @@ package body kv.apg.rules is
        Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
 
       Start_Count : Natural := 0;
-      Location : kv.apg.locations.File_Location_Type;
 
    begin
       for Rule of Self.Rules loop
@@ -1164,7 +1183,7 @@ package body kv.apg.rules is
       end loop;
       if Start_Count /= 1 then
          Self.Errors := Self.Errors + 1;
-         Logger.Note_Error(Location, To_String_Type("start"), "Expected one rule flagged as the start rule, found" & Natural'IMAGE(Start_Count) & ".");
+         Logger.Note_By_Severity(Error, "Expected one rule flagged as the start rule, found" & Natural'IMAGE(Start_Count) & ".");
       end if;
    end Validate;
 
@@ -1230,7 +1249,7 @@ package body kv.apg.rules is
 
 
    ----------------------------------------------------------------------------
-   function Get_Production(Self : Grammar_Class; Number : Predicate_Index_Type) return Production_Pointer is
+   function Get_Production(Self : Grammar_Class; Number : Production_Index_Type) return Production_Pointer is
    begin
       for Rule of Self.Rules loop
          for Production of Rule.Productions loop
@@ -1266,15 +1285,15 @@ package body kv.apg.rules is
    end Rule_Number_Hi;
 
    ----------------------------------------------------------------------------
-   function Production_Number_Lo(Self : Grammar_Class) return Predicate_Index_Type is
+   function Production_Number_Lo(Self : Grammar_Class) return Production_Index_Type is
    begin
       return 1;
    end Production_Number_Lo;
 
    ----------------------------------------------------------------------------
-   function Production_Number_Hi(Self : Grammar_Class) return Predicate_Index_Type is
+   function Production_Number_Hi(Self : Grammar_Class) return Production_Index_Type is
    begin
-      return Predicate_Index_Type(Self.Max_P);
+      return Production_Index_Type(Self.Max_P);
    end Production_Number_Hi;
 
    ----------------------------------------------------------------------------
@@ -1296,6 +1315,29 @@ package body kv.apg.rules is
       return Self.All_Symbols;
    end Grammar_Symbols;
 
+   ----------------------------------------------------------------------------
+   function Translate(Self : Grammar_Class; Terminal : Terminal_Index_Type) return Constant_Symbol_Pointer is
+   begin
+      for S of Self.All_Symbols loop
+         if S.Is_Terminal then
+            if S.Get_Number = Terminal then
+               return S;
+            end if;
+         end if;
+      end loop;
+      return null;
+   end Translate;
+
+   ----------------------------------------------------------------------------
+   function Translate(Self : Grammar_Class; Terminals : Terminal_Sets.Set) return Symbol_Vectors.Vector is
+      Answer : Symbol_Vectors.Vector;
+   begin
+      for T of Terminals loop
+         Answer.Append(Self.Translate(T));
+      end loop;
+      return Answer;
+   end Translate;
+
 
    ----------------------------------------------------------------------------
    function First_Kernel_Set(Self : Grammar_Class) return Item_Sets.Set is
@@ -1309,7 +1351,7 @@ package body kv.apg.rules is
    end First_Kernel_Set;
 
    ----------------------------------------------------------------------------
-   function Closure
+   function Closure -- We are using kernels and closures expand kernels into items
       (Self   : Grammar_Class;
        Kernel : Item_Sets.Set;
        Logger : kv.apg.logger.Safe_Logger_Pointer) return Item_Sets.Set is
@@ -1317,6 +1359,24 @@ package body kv.apg.rules is
    begin
       return Kernel;
    end Closure;
+
+   ----------------------------------------------------------------------------
+   function Goto_Step_Over_One -- goto(I, X)
+      (Self   : Grammar_Class;
+       Kernel : Constant_Item_Pointer;
+       Index  : State_Index_Type;
+       Symbol : Constant_Symbol_Pointer;
+       Logger : kv.apg.logger.Safe_Logger_Pointer) return Item_Sets.Set is
+
+      Answer : Item_Sets.Set;
+
+   begin
+      if Kernel.Has_Next and then Symbol.Is_Same_As(Kernel.Get_Big_B.all) then
+         Logger.Note_By_Severity(Debug, "Add next kernel for: " & To_String(Kernel.Image));
+         Answer.Insert(Kernel.New_Next_Kernel_Class);
+      end if;
+      return Answer;
+   end Goto_Step_Over_One;
 
    ----------------------------------------------------------------------------
    function Goto_Step_Over -- goto(I, X)
@@ -1328,18 +1388,13 @@ package body kv.apg.rules is
 
       Answer : Item_Sets.Set;
 
-      Location : kv.apg.locations.File_Location_Type;
-
    begin
-      Logger.Note_Debug(Location, To_String_Type("Grammar_Class.Goto_Step_Over"), "Goto("&Img(Index)&", " & To_String(Symbol.Name) & ") -- over.");
+      Logger.Note_By_Severity(Debug, "Goto("&Img(Index)&", " & To_String(Symbol.Name) & ") -- over.");
       for Item of Kernel loop
-         Logger.Note_Debug(Location, To_String_Type("Grammar_Class.Goto_Step_Over"), "Processing kernel item: " & To_String(Item.Image));
-         if Item.Has_Next and then Symbol.Is_Same_As(Item.Get_Big_B.all) then
-            Logger.Note_Debug(Location, To_String_Type("Grammar_Class.Goto_Step_Into"), "Add next kernel for: " & To_String(Item.Image));
-            Answer.Insert(Item.New_Next_Kernel_Class);
-         end if;
+         Logger.Note_By_Severity(Debug, "Processing kernel item: " & To_String(Item.Image));
+         Answer.Union(Self.Goto_Step_Over_One(Item, Index, Symbol, Logger));
       end loop;
-      return Self.Closure(Answer, Logger);
+      return Answer;
    end Goto_Step_Over;
 
    type Rule_Flags_Type is array (Non_Terminal_Index_Type range <>) of Boolean;
@@ -1350,9 +1405,9 @@ package body kv.apg.rules is
        Element_Type => Rule_Pointer);
 
    ----------------------------------------------------------------------------
-   function Goto_Step_Into -- goto(I, X)
+   function Goto_Step_Into_One -- goto(I, X)
       (Self   : Grammar_Class;
-       Kernel : Item_Sets.Set;
+       Kernel : Constant_Item_Pointer;
        Index  : State_Index_Type;
        Symbol : Constant_Symbol_Pointer;
        Logger : kv.apg.logger.Safe_Logger_Pointer) return Item_Sets.Set is
@@ -1365,45 +1420,61 @@ package body kv.apg.rules is
 
       Examined : Rule_Flags_Type(Self.Rule_Number_Lo .. Self.Rule_Number_Hi) := (others => False);
 
-      Location : kv.apg.locations.File_Location_Type;
-
    begin
-      Logger.Note_Debug(Location, To_String_Type("Grammar_Class.Goto_Step_Into"), "Goto("&Img(Index)&" " & To_String(Symbol.Name) & ") -- into.");
-      for Item of Kernel loop
-         Logger.Note_Debug(Location, To_String_Type("Grammar_Class.Goto_Step_Into"), "Processing kernel item: " & To_String(Item.Image));
-         if Item.Has_Next then
-            Next := Item.Get_Big_B;
-            if not Next.Is_Terminal then
-               Logger.Note_Debug(Location, Next.Name, "Next is non-terminal");
-               Rule := Self.Find_Non_Terminal(Next.Name);
-               while Rule /= null loop
-                  Examined(Rule.Get_Number) := True;
-                  Logger.Note_Debug(Location, To_String_Type("Grammar_Class.Goto_Step_Into"), "Processing rule: " & To_String(Rule.Get_Name));
-                  for Production of Rule.Productions loop
-                     Logger.Note_Debug(Location, To_String_Type("Grammar_Class.Goto_Step_Into"), "Checking production: " & To_String(Production.Image));
+      if Kernel.Has_Next then
+         Next := Kernel.Get_Big_B;
+         if not Next.Is_Terminal then
+            Logger.Note_By_Severity(Debug, "Next is non-terminal: " & To_String(Next.Name));
+            Rule := Self.Find_Non_Terminal(Next.Name);
+            while Rule /= null loop
+               Examined(Rule.Get_Number) := True;
+               Logger.Note_By_Severity(Debug, "Processing rule: " & To_String(Rule.Get_Name));
+               for Production of Rule.Productions loop
+                  Logger.Note_By_Severity(Debug, "Checking production: " & To_String(Production.Image));
+                  if Production.Symbol_Count > 0 then -- if production isn't empty
                      if Symbol.Is_Same_As(Production.Get_Symbol(1).all) then
-                        Logger.Note_Debug(Location, To_String_Type("Grammar_Class.Goto_Step_Into"), "Add new kernel for: " & To_String(Production.Image));
+                        Logger.Note_By_Severity(Debug, "Add new kernel for: " & To_String(Production.Image));
                         Answer.Insert(New_Kernel_Class(Constant_Production_Pointer(Production), 1));
                      end if;
-                     -- * right most =>
+                     -- * right most => ; but this is really a left most dive
                      if not Production.Get_Symbol(1).Is_Terminal then
-                        First := Self.Find_Non_Terminal(Production.Get_Symbol(1).Name);
+                        First := Rule_Of(Production.Get_Symbol(1));
                         if not Examined(First.Get_Number) then
-                           Logger.Note_Debug(Location, To_String_Type("Grammar_Class.Goto_Step_Into"), "Follow this up: " & To_String(First.Get_Name));
+                           Logger.Note_By_Severity(Debug, "Follow this up: " & To_String(First.Get_Name));
                            Follow_Up.Append(First);
                         end if;
+                        -- TODO: ??? while can disappear keep moving right and going into
                      end if;
-                  end loop;
-                  Rule := null;
-                  if not Follow_Up.Is_Empty then
-                     Rule := Follow_Up.First_Element;
-                     Follow_Up.Delete_First;
                   end if;
                end loop;
-            end if;
+               Rule := null;
+               if not Follow_Up.Is_Empty then
+                  Rule := Follow_Up.First_Element;
+                  Follow_Up.Delete_First;
+               end if;
+            end loop;
          end if;
+      end if;
+      return Answer;
+   end Goto_Step_Into_One;
+
+   ----------------------------------------------------------------------------
+   function Goto_Step_Into -- goto(I, X)
+      (Self   : Grammar_Class;
+       Kernel : Item_Sets.Set;
+       Index  : State_Index_Type;
+       Symbol : Constant_Symbol_Pointer;
+       Logger : kv.apg.logger.Safe_Logger_Pointer) return Item_Sets.Set is
+
+      Answer : Item_Sets.Set;
+
+   begin
+      Logger.Note_By_Severity(Debug, "Goto("&Img(Index)&" " & To_String(Symbol.Name) & ") -- into.");
+      for Item of Kernel loop
+         Logger.Note_By_Severity(Debug, "Processing kernel item: " & To_String(Item.Image));
+         Answer.Union(Self.Goto_Step_Into_One(Item, Index, Symbol, Logger));
       end loop;
-      return Self.Closure(Answer, Logger);
+      return Answer;
    end Goto_Step_Into;
 
 
@@ -1416,48 +1487,70 @@ package body kv.apg.rules is
    end Img;
 
    ----------------------------------------------------------------------------
-   function Generate_Parser_States(Self : Grammar_Class; Logger : kv.apg.logger.Safe_Logger_Pointer) return State_Space.Vector is
+   function Generate_Parser_States(Self : Grammar_Class; Logger : kv.apg.logger.Safe_Logger_Pointer) return State_Information_Type is
 
-      Answer : State_Space.Vector;
+      Answer : State_Information_Type;
       Count : State_Index_Type := 0;
       Current : State_Index_Type := 0;
       Found_More : Boolean := False;
-      Location : kv.apg.locations.File_Location_Type;
-      Working : Item_Sets.Set;
+      Hint : Action_Hint_Type;
 
       -------------------------------------------------------------------------
       procedure Add_State(Kernels : in Item_Sets.Set) is
          use Item_Sets;
+
          State_Def : State_Definition_Type;
+
       begin
          for S in State_Index_Type(0) .. Count-1 loop
-            if Answer(S).Kernels = Kernels then
-               Logger.Note_Debug(Location, To_String_Type("Grammar_Class.Generate_Parser_States"), "Not adding state definition because it matches: " & Img(S));
+            if Answer.States(S).Kernels = Kernels then
+               Logger.Note_By_Severity(Debug, "Not adding state definition because it matches: " & Img(S));
+               Hint.To_State := S;
+               State_Def := Answer.States(S);
+               Answer.Hints.Append(Hint);
+               Answer.States.Replace_Element(S, State_Def);
                return;
             end if;
          end loop;
-         Logger.Note_Debug(Location, To_String_Type("Grammar_Class.Generate_Parser_States"), "Adding state definition for: " & Img(Count));
+         Logger.Note_By_Severity(Debug, "Adding state definition for: " & Img(Count));
+         Hint.To_State := Count;
          State_Def.Index := Count;
-         Count := Count + 1;
          State_Def.Kernels := Kernels;
-         Answer.Append(State_Def);
+         Answer.Hints.Append(Hint);
+         Answer.States.Append(State_Def);
+         Count := Count + 1;
       end Add_State;
 
+      -------------------------------------------------------------------------
+      procedure Process_Source_Kernels
+         (Symbol : in Constant_Symbol_Pointer;
+          Kernels : in Item_Sets.Set) is
+
+         Working : Item_Sets.Set;
+
+      begin
+         for K of Kernels loop -- Constant_Item_Pointer
+            Working.Union(Self.Goto_Step_Over_One(K, Current, Symbol, Logger));
+            Working.Union(Self.Goto_Step_Into_One(K, Current, Symbol, Logger));
+         end loop;
+         if not Working.Is_Empty then
+            Add_State(Working);
+            Found_More := True;
+         end if;
+      end Process_Source_Kernels;
+
+      K : Item_Sets.Set;
+
    begin
+      Hint.From_State := 0;
       Add_State(Self.First_Kernel_Set);
       loop
-         Logger.Note_Debug(Location, To_String_Type("Grammar_Class.Generate_Parser_States"), "Processing " & Img(Current));
+         Logger.Note_By_Severity(Debug, "Processing " & Img(Current));
+         Hint.From_State := Current;
          for Symbol of Self.All_Symbols loop
-            Working := Self.Goto_Step_Over(Answer(Current).Kernels, Current, Symbol, Logger);
-            if not Working.Is_Empty then
-               Add_State(Working);
-               Found_More := True;
-            end if;
-            Working := Self.Goto_Step_Into(Answer(Current).Kernels, Current, Symbol, Logger);
-            if not Working.Is_Empty then
-               Add_State(Working);
-               Found_More := True;
-            end if;
+            Hint.Symbol := Symbol;
+            K := Answer.States.Constant_Reference(Current).Kernels;
+            Process_Source_Kernels(Symbol, K);
          end loop;
          Current := Current + 1;
       exit when Current > Count; -- Should not be able to get here, but protect against pathological case
@@ -1478,11 +1571,32 @@ package body kv.apg.rules is
 
    ----------------------------------------------------------------------------
    function Image(Action_Entry : Action_Entry_Type) return String is
-      Answer : String := State_Index_Type'IMAGE(Action_Entry.Where);
-      Actions : constant array (Action_Type) of Character := ('S', 'R', 'A', 'E');
+--      Answer : String := State_Index_Type'IMAGE(Action_Entry.Where);
+--      Actions : constant array (Action_Type) of Character := ('S', 'R', 'A', 'E');
+--   begin
+--      Answer(1) := Actions(Action_Entry.What);
+--      return Answer;
    begin
-      Answer(1) := Actions(Action_Entry.What);
-      return Answer;
+      case Action_Entry.What is
+         when Shift =>
+            declare
+               Answer : String := State_Index_Type'IMAGE(Action_Entry.Where);
+            begin
+               Answer(1) := 's';
+               return Answer;
+            end;
+         when Reduce =>
+            declare
+               Answer : String := Production_Index_Type'IMAGE(Action_Entry.Production);
+            begin
+               Answer(1) := 'r';
+               return Answer;
+            end;
+         when Accept_Input =>
+            return "acc";
+         when Error =>
+            return "err";
+      end case;
    end Image;
 
 
@@ -1499,6 +1613,7 @@ package body kv.apg.rules is
    begin
       Self.Table := new Action_Table_Matrix_Type(0..States, Terminal_Lo..Terminal_Hi);
       Self.Table.all := (others => (others => Default_Action_Entry));
+      Self.Errors := 0;
    end;
 
    ----------------------------------------------------------------------------
@@ -1506,9 +1621,15 @@ package body kv.apg.rules is
       (Self     : in out Action_Table_Class;
        Action   : in     Action_Entry_Type;
        State    : in     State_Index_Type;
-       Terminal : in     Terminal_Index_Type) is
+       Terminal : in     Terminal_Index_Type;
+       Logger   : in     kv.apg.logger.Safe_Logger_Pointer) is
    begin
-      Self.Table(State, Terminal) := Action;
+      if Self.Table(State, Terminal) = Default_Action_Entry then
+         Self.Table(State, Terminal) := Action;
+      else
+         Logger.Note_By_Severity(Error, Image(Self.Table(State, Terminal)) & "/" & Image(Action) & " conflict in state " & Img(State) & " for terminal " & Terminal_Index_Type'IMAGE(Terminal));
+         Self.Errors := Self.Errors + 1;
+      end if;
    end Set_Action;
 
    ----------------------------------------------------------------------------
@@ -1519,6 +1640,12 @@ package body kv.apg.rules is
    begin
       return Self.Table(State, Terminal);
    end Get_Action;
+
+   ----------------------------------------------------------------------------
+   function Error_Count(Self : Action_Table_Class) return Natural is
+   begin
+      return Self.Errors;
+   end Error_Count;
 
 
 
@@ -1595,27 +1722,134 @@ package body kv.apg.rules is
        Logger  : in     kv.apg.logger.Safe_Logger_Pointer) is
 
       Start_State : State_Entry_Type := (Symbol => null, State => 0);
-      Location : kv.apg.locations.File_Location_Type;
+      Info : State_Information_Type;
+      State_Count : State_Index_Type;
+      Action : Action_Entry_Type;
+      Rule : Rule_Pointer;
+      Symbol : Constant_Symbol_Pointer;
 
    begin
-      Logger.Note_Debug(Location, To_String_Type("Parser_Engine_Class.Initialize"), "Start");
+      Logger.Note_By_Severity(Debug, "Parser_Engine_Class.Initialize Start");
       Self.Grammar := Grammar;
-      Logger.Note_Debug(Location, To_String_Type("Parser_Engine_Class.Initialize"), "Push state 0");
+      Info := Grammar.Generate_Parser_States(Logger);
+      State_Count := State_Index_Type(Info.States.Length)+1;
+      Logger.Note_By_Severity(Debug, "Push state 0");
       Self.Stack.Push_State(Start_State);
-      Logger.Note_Debug(Location, To_String_Type("Parser_Engine_Class.Initialize"), "Set up action table");
-      Self.Actions.Initialize(50, Grammar.Terminal_Lo, Grammar.Terminal_Hi);
-      Logger.Note_Debug(Location, To_String_Type("Parser_Engine_Class.Initialize"), "Set up goto table");
-      Self.Gotos.Initialize(50, Grammar.Rule_Number_Lo, Grammar.Rule_Number_Hi);
-      Logger.Note_Debug(Location, To_String_Type("Parser_Engine_Class.Initialize"), "Done");
+      Logger.Note_By_Severity(Debug, "Set up action table");
+      Self.Actions.Initialize(State_Count, Grammar.Terminal_Lo, Grammar.Terminal_Hi);
+      Logger.Note_By_Severity(Debug, "Set up goto table");
+      Self.Gotos.Initialize(State_Count, Grammar.Rule_Number_Lo, Grammar.Rule_Number_Hi);
+
+      for Hint of Info.Hints loop
+         if Hint.Symbol /= null then
+            if Hint.Symbol.Is_Terminal then
+               if Hint.Symbol.Get_Number = End_Of_File then
+                  -- Add an accept action
+                  Action := (What => Accept_Input);
+                  Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add ACCEPT " & To_String(Hint.Symbol.Name));
+               else
+                  -- Add a shift action
+                  Action := (What => Shift, Where => Hint.To_State);
+                  Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add SHIFT " & To_String(Hint.Symbol.Name) & " and goto " & Img(Hint.To_State));
+               end if;
+               Self.Actions.Set_Action(Action, Hint.From_State, Hint.Symbol.Get_Number, Logger);
+            else
+               -- Add a non-terminal goto
+               Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add GOTO " & To_String(Hint.Symbol.Name) & " and goto " & Img(Hint.To_State));
+               Self.Gotos.Set_Goto(Hint.To_State, Hint.From_State, Rule_Of(Hint.Symbol).Get_Number);
+            end if;
+         end if;
+      end loop;
+
+      for State of Info.States loop
+         for Item of State.Kernels loop
+            if not Item.Has_Next then
+               Rule := Item.Get_Big_A;
+               for T of Rule.Follow loop
+                  Symbol := Grammar.Translate(T);
+                  -- Add a reduce action
+                  Action := (What => Reduce, Production => Item.Get_Production_Number);
+                  Logger.Note_By_Severity(Debug,
+                     Img(State.Index) & ": add RUDUCE by production" & Production_Index_Type'IMAGE(Item.Get_Production_Number) &
+                     ", terminal " & To_String(Symbol.Name));
+                  Self.Actions.Set_Action(Action, State.Index, T, Logger);
+               end loop;
+            end if;
+         end loop;
+      end loop;
+
+      Logger.Note_By_Severity(Debug, "Parser_Engine_Class.Initialize Done");
    end Initialize;
+
+   ----------------------------------------------------------------------------
+   function Img(State : State_Entry_Type) return String is
+   begin
+      if State.Symbol = null then
+         return "[null, " & Img(State.State) & "]";
+      end if;
+      return "[" & To_String(State.Symbol.Name) & ", " & Img(State.State) & "]";
+   end Img;
 
    ----------------------------------------------------------------------------
    procedure Parse_Token
       (Self   : in out Parser_Engine_Class;
        Token  : in     Terminal_Index_Type;
        Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
+
+      Unshifted : Boolean := True;
+      Current_State : State_Entry_Type;
+      State_Index : State_Index_Type;
+      Action : Action_Entry_Type;
+      Rule : Rule_Pointer;
+      Symbol : Constant_Symbol_Pointer;
+      Production : Production_Pointer;
+
    begin
-      null;
+      Symbol := Self.Grammar.Translate(Token);
+      while Unshifted loop
+         State_Index := Self.Stack.Top_State;
+         Logger.Note_By_Severity(Debug, "Processing state "&Img(State_Index)&" with terminal " & To_String(Symbol.Name));
+         Action := Self.Actions.Get_Action(State_Index, Token);
+         case Action.What is
+            when Shift =>
+               Current_State := (Symbol => Symbol, State => Action.Where);
+               Logger.Note_By_Severity(Debug, "SHIFT " & Img(Current_State));
+               Self.Stack.Push_State(Current_State);
+               Unshifted := False;
+            when Reduce =>
+               Production := Self.Grammar.Get_Production(Action.Production);
+               Logger.Note_By_Severity(Debug, "REDUCE by " & To_String(Production.Image) & ".");
+               for I in 1..Production.Symbol_Count loop
+                  Current_State := Self.Stack.Pop_State;
+                  Logger.Note_By_Severity(Debug, "---- pop "  & Img(Current_State));
+               end loop;
+               State_Index := Self.Stack.Top_State;
+               Rule := Production.Get_Rule;
+               Current_State := (Symbol => Rule.Get_Symbol, State => Self.Gotos.Get_Goto(State_Index, Rule.Get_Number));
+               Logger.Note_By_Severity(Debug, "PUSH " & Img(Current_State));
+               Self.Stack.Push_State(Current_State);
+            when Accept_Input =>
+               Logger.Note_By_Severity(Information, "ACCEPT!!!!");
+               Unshifted := False;
+               Self.Accepted := True;
+            when Error =>
+               Logger.Note_By_Severity(Error, "ERROR!!!!");
+               Unshifted := False;
+               Self.Errors := Self.Errors + 1;
+         end case;
+      end loop;
    end Parse_Token;
+
+   ----------------------------------------------------------------------------
+   function Error_Count(Self : Parser_Engine_Class) return Natural is
+   begin
+      return Self.Errors + Self.Actions.Error_Count;
+   end Error_Count;
+
+   ----------------------------------------------------------------------------
+   function Has_Accepted(Self : Parser_Engine_Class) return Boolean is
+   begin
+      return Self.Accepted and (Self.Errors = 0);
+   end Has_Accepted;
 
 end kv.apg.rules;

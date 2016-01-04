@@ -63,6 +63,12 @@ package body kv.apg.tokens is
    end Is_Eos;
 
    ----------------------------------------------------------------------------
+   function Cite(Self : Token_Class; Additional : String := "") return String is
+   begin
+      return "(" & Self.Location.Cite(Self.Get_Data_As_String) & "): " & Additional;
+   end Cite;
+
+   ----------------------------------------------------------------------------
    function "="(L, R : Token_Class) return Boolean is
       use kv.apg.locations; -- "="
    begin

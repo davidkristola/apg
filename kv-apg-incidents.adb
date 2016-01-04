@@ -51,4 +51,15 @@ package body kv.apg.incidents is
       end if;
    end Note;
 
+   ----------------------------------------------------------------------------
+   overriding procedure Note
+      (Self        : in     Writer_Report_Class;
+       Severity    : in     Severity_Type;
+       Information : in     String) is
+   begin
+      if Severity >= Self.Level then
+         Self.Writer.Write_Line(Severity_Type'IMAGE(Severity) & ": " & Information);
+      end if;
+   end Note;
+
 end kv.apg.incidents;

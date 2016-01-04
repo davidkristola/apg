@@ -19,6 +19,12 @@ package body kv.apg.locations is
    end Image;
 
    -------------------------------------------------------------------------
+   function Cite(Self : Location_Type; Additional : String := "") return String is
+   begin
+      return "(" & Self.Image & "): " & Additional;
+   end Cite;
+
+   -------------------------------------------------------------------------
    procedure Next_Line(Self : in out Location_Type) is
    begin
       Self.Line := Self.Line + 1;

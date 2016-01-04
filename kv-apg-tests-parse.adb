@@ -6,6 +6,7 @@ with Ada.Tags; use Ada.Tags;
 with Ada.Strings.UTF_Encoding.Strings;
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Containers;
+with Ada.Exceptions; use Ada.Exceptions;
 
 with kv.apg.lex;
 with kv.apg.tokens;
@@ -261,7 +262,7 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type No_Start_Gramar_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out No_Start_Gramar_Test) is
-      Expected : constant String := "ERROR (File: , line 1, column 1): Expected one rule flagged as the start rule, found 0. (""start"").";
+      Expected : constant String := "ERROR: Expected one rule flagged as the start rule, found 0.";
    begin
       Set_Up_Start_Test(T);
 
@@ -277,7 +278,7 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Two_Start_Gramar_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Two_Start_Gramar_Test) is
-      Expected : constant String := "ERROR (File: , line 1, column 1): Expected one rule flagged as the start rule, found 2. (""start"").";
+      Expected : constant String := "ERROR: Expected one rule flagged as the start rule, found 2.";
    begin
       Set_Up_Start_Test(T, " start", "", " start");
 
@@ -439,7 +440,7 @@ package body kv.apg.tests.parse is
       T.Assert(not Pp.Can_Disappear, "Rule 'program' only production should not be able to disappear");
       T.Assert(not Pp.Matches_An_Empty_Sequence, "Rule 'program' only production should not match an empty sequence");
       T.Assert(Pp.Has_A_Terminal, "Rule 'program' only production should have a terminal");
-      T.Assert(Pp.Get_Number = 5, "Expected production number to be 5, got" & Predicate_Index_Type'IMAGE(Pp.Get_Number));
+      T.Assert(Pp.Get_Number = 5, "Expected production number to be 5, got" & Production_Index_Type'IMAGE(Pp.Get_Number));
 
       Rule := T.Grammar.Find_Non_Terminal(To_String_Type("alpha_list"));
       T.Assert(Rule.Production_Count = 2, "Expected 2 productions for rule 'alpha_list'");
@@ -449,12 +450,12 @@ package body kv.apg.tests.parse is
       T.Assert(not Pp.Can_Disappear, "Rule 'alpha_list' production 1 should not be able to disappear");
       T.Assert(not Pp.Matches_An_Empty_Sequence, "Rule 'alpha_list' production 1 should not match an empty sequence");
       T.Assert(Pp.Has_A_Terminal, "Rule 'alpha_list' production 1 should have a terminal");
-      T.Assert(Pp.Get_Number = 1, "Expected production number to be 1, got" & Predicate_Index_Type'IMAGE(Pp.Get_Number));
+      T.Assert(Pp.Get_Number = 1, "Expected production number to be 1, got" & Production_Index_Type'IMAGE(Pp.Get_Number));
       Pp := Rule.Get_Production(2);
       T.Assert(Pp.Can_Disappear, "Rule 'alpha_list' production 2 should be able to disappear");
       T.Assert(not Pp.Matches_An_Empty_Sequence, "Rule 'alpha_list' production 2 should not match an empty sequence");
       T.Assert(not Pp.Has_A_Terminal, "Rule 'alpha_list' production 2 should not have a terminal");
-      T.Assert(Pp.Get_Number = 2, "Expected production number to be 2, got" & Predicate_Index_Type'IMAGE(Pp.Get_Number));
+      T.Assert(Pp.Get_Number = 2, "Expected production number to be 2, got" & Production_Index_Type'IMAGE(Pp.Get_Number));
 
       Rule := T.Grammar.Find_Non_Terminal(To_String_Type("beta_list"));
       T.Assert(Rule.Production_Count = 2, "Expected 2 productions for rule 'beta_list'");
@@ -464,12 +465,12 @@ package body kv.apg.tests.parse is
       T.Assert(not Pp.Can_Disappear, "Rule 'beta_list' production 1 should not be able to disappear");
       T.Assert(not Pp.Matches_An_Empty_Sequence, "Rule 'beta_list' production 1 should not match an empty sequence");
       T.Assert(Pp.Has_A_Terminal, "Rule 'beta_list' production 1 should have a terminal");
-      T.Assert(Pp.Get_Number = 6, "Expected production number to be 6, got" & Predicate_Index_Type'IMAGE(Pp.Get_Number));
+      T.Assert(Pp.Get_Number = 6, "Expected production number to be 6, got" & Production_Index_Type'IMAGE(Pp.Get_Number));
       Pp := Rule.Get_Production(2);
       T.Assert(Pp.Can_Disappear, "Rule 'beta_list' production 2 should be able to disappear");
       T.Assert(not Pp.Matches_An_Empty_Sequence, "Rule 'beta_list' production 2 should not match an empty sequence");
       T.Assert(not Pp.Has_A_Terminal, "Rule 'beta_list' production 2 should not have a terminal");
-      T.Assert(Pp.Get_Number = 7, "Expected production number to be 7, got" & Predicate_Index_Type'IMAGE(Pp.Get_Number));
+      T.Assert(Pp.Get_Number = 7, "Expected production number to be 7, got" & Production_Index_Type'IMAGE(Pp.Get_Number));
 
       Rule := T.Grammar.Find_Non_Terminal(To_String_Type("gamma_list"));
       T.Assert(Rule.Production_Count = 2, "Expected 2 productions for rule 'gamma_list'");
@@ -479,12 +480,12 @@ package body kv.apg.tests.parse is
       T.Assert(not Pp.Can_Disappear, "Rule 'gamma_list' production 1 should not be able to disappear");
       T.Assert(not Pp.Matches_An_Empty_Sequence, "Rule 'gamma_list' production 1 should not match an empty sequence");
       T.Assert(Pp.Has_A_Terminal, "Rule 'gamma_list' production 1 should have a terminal");
-      T.Assert(Pp.Get_Number = 3, "Expected production number to be 3, got" & Predicate_Index_Type'IMAGE(Pp.Get_Number));
+      T.Assert(Pp.Get_Number = 3, "Expected production number to be 3, got" & Production_Index_Type'IMAGE(Pp.Get_Number));
       Pp := Rule.Get_Production(2);
       T.Assert(Pp.Can_Disappear, "Rule 'gamma_list' production 2 should be able to disappear");
       T.Assert(Pp.Matches_An_Empty_Sequence, "Rule 'gamma_list' production 2 should match an empty sequence");
       T.Assert(not Pp.Has_A_Terminal, "Rule 'gamma_list' production 2 should not have a terminal");
-      T.Assert(Pp.Get_Number = 4, "Expected production number to be 4, got" & Predicate_Index_Type'IMAGE(Pp.Get_Number));
+      T.Assert(Pp.Get_Number = 4, "Expected production number to be 4, got" & Production_Index_Type'IMAGE(Pp.Get_Number));
 
       Sp := T.Grammar.Get_Symbol(To_String_Type("program"), 1, 1);
       T.Assert(Sp.Name = To_String_Type("alpha_list"), "Expected Ep.Name to be alpha_list, got " & To_UTF(Sp.Name));
@@ -788,7 +789,7 @@ package body kv.apg.tests.parse is
       T.Assert(Item.Get_Big_A = Rule, "Expected Big A of Item to be alpha_list, got " & To_String(Item.Get_Big_A.Get_Name));
       T.Assert(Item.Get_Big_B = Production.Get_Symbol(1), "Expected Item.Get_Big_B to be " & To_String(Production.Get_Symbol(1).Name) & ", got " & To_String(Item.Get_Big_B.Name));
       T.Assert(Item.Get_Little_A = Terminal, "Expected Item.Get_Little_A yo be Alpha terminal, got " & To_String(Item.Get_Little_A.Name));
---      T.Assert(Item.Get_Little_Alpha = null, "Expected Item.Get_Little_Alpha to be ɛ (null), got something else");
+      T.Assert(Item.Get_Little_Alpha = null, "Expected Item.Get_Little_Alpha to be ɛ (null), got something else");
       T.Assert(Item.Get_Little_Beta = Production.Get_Symbol(2), "Expected Item.Get_Little_Beta to be Alpha, got something else");
       Free(Item);
    end Run;
@@ -813,7 +814,7 @@ package body kv.apg.tests.parse is
       T.Assert(Item.Get_Big_B = Production.Get_Symbol(2), "Expected Item.Get_Big_B to be " & To_String(Production.Get_Symbol(1).Name) & ", got " & To_String(Item.Get_Big_B.Name));
       T.Assert(Item.Get_Little_A = Terminal, "Expected Item.Get_Little_A yo be Gamma terminal, got " & To_String(Item.Get_Little_A.Name));
       T.Assert(Item.Get_Little_Alpha = Production.Get_Symbol(1), "Expected Item.Get_Little_Alpha to be alpha_list, got something else");
---      T.Assert(Item.Get_Little_Beta = null, "Expected Item.Get_Little_Beta to be ɛ (null), got something else");
+      T.Assert(Item.Get_Little_Beta = null, "Expected Item.Get_Little_Beta to be ɛ (null), got something else");
       Free(Item);
    end Run;
 
@@ -834,10 +835,10 @@ package body kv.apg.tests.parse is
       Item := New_Item_Class(Constant_Production_Pointer(Production), 2, Terminal);
       T.Assert(Item.Image = To_String_Type("[alpha_list -> alpha_list Alpha ., Gamma]"), "Item.Image is wrong, got " & To_String(Item.Image));
       T.Assert(Item.Get_Big_A = Rule, "Expected Big A of Item to be alpha_list, got " & To_String(Item.Get_Big_A.Get_Name));
---      T.Assert(Item.Get_Big_B = null, "Expected Item.Get_Big_B to be  ɛ (null), got something else");
+      T.Assert(Item.Get_Big_B = null, "Expected Item.Get_Big_B to be  ɛ (null), got something else");
       T.Assert(Item.Get_Little_A = Terminal, "Expected Item.Get_Little_A yo be Gamma terminal, got " & To_String(Item.Get_Little_A.Name));
       T.Assert(Item.Get_Little_Alpha = Production.Get_Symbol(2), "Expected Item.Get_Little_Alpha to be Alpha, got something else");
---      T.Assert(Item.Get_Little_Beta = null, "Expected Item.Get_Little_Beta to be ɛ (null), got something else");
+      T.Assert(Item.Get_Little_Beta = null, "Expected Item.Get_Little_Beta to be ɛ (null), got something else");
       Free(Item);
    end Run;
 
@@ -891,7 +892,7 @@ package body kv.apg.tests.parse is
 
    ----------------------------------------------------------------------------
    -- Grammar from example 4.46 the Dragon Book (page 241)
-   procedure Set_Up_Alternate_SLR_Grammar
+   procedure Set_Up_SLR_Grammar
       (T : in out Grammar_Test_Class'CLASS;
        Logger : in kv.apg.logger.Safe_Logger_Pointer) is
       Add_EOF : constant Boolean := True;
@@ -916,7 +917,7 @@ package body kv.apg.tests.parse is
       T.Grammar.Resolve_Follows(not Add_EOF, Logger);
       T.Grammar.Validate(Logger);
       T.Assert(T.Grammar.Get_Error_Count = 0, "Expected 0 resolve/validate errors got" & Natural'IMAGE(T.Grammar.Get_Error_Count));
-   end Set_Up_Alternate_SLR_Grammar;
+   end Set_Up_SLR_Grammar;
 
    ----------------------------------------------------------------------------
    procedure Check_Kernel_Set_First
@@ -990,7 +991,7 @@ package body kv.apg.tests.parse is
           Level  => Debug);
       --Logger := CL'UNCHECKED_ACCESS;
 
-      Set_Up_Alternate_SLR_Grammar(T, Logger);
+      Set_Up_SLR_Grammar(T, Logger);
       I0 := T.Grammar.First_Kernel_Set;
       Check_Kernel_Set_First(T, I0, "I0", I0_Expected);
 
@@ -1036,13 +1037,53 @@ package body kv.apg.tests.parse is
    end Run;
 
    ----------------------------------------------------------------------------
+   procedure Debug_Print_States
+      (T : in     Grammar_Test_Class'CLASS;
+       All_Symbols : kv.apg.rules.Symbol_Vectors.Vector;
+       State_Info : kv.apg.rules.State_Information_Type) is
+
+      use kv.apg.rules;
+      use Ada.Containers;
+
+      function Safe_Name(S : Constant_Symbol_Pointer) return String is
+      begin
+         if S = null then
+            return "null";
+         end if;
+         return To_String(S.Name);
+      exception
+         when X: others =>
+            return Exception_Name(X) & "+" & Exception_Message(X);
+      end Safe_Name;
+
+   begin
+      for S of All_Symbols loop
+         Put_Line(To_String(S.Name));
+      end loop;
+      for P in T.Grammar.Production_Number_Lo .. T.Grammar.Production_Number_Hi loop
+         Put_Line("Production "&Production_Index_Type'IMAGE(P)&" = " & To_String(T.Grammar.Get_Production(P).Image));
+      end loop;
+      for S of State_Info.States loop
+         Put_Line("----- " & Img(S.Index));
+         for K of S.Kernels loop
+            Put_Line(To_String(K.Image));
+         end loop;
+      end loop;
+      for H of State_Info.Hints loop
+         Put_Line("Symbol "&Safe_Name(H.Symbol)&
+                  ", From "&Img(H.From_State)&
+                  ", To "&Img(H.To_State));
+      end loop;
+   end Debug_Print_States;
+
+   ----------------------------------------------------------------------------
    type Kernels_3_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Kernels_3_Test) is
       -- This test checks the states listed in Figure 4.42 of the Dragon Book (page 241).
       use kv.apg.rules;
       use Ada.Containers;
       All_Symbols : Symbol_Vectors.Vector;
-      All_States : State_Space.Vector;
+      State_Info : State_Information_Type;
       Logger : kv.apg.logger.Safe_Logger_Pointer := T.Logger'UNCHECKED_ACCESS;
       CW : aliased kv.apg.writer.console.Console_Writer_Class;
       CL : aliased kv.apg.logger.writer.Writer_Logger_Class;
@@ -1052,21 +1093,112 @@ package body kv.apg.tests.parse is
           Level  => Debug);
       --Logger := CL'UNCHECKED_ACCESS;
 
-      Set_Up_Alternate_SLR_Grammar(T, Logger);
+      Set_Up_SLR_Grammar(T, Logger);
       All_Symbols := T.Grammar.Grammar_Symbols;
---      for S of All_Symbols loop
---         Put_Line(To_String(S.Name));
---      end loop;
-      T.Assert(All_Symbols.Length = 6, "Expected 6 symbols in the SLR grammar.");
-      All_States := T.Grammar.Generate_Parser_States(Logger);
-      T.Assert(All_States.Length = 10, "Expected 10 parser states in the SLR grammar, got " & Natural'IMAGE(Natural(All_States.Length)));
---      for S of All_States loop
---         Put_Line("----- " & Img(S.Index));
---         for K of S.Kernels loop
---            Put_Line(To_String(K.Image));
---         end loop;
---      end loop;
+      T.Assert(All_Symbols.Length = 7, "Expected 7 symbols in the SLR grammar.");
+      State_Info := T.Grammar.Generate_Parser_States(Logger);
+      T.Assert(State_Info.States.Length = 11, "Expected 11 parser states in the SLR grammar, got " & Natural'IMAGE(Natural(State_Info.States.Length)));
+      --Debug_Print_States(T, All_Symbols, State_Info);
    end Run;
+
+   ----------------------------------------------------------------------------
+   procedure Add_4_22_Enum(T : in out Grammar_Test_Class'CLASS) is
+   begin
+      T.Enum.Initialize(+"Enum_Type");
+      T.Enum.Append(+"plus");        -- 1
+      T.Enum.Append(+"times");       -- 2
+      T.Enum.Append(+"id");          -- 3
+      T.Enum.Append(+"open");          -- 4
+      T.Enum.Append(+"close");          -- 5
+      T.Grammar.Initialize(T.Enum);
+   end Add_4_22_Enum;
+
+   ----------------------------------------------------------------------------
+   -- Grammar from example 4.46 the Dragon Book (page 241)
+   procedure Set_Up_4_22_Grammar
+      (T : in out Grammar_Test_Class'CLASS;
+       Logger : in kv.apg.logger.Safe_Logger_Pointer) is
+      Add_EOF : constant Boolean := True;
+   begin
+      Add_4_22_Enum(T);
+      Run_Basic_Grammar_Test(T, 1,
+         (01 => To_String_Type("rule E = start"),
+          02 => To_String_Type(" | E plus E => «null;»"),
+          03 => To_String_Type(" | E times E => «null;»"),
+          04 => To_String_Type(" | open E close => «null;»"),
+          05 => To_String_Type(" | id => «null;»"),
+          06 => To_String_Type(" ;")));
+      T.Grammar.Add_Meta_Rule(Logger);
+      T.Grammar.Resolve_Rules(Logger);
+      T.Grammar.Resolve_Productions(Logger);
+      T.Grammar.Resolve_Firsts(Logger);
+      T.Grammar.Resolve_Follows(not Add_EOF, Logger);
+      T.Grammar.Validate(Logger);
+      T.Assert(T.Grammar.Get_Error_Count = 0, "Expected 0 resolve/validate errors got" & Natural'IMAGE(T.Grammar.Get_Error_Count));
+   end Set_Up_4_22_Grammar;
+
+   ----------------------------------------------------------------------------
+   type Kernels_4_Test is new Grammar_Test_Class with null record;
+   procedure Run(T : in out Kernels_4_Test) is
+      -- This test checks the states listed in Figure 4.46 of the Dragon Book (page 248).
+      use kv.apg.rules;
+      use Ada.Containers;
+      All_Symbols : Symbol_Vectors.Vector;
+      State_Info : State_Information_Type;
+      Logger : kv.apg.logger.Safe_Logger_Pointer := T.Logger'UNCHECKED_ACCESS;
+      CW : aliased kv.apg.writer.console.Console_Writer_Class;
+      CL : aliased kv.apg.logger.writer.Writer_Logger_Class;
+
+   begin
+      CL.Initialize
+         (Writer => CW'UNCHECKED_ACCESS,
+          Level  => Debug);
+      --Logger := CL'UNCHECKED_ACCESS;
+
+      Set_Up_4_22_Grammar(T, Logger);
+      All_Symbols := T.Grammar.Grammar_Symbols;
+      T.Assert(All_Symbols.Length = 7, "Expected 7 symbols in the 4.22 grammar.");
+      State_Info := T.Grammar.Generate_Parser_States(Logger);
+      T.Assert(State_Info.States.Length = 11, "Expected 11 parser states in the 4.22 grammar, got " & Natural'IMAGE(Natural(State_Info.States.Length)));
+      --Debug_Print_States(T, All_Symbols, State_Info);
+   end Run;
+
+
+   ----------------------------------------------------------------------------
+   type Kernels_5_Test is new Grammar_Test_Class with null record;
+   procedure Run(T : in out Kernels_5_Test) is
+      use kv.apg.rules;
+      use Ada.Containers;
+      All_Symbols : Symbol_Vectors.Vector;
+      State_Info : State_Information_Type;
+
+      Add_EOF : constant Boolean := True;
+
+      Logger : kv.apg.logger.Safe_Logger_Pointer := T.Logger'UNCHECKED_ACCESS;
+      CW : aliased kv.apg.writer.console.Console_Writer_Class;
+      CL : aliased kv.apg.logger.writer.Writer_Logger_Class;
+   begin
+      CL.Initialize
+         (Writer => CW'UNCHECKED_ACCESS,
+          Level  => Debug);
+      --Logger := CL'UNCHECKED_ACCESS;
+
+      Set_Up_ETF_Grammar(T);
+      T.Grammar.Add_Meta_Rule(Logger);
+      T.Grammar.Resolve_Rules(Logger);
+      T.Grammar.Resolve_Productions(Logger);
+      T.Grammar.Resolve_Firsts(Logger);
+      T.Grammar.Resolve_Follows(not Add_EOF, Logger);
+      T.Grammar.Validate(Logger);
+      T.Assert(T.Grammar.Get_Error_Count = 0, "Expected 0 resolve/validate errors got" & Natural'IMAGE(T.Grammar.Get_Error_Count));
+
+      All_Symbols := T.Grammar.Grammar_Symbols;
+      T.Assert(All_Symbols.Length = 9, "Expected 9 symbols in the ETF grammar, got " & Natural'IMAGE(Natural(All_Symbols.Length)));
+      State_Info := T.Grammar.Generate_Parser_States(Logger);
+      T.Assert(State_Info.States.Length = 13, "Expected 13 parser states in the ETF grammar, got " & Natural'IMAGE(Natural(State_Info.States.Length)));
+--      Debug_Print_States(T, All_Symbols, State_Info);
+   end Run;
+
 
 
 
@@ -1081,7 +1213,7 @@ package body kv.apg.tests.parse is
    begin
       Table.Initialize(5, kv.apg.rules.End_Of_File, 5);
       Action := (What => Shift, Where => 2);
-      Table.Set_Action(Action, 0, 0);
+      Table.Set_Action(Action, 0, 0, T.Logger'UNCHECKED_ACCESS);
       Action := Table.Get_Action(0, 0);
       T.Assert(Action.What = Shift, "Expected Shift");
       T.Assert(Action.Where = 2, "Expected 2");
@@ -1110,24 +1242,168 @@ package body kv.apg.tests.parse is
    end Run;
 
 
+
    ----------------------------------------------------------------------------
-   type Parser_Engine_1_Test is new Grammar_Test_Class with null record;
+   type Parser_Engine_Test_Class is abstract new Grammar_Test_Class with
+      record
+         Engine : aliased kv.apg.rules.Parser_Engine_Class;
+         CW : aliased kv.apg.writer.console.Console_Writer_Class;
+         CL : aliased kv.apg.logger.writer.Writer_Logger_Class;
+      end record;
+
+   ----------------------------------------------------------------------------
+   overriding procedure Set_Up(T : in out Parser_Engine_Test_Class) is
+      use kv.apg.rules;
+   begin
+      Set_Up(Grammar_Test_Class(T));
+      T.CL.Initialize
+         (Writer => T.CW'UNCHECKED_ACCESS,
+          Level  => Debug);
+   end Set_Up;
+
+
+   ----------------------------------------------------------------------------
+   procedure Load_ETF_Into_Engine
+      (T      : in out Parser_Engine_Test_Class'CLASS;
+       Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
+
+      Add_EOF : constant Boolean := True;
+
+   begin
+      Set_Up_ETF_Grammar(T);
+      T.Grammar.Add_Meta_Rule(Logger);
+      T.Grammar.Resolve_Rules(Logger);
+      T.Grammar.Resolve_Productions(Logger);
+      T.Grammar.Resolve_Firsts(Logger);
+      T.Grammar.Resolve_Follows(not Add_EOF, Logger);
+      T.Grammar.Validate(Logger);
+      T.Assert(T.Grammar.Get_Error_Count = 0, "Expected 0 resolve/validate errors got" & Natural'IMAGE(T.Grammar.Get_Error_Count));
+      T.Engine.Initialize(T.Grammar'UNCHECKED_ACCESS, Logger);
+   end Load_ETF_Into_Engine;
+
+   package ETF_Tokens is
+      eof         : constant := -1;
+      plus        : constant kv.apg.rules.Terminal_Index_Type := 1;
+      times       : constant kv.apg.rules.Terminal_Index_Type := 2;
+      id          : constant kv.apg.rules.Terminal_Index_Type := 3;
+      open_paren  : constant kv.apg.rules.Terminal_Index_Type := 4;
+      close_paren : constant kv.apg.rules.Terminal_Index_Type := 5;
+   end ETF_Tokens;
+
+   type Token_Array_Type is array (Positive range <>) of kv.apg.rules.Terminal_Index_Type;
+
+   ----------------------------------------------------------------------------
+   procedure Load_Tokens_Into_Engine
+      (T      : in out Parser_Engine_Test_Class'CLASS;
+       Logger : in     kv.apg.logger.Safe_Logger_Pointer;
+       Tokens : in     Token_Array_Type) is
+   begin
+      for Token of Tokens loop
+         T.Engine.Parse_Token(Token, Logger);
+      end loop;
+   end Load_Tokens_Into_Engine;
+
+
+   ----------------------------------------------------------------------------
+   type Parser_Engine_1_Test is new Parser_Engine_Test_Class with null record;
    procedure Run(T : in out Parser_Engine_1_Test) is
       use kv.apg.rules;
-      Engine : Parser_Engine_Class;
-
-      CW : aliased kv.apg.writer.console.Console_Writer_Class;
-      CL : aliased kv.apg.logger.writer.Writer_Logger_Class;
-      Add_EOF : constant Boolean := True;
       Logger : kv.apg.logger.Safe_Logger_Pointer := T.Logger'UNCHECKED_ACCESS;
    begin
-      CL.Initialize
-         (Writer => CW'UNCHECKED_ACCESS,
-          Level  => Debug);
-      --Logger := CL'UNCHECKED_ACCESS;
-      Set_Up_ABG_Grammar(T);
-      Engine.Initialize(T.Grammar'UNCHECKED_ACCESS, Logger);
+      --Logger := T.CL'UNCHECKED_ACCESS;
+      Load_ETF_Into_Engine(T, Logger);
+      --Put_Line("==========================================");
+      --Logger := T.CL'UNCHECKED_ACCESS;
+      Load_Tokens_Into_Engine(T, Logger, (ETF_Tokens.id, ETF_Tokens.plus, ETF_Tokens.id, ETF_Tokens.eof));
+      T.Assert(T.Engine.Has_Accepted, "Expected the token sequence to be accepted.");
+      T.Assert(T.Engine.Error_Count = 0, "Expected the error count to be 0, got" & Natural'IMAGE(T.Engine.Error_Count));
    end Run;
+
+   ----------------------------------------------------------------------------
+   type Parser_Engine_2_Test is new Parser_Engine_Test_Class with null record;
+   procedure Run(T : in out Parser_Engine_2_Test) is
+      use kv.apg.rules;
+      Logger : kv.apg.logger.Safe_Logger_Pointer := T.Logger'UNCHECKED_ACCESS;
+   begin
+      --Logger := T.CL'UNCHECKED_ACCESS;
+      Load_ETF_Into_Engine(T, Logger);
+      --Put_Line("==========================================");
+      --Logger := T.CL'UNCHECKED_ACCESS;
+      Load_Tokens_Into_Engine(T, Logger, (ETF_Tokens.id, ETF_Tokens.plus, ETF_Tokens.id, ETF_Tokens.times, ETF_Tokens.id, ETF_Tokens.eof));
+      T.Assert(T.Engine.Has_Accepted, "Expected the token sequence to be accepted.");
+      T.Assert(T.Engine.Error_Count = 0, "Expected the error count to be 0, got" & Natural'IMAGE(T.Engine.Error_Count));
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parser_Engine_3_Test is new Parser_Engine_Test_Class with null record;
+   procedure Run(T : in out Parser_Engine_3_Test) is
+      use kv.apg.rules;
+      use ETF_Tokens;
+      Logger : kv.apg.logger.Safe_Logger_Pointer := T.Logger'UNCHECKED_ACCESS;
+   begin
+      --Logger := T.CL'UNCHECKED_ACCESS;
+      Load_ETF_Into_Engine(T, Logger);
+      --Put_Line("==========================================");
+      --Logger := T.CL'UNCHECKED_ACCESS;
+      Load_Tokens_Into_Engine(T, Logger, (open_paren, id, plus, id, close_paren, times, id, eof));
+      T.Assert(T.Engine.Has_Accepted, "Expected the token sequence to be accepted.");
+      T.Assert(T.Engine.Error_Count = 0, "Expected the error count to be 0, got" & Natural'IMAGE(T.Engine.Error_Count));
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Parser_Engine_4_Test is new Parser_Engine_Test_Class with null record;
+   procedure Run(T : in out Parser_Engine_4_Test) is
+      use kv.apg.rules;
+      use ETF_Tokens;
+      Logger : kv.apg.logger.Safe_Logger_Pointer := T.Logger'UNCHECKED_ACCESS;
+   begin
+      --Logger := T.CL'UNCHECKED_ACCESS;
+      Load_ETF_Into_Engine(T, Logger);
+      --Put_Line("==========================================");
+      --Logger := T.CL'UNCHECKED_ACCESS;
+      Load_Tokens_Into_Engine(T, Logger, (id, plus, times, id, eof));
+      T.Assert(not T.Engine.Has_Accepted, "Expected the token sequence to be fail.");
+      T.Assert(T.Engine.Error_Count = 1, "Expected the error count to be 1, got" & Natural'IMAGE(T.Engine.Error_Count));
+   end Run;
+
+   ----------------------------------------------------------------------------
+   procedure Load_4_22_Into_Engine
+      (T      : in out Parser_Engine_Test_Class'CLASS;
+       Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
+   begin
+      Set_Up_4_22_Grammar(T, Logger);
+      T.Engine.Initialize(T.Grammar'UNCHECKED_ACCESS, Logger);
+   end Load_4_22_Into_Engine;
+
+   package Grammar_4_22_Tokens is
+      eof   : constant := -1;
+      plus  : constant kv.apg.rules.Terminal_Index_Type := 1;
+      times : constant kv.apg.rules.Terminal_Index_Type := 2;
+      id    : constant kv.apg.rules.Terminal_Index_Type := 3;
+      open  : constant kv.apg.rules.Terminal_Index_Type := 4;
+      close : constant kv.apg.rules.Terminal_Index_Type := 5;
+   end Grammar_4_22_Tokens;
+
+   ----------------------------------------------------------------------------
+   type Parser_Engine_5_Test is new Parser_Engine_Test_Class with null record;
+   procedure Run(T : in out Parser_Engine_5_Test) is
+      use kv.apg.rules;
+      use Grammar_4_22_Tokens;
+      Logger : kv.apg.logger.Safe_Logger_Pointer := T.Logger'UNCHECKED_ACCESS;
+   begin
+      Logger := T.CL'UNCHECKED_ACCESS;
+      Load_4_22_Into_Engine(T, Logger);
+      --Put_Line("==========================================");
+      --Logger := T.CL'UNCHECKED_ACCESS;
+      Load_Tokens_Into_Engine(T, Logger, (id, plus, id, times, id, eof));
+      T.Assert(T.Engine.Has_Accepted, "Expected the token sequence to be accepted.");
+      T.Assert(T.Engine.Error_Count = 0, "Expected the error count to be 0, got" & Natural'IMAGE(T.Engine.Error_Count));
+   end Run;
+
+
+
+
+
 
 
 
@@ -1166,6 +1442,8 @@ package body kv.apg.tests.parse is
       suite.register(new Kernels_1_Test, "Kernels_1_Test");
       suite.register(new Kernels_2_Test, "Kernels_2_Test");
       suite.register(new Kernels_3_Test, "Kernels_3_Test");
+      suite.register(new Kernels_4_Test, "Kernels_4_Test");
+      suite.register(new Kernels_5_Test, "Kernels_5_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
@@ -1173,6 +1451,10 @@ package body kv.apg.tests.parse is
       suite.register(new Action_Table_1_Test, "Action_Table_1_Test");
       suite.register(new State_Stack_1_Test, "State_Stack_1_Test");
       suite.register(new Parser_Engine_1_Test, "Parser_Engine_1_Test");
+      suite.register(new Parser_Engine_2_Test, "Parser_Engine_2_Test");
+      suite.register(new Parser_Engine_3_Test, "Parser_Engine_3_Test");
+      suite.register(new Parser_Engine_4_Test, "Parser_Engine_4_Test");
+      suite.register(new Parser_Engine_5_Test, "Parser_Engine_5_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;

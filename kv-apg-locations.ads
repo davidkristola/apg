@@ -10,6 +10,7 @@ package kv.apg.locations is
        Column : in     Natural);
 
    function Image(Self : Location_Type) return String;
+   function Cite(Self : Location_Type; Additional : String := "") return String;
 
    procedure Next_Line(Self : in out Location_Type);
    procedure Next_Column(Self : in out Location_Type);

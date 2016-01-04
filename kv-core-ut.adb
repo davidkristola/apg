@@ -1,6 +1,7 @@
 -- This version of this file is hereby given to the Public Domain without restrictions or assurances.
 
 with Ada.Text_IO;
+with Ada.Exceptions; use Ada.Exceptions;
 
 package body kv.core.ut is
 
@@ -53,9 +54,9 @@ package body kv.core.ut is
          begin
             B.Test.Run;
          exception
-            when others =>
-               self.Fails := self.Fails + 1; --TODO: make better
-               Put_Line((+B.Name) & " *** EXCEPTION!");
+            when X: others =>
+               self.Fails := self.Fails + 1;
+               Put_Line((+B.Name) & " *** EXCEPTION! " & Exception_Name(X) & " '" & Exception_Message(X) & "'.");
          end;
          B.Test.Tear_Down;
          if self.Asserts = Previous_Asserts then

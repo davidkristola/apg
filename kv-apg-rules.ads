@@ -98,15 +98,16 @@ package kv.apg.rules is
 
 
 
-   function "="(L, R : Constant_Symbol_Pointer) return Boolean;
+   function Equal(L, R : Constant_Symbol_Pointer) return Boolean;
 
    package Symbol_Vectors is new Ada.Containers.Vectors
       (Index_Type   => Positive,
-       Element_Type => Constant_Symbol_Pointer);
+       Element_Type => Constant_Symbol_Pointer,
+       "=" => Equal);
 
 
 
-   type Predicate_Index_Type is new Positive;
+   type Production_Index_Type is new Positive;
 
 
    type Production_Class is tagged private;
@@ -148,7 +149,7 @@ package kv.apg.rules is
 
    function First(Self : Production_Class) return Terminal_Sets.Set;
 
-   function Get_Number(Self : Production_Class) return Predicate_Index_Type;
+   function Get_Number(Self : Production_Class) return Production_Index_Type;
 
 
 
@@ -183,6 +184,8 @@ package kv.apg.rules is
    function Image(Self : Item_Class) return String_Type;
 
    function Has_Next(Self : Kernel_Class) return Boolean;
+
+   function Get_Production_Number(Self : Kernel_Class) return Production_Index_Type;
 
    function Get_Big_A(Self : Kernel_Class) return Rule_Pointer;
    function Get_Little_Alpha(Self : Kernel_Class) return Constant_Symbol_Pointer;
@@ -236,6 +239,8 @@ package kv.apg.rules is
    function Hash(Self : Rule_Pointer) return Ada.Containers.Hash_Type;
 
    function Get_Number(Self : Rule_Class) return Non_Terminal_Index_Type;
+
+   function Get_Symbol(Self : Rule_Class) return Constant_Symbol_Pointer;
 
 
 
@@ -298,17 +303,19 @@ package kv.apg.rules is
    function Get_Symbol(Self : Grammar_Class; Name : String_Type; Production : Positive; Symbol : Positive) return Constant_Symbol_Pointer;
 
 
-   function Get_Production(Self : Grammar_Class; Number : Predicate_Index_Type) return Production_Pointer;
+   function Get_Production(Self : Grammar_Class; Number : Production_Index_Type) return Production_Pointer;
    function Get_Rule(Self : Grammar_Class; Number : Non_Terminal_Index_Type) return Rule_Pointer;
 
    function Rule_Number_Lo(Self : Grammar_Class) return Non_Terminal_Index_Type;
    function Rule_Number_Hi(Self : Grammar_Class) return Non_Terminal_Index_Type;
-   function Production_Number_Lo(Self : Grammar_Class) return Predicate_Index_Type;
-   function Production_Number_Hi(Self : Grammar_Class) return Predicate_Index_Type;
+   function Production_Number_Lo(Self : Grammar_Class) return Production_Index_Type;
+   function Production_Number_Hi(Self : Grammar_Class) return Production_Index_Type;
    function Terminal_Lo(Self : Grammar_Class) return Terminal_Index_Type;
    function Terminal_Hi(Self : Grammar_Class) return Terminal_Index_Type;
 
    function Grammar_Symbols(Self : Grammar_Class) return Symbol_Vectors.Vector;
+   function Translate(Self : Grammar_Class; Terminal : Terminal_Index_Type) return Constant_Symbol_Pointer;
+   function Translate(Self : Grammar_Class; Terminals : Terminal_Sets.Set) return Symbol_Vectors.Vector;
 
    function First_Kernel_Set(Self : Grammar_Class) return Item_Sets.Set;
 
@@ -320,9 +327,24 @@ package kv.apg.rules is
    type State_Index_Type is new Natural;
    function Img(I : State_Index_Type) return String;
 
+
+   function Goto_Step_Over_One -- goto(I, X)
+      (Self   : Grammar_Class;
+       Kernel : Constant_Item_Pointer;
+       Index  : State_Index_Type;
+       Symbol : Constant_Symbol_Pointer;
+       Logger : kv.apg.logger.Safe_Logger_Pointer) return Item_Sets.Set;
+
    function Goto_Step_Over -- goto(I, X)
       (Self   : Grammar_Class;
        Kernel : Item_Sets.Set;
+       Index  : State_Index_Type;
+       Symbol : Constant_Symbol_Pointer;
+       Logger : kv.apg.logger.Safe_Logger_Pointer) return Item_Sets.Set;
+
+   function Goto_Step_Into_One -- goto(I, X)
+      (Self   : Grammar_Class;
+       Kernel : Constant_Item_Pointer;
        Index  : State_Index_Type;
        Symbol : Constant_Symbol_Pointer;
        Logger : kv.apg.logger.Safe_Logger_Pointer) return Item_Sets.Set;
@@ -337,6 +359,16 @@ package kv.apg.rules is
 
 
 
+   type Action_Hint_Type is
+      record
+         Symbol     : Constant_Symbol_Pointer;
+         From_State : State_Index_Type;
+         To_State   : State_Index_Type;
+      end record;
+   package Action_Space is new Ada.Containers.Vectors
+      (Index_Type   => Positive,
+       Element_Type => Action_Hint_Type);
+
 
 
    type State_Definition_Type is
@@ -350,19 +382,27 @@ package kv.apg.rules is
        Element_Type => State_Definition_Type);
 
 
-   function Generate_Parser_States(Self : Grammar_Class; Logger : kv.apg.logger.Safe_Logger_Pointer) return State_Space.Vector;
+   type State_Information_Type is
+      record
+         States : State_Space.Vector;
+         Hints  : Action_Space.Vector;
+      end record;
+
+
+   function Generate_Parser_States(Self : Grammar_Class; Logger : kv.apg.logger.Safe_Logger_Pointer) return State_Information_Type;
 
 
 
 
    type Action_Type is (Shift, Reduce, Accept_Input, Error);
+
    type Action_Entry_Type(What : Action_Type := Error) is
       record
          case What is
             when Shift =>
                Where : State_Index_Type;
             when Reduce =>
-               Production : Predicate_Index_Type;
+               Production : Production_Index_Type;
             when others =>
                null;
          end case;
@@ -382,12 +422,15 @@ package kv.apg.rules is
       (Self     : in out Action_Table_Class;
        Action   : in     Action_Entry_Type;
        State    : in     State_Index_Type;
-       Terminal : in     Terminal_Index_Type);
+       Terminal : in     Terminal_Index_Type;
+       Logger   : in     kv.apg.logger.Safe_Logger_Pointer);
 
    function Get_Action
       (Self     : Action_Table_Class;
        State    : State_Index_Type;
        Terminal : Terminal_Index_Type) return Action_Entry_Type;
+
+   function Error_Count(Self : Action_Table_Class) return Natural;
 
 
    type Goto_Table_Class is tagged private;
@@ -436,6 +479,9 @@ package kv.apg.rules is
        Token  : in     Terminal_Index_Type;
        Logger : in     kv.apg.logger.Safe_Logger_Pointer);
 
+   function Error_Count(Self : Parser_Engine_Class) return Natural;
+   function Has_Accepted(Self : Parser_Engine_Class) return Boolean;
+
 private
 
    type Symbol_Class is abstract tagged
@@ -461,7 +507,7 @@ private
          Code       : String_Type;
          Rule       : Rule_Pointer;
          Vanishable : Boolean;
-         Number     : Predicate_Index_Type := Predicate_Index_Type'LAST; -- Will be nominal once it is resolved
+         Number     : Production_Index_Type := Production_Index_Type'LAST; -- Will be nominal once it is resolved
       end record;
 
    type Kernel_Class is tagged
@@ -477,6 +523,7 @@ private
 
    type Rule_Class is tagged
       record
+         Me          : Rule_Pointer;
          Name_Token  : kv.apg.tokens.Token_Class;
          Productions : Production_Vectors.Vector;
          Firsts      : Terminal_Sets.Set;
@@ -504,7 +551,8 @@ private
 
    type Action_Table_Class is tagged
       record
-         Table : Action_Table_Matrix_Pointer;
+         Table  : Action_Table_Matrix_Pointer;
+         Errors : Natural := 0;
       end record;
 
 
@@ -514,7 +562,6 @@ private
       record
          Table : Goto_Table_Matrix_Pointer;
       end record;
-
 
    package State_Vector is new Ada.Containers.Vectors
       (Index_Type   => Natural,
@@ -528,11 +575,13 @@ private
 
    type Parser_Engine_Class is tagged
       record
-         Grammar : Grammar_Pointer;
-         States  : State_Space.Vector;
-         Stack   : Stack_Class;
-         Actions : Action_Table_Class;
-         Gotos   : Goto_Table_Class;
+         Grammar  : Grammar_Pointer;
+         States   : State_Space.Vector;
+         Stack    : Stack_Class;
+         Actions  : Action_Table_Class;
+         Gotos    : Goto_Table_Class;
+         Accepted : Boolean := False;
+         Errors   : Natural := 0;
       end record;
 
 

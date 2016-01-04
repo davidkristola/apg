@@ -24,6 +24,10 @@ package kv.apg.incidents is
    procedure Note
       (Self     : in     Report_Class;
        Incident : in     Incident_Class'CLASS) is abstract;
+   procedure Note
+      (Self        : in     Report_Class;
+       Severity    : in     Severity_Type;
+       Information : in     String) is abstract;
 
 
 
@@ -37,6 +41,10 @@ package kv.apg.incidents is
    overriding procedure Note
       (Self     : in     Writer_Report_Class;
        Incident : in     Incident_Class'CLASS);
+   overriding procedure Note
+      (Self        : in     Writer_Report_Class;
+       Severity    : in     Severity_Type;
+       Information : in     String);
 
 
 private

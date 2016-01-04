@@ -22,6 +22,8 @@ package kv.apg.tokens is
    function Get_Data_As_String(Self : Token_Class) return String;
    function Is_Eos(Self : Token_Class) return Boolean;
 
+   function Cite(Self : Token_Class; Additional : String := "") return String;
+
    function "="(L, R : Token_Class) return Boolean;
 
    -- A few special tokens

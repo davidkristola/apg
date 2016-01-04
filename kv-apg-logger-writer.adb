@@ -11,19 +11,28 @@ package body kv.apg.logger.writer is
    end Initialize;
 
    ----------------------------------------------------------------------------
-   procedure Note_Level
+   overriding procedure Note_By_Severity
+      (Self        : in out Writer_Logger_Class;
+       Severity    : in     kv.apg.incidents.Severity_Type;
+       Information : in     String) is
+   begin
+      Self.Reporter.Note(Severity, Information);
+   end Note_By_Severity;
+
+   ----------------------------------------------------------------------------
+   overriding procedure Note_By_Severity
       (Self     : in out Writer_Logger_Class;
        Location : in     kv.apg.locations.File_Location_Type;
        Citation : in     String_Type;
        Reason   : in     String;
-       Level    : in     kv.apg.incidents.Severity_Type) is
+       Severity : in     kv.apg.incidents.Severity_Type) is
 
-      What : kv.apg.incidents.Incident_Class(Level);
+      What : kv.apg.incidents.Incident_Class(Severity);
 
    begin
       What.Initialize(Location, Citation, To_String_Type(Reason));
       Self.Reporter.Note(What);
-   end Note_Level;
+   end Note_By_Severity;
 
    ----------------------------------------------------------------------------
    overriding procedure Note_Debug
@@ -32,7 +41,7 @@ package body kv.apg.logger.writer is
        Citation : in     String_Type;
        Reason   : in     String) is
    begin
-      Note_Level(Self, Location, Citation, Reason, kv.apg.incidents.Debug);
+      Note_By_Severity(Self, Location, Citation, Reason, kv.apg.incidents.Debug);
    end Note_Debug;
 
    ----------------------------------------------------------------------------
@@ -42,7 +51,7 @@ package body kv.apg.logger.writer is
        Citation : in     String_Type;
        Reason   : in     String) is
    begin
-      Note_Level(Self, Location, Citation, Reason, kv.apg.incidents.Detail);
+      Note_By_Severity(Self, Location, Citation, Reason, kv.apg.incidents.Detail);
    end Note_Detail;
 
    ----------------------------------------------------------------------------
@@ -52,7 +61,7 @@ package body kv.apg.logger.writer is
        Citation : in     String_Type;
        Reason   : in     String) is
    begin
-      Note_Level(Self, Location, Citation, Reason, kv.apg.incidents.Information);
+      Note_By_Severity(Self, Location, Citation, Reason, kv.apg.incidents.Information);
    end Note_Info;
 
    ----------------------------------------------------------------------------
@@ -62,7 +71,7 @@ package body kv.apg.logger.writer is
        Citation : in     String_Type;
        Reason   : in     String) is
    begin
-      Note_Level(Self, Location, Citation, Reason, kv.apg.incidents.Warning);
+      Note_By_Severity(Self, Location, Citation, Reason, kv.apg.incidents.Warning);
    end Note_Warning;
 
    ----------------------------------------------------------------------------
@@ -72,7 +81,7 @@ package body kv.apg.logger.writer is
        Citation : in     String_Type;
        Reason   : in     String) is
    begin
-      Note_Level(Self, Location, Citation, Reason, kv.apg.incidents.Error);
+      Note_By_Severity(Self, Location, Citation, Reason, kv.apg.incidents.Error);
    end Note_Error;
 
 end kv.apg.logger.writer;
