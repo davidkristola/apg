@@ -53,6 +53,9 @@ private
       (Self : in out Lexer_Class;
        Next : in     Wide_Wide_Character);
 
+   procedure Complete_Word
+      (Self : in out Lexer_Class);
+
    procedure Complete_Token
       (Self : in out Lexer_Class;
        Kind : in     kv.apg.tokens.Token_Type);

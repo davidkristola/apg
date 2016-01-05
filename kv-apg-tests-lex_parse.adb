@@ -113,7 +113,7 @@ package body kv.apg.tests.lex_parse is
    procedure Run(T : in out Parse_Set_Error_1_Test) is
       Buffer : aliased Buffer_Writer_Class;
       Logger : aliased Writer_Logger_Class;
-      Expected : constant String := "ERROR (File: test.lex, line 1, column 14): Expected '=' (""****"").";
+      Expected : constant String := "***ERROR*** (File: test.lex, line 1, column 14): Expected '=' (""****"").";
    begin
       T.Lexer.Start_File(To_String_Type("test.lex"));
       Logger.Initialize
@@ -131,7 +131,7 @@ package body kv.apg.tests.lex_parse is
    procedure Run(T : in out Parse_Set_Error_2_Test) is
       Buffer : aliased Buffer_Writer_Class;
       Logger : aliased Writer_Logger_Class;
-      Expected : constant String := "ERROR (File: test.lex, line 1, column 5): Expected an unquoted name (""lex_spec"").";
+      Expected : constant String := "***ERROR*** (File: test.lex, line 1, column 5): Expected an unquoted name (""lex_spec"").";
    begin
       T.Lexer.Start_File(To_String_Type("test.lex"));
       Logger.Initialize
@@ -149,7 +149,7 @@ package body kv.apg.tests.lex_parse is
    procedure Run(T : in out Parse_Set_Error_3_Test) is
       Buffer : aliased Buffer_Writer_Class;
       Logger : aliased Writer_Logger_Class;
-      Expected : constant String := "ERROR (File: test.lex, line 1, column 16): Expected a quoted string or block (""test"").";
+      Expected : constant String := "***ERROR*** (File: test.lex, line 1, column 16): Expected a quoted string or block (""test"").";
    begin
       T.Lexer.Start_File(To_String_Type("test.lex"));
       Logger.Initialize
@@ -183,7 +183,7 @@ package body kv.apg.tests.lex_parse is
    procedure Run(T : in out Parse_Set_Error_4_Test) is
       Buffer : aliased Buffer_Writer_Class;
       Logger : aliased Writer_Logger_Class;
-      Expected : constant String := "ERROR (File: test.lex, line 1, column 23): Expected ';' (""foo"").";
+      Expected : constant String := "***ERROR*** (File: test.lex, line 1, column 23): Expected ';' (""foo"").";
    begin
       T.Lexer.Start_File(To_String_Type("test.lex"));
       Logger.Initialize
@@ -437,7 +437,7 @@ package body kv.apg.tests.lex_parse is
    procedure Run(T : in out Parse_Invalid_Token_Test) is
       Buffer : aliased Buffer_Writer_Class;
       Logger : aliased Writer_Logger_Class;
-      Expected : constant String := "ERROR (File: token.lex, line 1, column 1): Expected directive (""nerk"").";
+      Expected : constant String := "***ERROR*** (File: token.lex, line 1, column 1): Expected directive (""nerk"").";
    begin
       T.Lexer.Start_File(To_String_Type("token.lex"));
       Logger.Initialize
@@ -483,8 +483,8 @@ package body kv.apg.tests.lex_parse is
    begin
       --kv.apg.regex.Set_Debug(True);
       Run_Broken_Token_Test(T, "U0061-;",
-         (1 => To_String_Type("ERROR (File: token.lex, line 1, column 19): Incomplete regular expression ("";"")."),
-          2 => To_String_Type("ERROR (File: token.lex, line 1, column 18): Upper end of range is empty (""-"").")));
+         (1 => To_String_Type("***ERROR*** (File: token.lex, line 1, column 19): Incomplete regular expression ("";"")."),
+          2 => To_String_Type("***ERROR*** (File: token.lex, line 1, column 18): Upper end of range is empty (""-"").")));
       --kv.apg.regex.Set_Debug(False);
    end Run;
 
@@ -495,8 +495,8 @@ package body kv.apg.tests.lex_parse is
       -- This is a regular expression that seemed to work until beter error checking was added
       --kv.apg.regex.Set_Debug(True);
       Run_Broken_Token_Test(T, "(('a'-'z') | ('A'-'Z')) * ('_'? (('a'-'z')|('A'-'Z')|('0'-'9'))*;",
-         (1 => To_String_Type("ERROR (File: token.lex, line 1, column 77): Incomplete regular expression ("";"")."),
-          2 => To_String_Type("ERROR (File: token.lex, line 1, column 39): Incomplete subsequence (""("").")));
+         (1 => To_String_Type("***ERROR*** (File: token.lex, line 1, column 77): Incomplete regular expression ("";"")."),
+          2 => To_String_Type("***ERROR*** (File: token.lex, line 1, column 39): Incomplete subsequence (""("").")));
       --kv.apg.regex.Set_Debug(False);
    end Run;
 
@@ -506,8 +506,8 @@ package body kv.apg.tests.lex_parse is
    begin
       --kv.apg.regex.Set_Debug(True);
       Run_Broken_Token_Test(T, ");",
-         (1 => To_String_Type("ERROR (File: token.lex, line 1, column 14): Incomplete regular expression ("";"")."),
-          2 => To_String_Type("ERROR (File: token.lex, line 1, column 13): Unmatched end of subsequence ("")"").")));
+         (1 => To_String_Type("***ERROR*** (File: token.lex, line 1, column 14): Incomplete regular expression ("";"")."),
+          2 => To_String_Type("***ERROR*** (File: token.lex, line 1, column 13): Unmatched end of subsequence ("")"").")));
       --kv.apg.regex.Set_Debug(False);
    end Run;
 
@@ -516,7 +516,7 @@ package body kv.apg.tests.lex_parse is
    procedure Run(T : in out Parse_Bad_Regex_4_Token_Test) is
    begin
       --kv.apg.regex.Set_Debug(True);
-      Run_Broken_Token_Test(T, ";", (1 => To_String_Type("ERROR (File: token.lex, line 1, column 13): Empty regular expression ("";"").")));
+      Run_Broken_Token_Test(T, ";", (1 => To_String_Type("***ERROR*** (File: token.lex, line 1, column 13): Empty regular expression ("";"").")));
       --kv.apg.regex.Set_Debug(False);
    end Run;
 
@@ -526,10 +526,28 @@ package body kv.apg.tests.lex_parse is
    begin
       --kv.apg.regex.Set_Debug(True);
       Run_Broken_Token_Test(T, "('a'|;",
-         (1 => To_String_Type("ERROR (File: token.lex, line 1, column 18): Incomplete regular expression ("";"")."),
-          2 => To_String_Type("ERROR (File: token.lex, line 1, column 17): Right-hand side of OR is empty (""|"")."),
-          3 => To_String_Type("ERROR (File: token.lex, line 1, column 13): Incomplete subsequence (""("").")));
+         (1 => To_String_Type("***ERROR*** (File: token.lex, line 1, column 18): Incomplete regular expression ("";"")."),
+          2 => To_String_Type("***ERROR*** (File: token.lex, line 1, column 17): Right-hand side of OR is empty (""|"")."),
+          3 => To_String_Type("***ERROR*** (File: token.lex, line 1, column 13): Incomplete subsequence (""("").")));
       --kv.apg.regex.Set_Debug(False);
+   end Run;
+
+
+   ----------------------------------------------------------------------------
+   type Parse_Left_Token_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Left_Token_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      use kv.apg.directives;
+   begin
+      Parse_This(T, "token foo : left 42 = ""foo"";");
+      Check_States(T, Errors => 0, Directives => 1);
+      Directive := T.Parser.Next_Directive;
+      T.Assert(kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Subtype = Accepting, "Expected subtype to be Accepting");
+      T.Assert(kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Associativity = Left, "Expected foo to be left associative, got " &
+         Token_Associativity_Type'IMAGE(kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Associativity));
+      T.Assert(kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Precedence = 42, "Expected foo to have precedence 42, got " &
+         Token_Precedence_Type'IMAGE(kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Precedence));
+      kv.apg.directives.Free(Directive);
    end Run;
 
 
@@ -571,7 +589,8 @@ package body kv.apg.tests.lex_parse is
       suite.register(new Parse_Bad_Regex_3_Token_Test, "Parse_Bad_Regex_3_Token_Test");
       suite.register(new Parse_Bad_Regex_4_Token_Test, "Parse_Bad_Regex_4_Token_Test");
       suite.register(new Parse_Bad_Regex_5_Token_Test, "Parse_Bad_Regex_5_Token_Test");
---      suite.register(new XXX, "XXX");
+
+      suite.register(new Parse_Left_Token_Test, "Parse_Left_Token_Test");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;

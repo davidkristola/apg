@@ -46,6 +46,8 @@ package kv.apg.directives is
    --
 
    type Token_Subtype is (Accepting, Pattern, Skipover);
+   type Token_Associativity_Type is (Neither, Left, Right);
+   type Token_Precedence_Type is new Natural;
 
    type Token_Class is new Directive_Class with private;
    not overriding procedure Initialize
@@ -56,6 +58,10 @@ package kv.apg.directives is
    overriding procedure Process(Self : in out Token_Class; Visitor : in out Directive_Visitor_Class'CLASS);
    not overriding function Get_Tree(Self : in     Token_Class) return kv.apg.regex.Regular_Expression_Tree_Type;
    not overriding function Get_Subtype(Self : in     Token_Class) return Token_Subtype;
+   not overriding function Get_Associativity(Self : Token_Class) return Token_Associativity_Type;
+   not overriding function Get_Precedence(Self : Token_Class) return Token_Precedence_Type;
+   not overriding procedure Set_Associativity(Self : in out Token_Class; Associativity : in Token_Associativity_Type);
+   not overriding procedure Set_Precedence(Self : in out Token_Class; Precedence : in Token_Precedence_Type);
 
 
    --
@@ -98,6 +104,8 @@ private
       record
          Tree : kv.apg.regex.Regular_Expression_Tree_Type;
          Kind : Token_Subtype;
+         Associativity : Token_Associativity_Type := Neither;
+         Precedence : Token_Precedence_Type := 0;
       end record;
 
    type Rule_Class is new Directive_Class with

@@ -1571,11 +1571,6 @@ package body kv.apg.rules is
 
    ----------------------------------------------------------------------------
    function Image(Action_Entry : Action_Entry_Type) return String is
---      Answer : String := State_Index_Type'IMAGE(Action_Entry.Where);
---      Actions : constant array (Action_Type) of Character := ('S', 'R', 'A', 'E');
---   begin
---      Answer(1) := Actions(Action_Entry.What);
---      return Answer;
    begin
       case Action_Entry.What is
          when Shift =>

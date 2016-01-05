@@ -49,18 +49,80 @@ package body kv.apg.parse.token is
    begin
       if Token.Get_Kind = A_Word then
          Self.Name_Token := Token;
-         Self.Expect := Equal;
+         Self.Expect := Colon_Or_Equal;
       else
          Self.Status := Done_Error;
       end if;
    end Expect_Name;
 
    -------------------------------------------------------------------------
+   procedure Expect_Colon_Or_Equal
+      (Self  : in out Token_State_Class;
+       Token : in     kv.apg.tokens.Token_Class) is
+   begin
+      if Token.Get_Kind = A_Symbol then
+         if Token.Get_Data_As_String = "=" then
+            Self.Expect := Value;
+         elsif Token.Get_Data_As_String = ":" then
+            Self.Expect := Flag;
+         else
+            Self.Status := Done_Error;
+         end if;
+      else
+         Self.Status := Done_Error;
+      end if;
+   end Expect_Colon_Or_Equal;
+
+   -------------------------------------------------------------------------
+   procedure Process_Flag
+      (Self  : in out Token_State_Class;
+       Token : in     kv.apg.tokens.Token_Class) is
+   begin
+      if Token.Get_Kind = A_Number then
+         Self.Precedence := kv.apg.directives.Token_Precedence_Type'VALUE(Token.Get_Data_As_String);
+      elsif Token.Get_Data_As_String = "left" then
+         Self.Associativity := kv.apg.directives.Left;
+      elsif Token.Get_Data_As_String = "right" then
+         Self.Associativity := kv.apg.directives.Right;
+      else
+         Self.Status := Done_Error;
+      end if;
+   end Process_Flag;
+
+   -------------------------------------------------------------------------
+   procedure Expect_Flag
+      (Self  : in out Token_State_Class;
+       Token : in     kv.apg.tokens.Token_Class) is
+   begin
+      if Token.Get_Kind = A_Word or Token.Get_Kind = A_Number then
+         Self.Expect := Flag_Or_Equal;
+         Process_Flag(Self, Token); -- Could change status to Done_Error
+      else
+         Self.Status := Done_Error;
+      end if;
+   end Expect_Flag;
+
+   -------------------------------------------------------------------------
+   procedure Expect_Flag_Or_Equal
+      (Self  : in out Token_State_Class;
+       Token : in     kv.apg.tokens.Token_Class) is
+   begin
+      if Token.Get_Kind = A_Word or Token.Get_Kind = A_Number then
+         Self.Expect := Equal;
+         Process_Flag(Self, Token); -- Could change status to Done_Error
+      elsif Token.Get_Kind = A_Symbol and then Token.Get_Data_As_String = "=" then
+         Self.Expect := Value;
+      else
+         Self.Status := Done_Error;
+      end if;
+   end Expect_Flag_Or_Equal;
+
+   -------------------------------------------------------------------------
    procedure Expect_Equal
       (Self  : in out Token_State_Class;
        Token : in     kv.apg.tokens.Token_Class) is
    begin
-      if Token.Get_Kind = A_Symbol and then To_String(+Token.Get_Data) = "=" then
+      if Token.Get_Kind = A_Symbol and then Token.Get_Data_As_String = "=" then
          Self.Expect := Value;
       else
          Self.Status := Done_Error;
@@ -137,23 +199,30 @@ package body kv.apg.parse.token is
    end Process_Eos;
 
    -------------------------------------------------------------------------
+   procedure Expect_Value_Or_Eos
+      (Self  : in out Token_State_Class;
+       Token : in     kv.apg.tokens.Token_Class) is
+   begin
+      if Token.Is_Eos then
+         Process_Eos(Self, Token);
+      else
+         Expect_Value(Self, Token);
+      end if;
+   end Expect_Value_Or_Eos;
+
+   -------------------------------------------------------------------------
    procedure Ingest_Token
       (Self  : in out Token_State_Class;
        Token : in     kv.apg.tokens.Token_Class) is
    begin
       case Self.Expect is
-         when Name =>
-            Expect_Name(Self, Token);
-         when Equal =>
-            Expect_Equal(Self, Token);
-         when Value =>
-            Expect_Value(Self, Token);
-         when Value_Or_Eos =>
-            if Token.Is_Eos then
-               Process_Eos(Self, Token);
-            else
-               Expect_Value(Self, Token);
-            end if;
+         when Name =>            Expect_Name(Self, Token);
+         when Colon_Or_Equal =>  Expect_Colon_Or_Equal(Self, Token);
+         when Flag =>            Expect_Flag(Self, Token);
+         when Flag_Or_Equal =>   Expect_Flag_Or_Equal(Self, Token);
+         when Equal =>           Expect_Equal(Self, Token);
+         when Value =>           Expect_Value(Self, Token);
+         when Value_Or_Eos =>    Expect_Value_Or_Eos(Self, Token);
       end case;
    end Ingest_Token;
 
@@ -163,6 +232,8 @@ package body kv.apg.parse.token is
    begin
       Directive := new kv.apg.directives.Token_Class;
       Directive.Initialize(Name => Self.Name_Token, Tree => Self.Tree, Kind => Self.Kind);
+      Directive.Set_Associativity(Self.Associativity);
+      Directive.Set_Precedence(Self.Precedence);
       return kv.apg.directives.Directive_Pointer_Type(Directive);
    end Get_Directive;
 

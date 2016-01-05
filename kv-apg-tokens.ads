@@ -5,7 +5,16 @@ with kv.apg.locations;
 
 package kv.apg.tokens is
 
-   type Token_Type is (A_Word, A_Symbol, A_Char, A_String, A_Block, A_Comment, A_Special);
+   type Token_Type is
+      (A_Word,       -- An unquoted combination of alphanumeric characters and '_'
+       A_Number,     -- Pure decimal digits
+       A_Code_Point, -- A 6-character hex code point
+       A_Symbol,     -- A non-alphanumeric character
+       A_Char,       -- A single-quoted character, ex: 'a'
+       A_String,     -- A double-quoted string of characters, ex: "hello world!"
+       A_Block,      -- A european-style quoted (multi-line) block of text, ex: «block»
+       A_Comment,    -- A # line comment
+       A_Special);   -- end of file, empty, invalid, etc.
 
    type Token_Class is tagged private;
 

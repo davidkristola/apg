@@ -94,7 +94,7 @@ package body kv.apg.lex is
             if Tentative_State = In_Word then
                Self.Accumulate_Character(Next);
             else
-               Self.Complete_Token(kv.apg.tokens.A_Word);
+               Self.Complete_Word;
                Self.State := Tentative_State;
                Start_New_Token_If;
             end if;
@@ -186,6 +186,30 @@ package body kv.apg.lex is
          Self.Complete_Token(kv.apg.tokens.A_Symbol);
       end if;
    end Begin_Token;
+
+   ----------------------------------------------------------------------------
+   function Is_Number(Sample : String_Type) return Boolean is
+      C : Wide_Wide_Character;
+   begin
+      for I in 1 .. Length(Sample) loop
+         C := Element(Sample, I);
+         if not Is_Decimal_Digit(C) then
+            return False;
+         end if;
+      end loop;
+      return True;
+   end Is_Number;
+
+   ----------------------------------------------------------------------------
+   procedure Complete_Word
+      (Self : in out Lexer_Class) is
+   begin
+      if Is_Number(Self.Accumulator) then
+         Self.Complete_Token(kv.apg.tokens.A_Number);
+      else
+         Self.Complete_Token(kv.apg.tokens.A_Word);
+      end if;
+   end Complete_Word;
 
    ----------------------------------------------------------------------------
    procedure Complete_Token

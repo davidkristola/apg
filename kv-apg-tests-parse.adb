@@ -199,7 +199,7 @@ package body kv.apg.tests.parse is
    type Resolve_Gramar_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Resolve_Gramar_Test) is
       Rule : kv.apg.rules.Rule_Pointer;
-      Expected : constant String := "ERROR (File: , line 3, column 31): Symbol of production rule ""program"" not found. (""Epsilon"").";
+      Expected : constant String := "***ERROR*** (File: , line 3, column 31): Symbol of production rule ""program"" not found. (""Epsilon"").";
       Expected_1 : constant String := "beta_list -> ( Beta beta_list ) => null;";
       use kv.apg.rules;
    begin
@@ -262,7 +262,7 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type No_Start_Gramar_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out No_Start_Gramar_Test) is
-      Expected : constant String := "ERROR: Expected one rule flagged as the start rule, found 0.";
+      Expected : constant String := "***ERROR***: Expected one rule flagged as the start rule, found 0.";
    begin
       Set_Up_Start_Test(T);
 
@@ -278,7 +278,7 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Two_Start_Gramar_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Two_Start_Gramar_Test) is
-      Expected : constant String := "ERROR: Expected one rule flagged as the start rule, found 2.";
+      Expected : constant String := "***ERROR***: Expected one rule flagged as the start rule, found 2.";
    begin
       Set_Up_Start_Test(T, " start", "", " start");
 
@@ -1391,9 +1391,9 @@ package body kv.apg.tests.parse is
       use Grammar_4_22_Tokens;
       Logger : kv.apg.logger.Safe_Logger_Pointer := T.Logger'UNCHECKED_ACCESS;
    begin
-      Logger := T.CL'UNCHECKED_ACCESS;
+      --Logger := T.CL'UNCHECKED_ACCESS;
       Load_4_22_Into_Engine(T, Logger);
-      --Put_Line("==========================================");
+      Put_Line("==========================================");
       --Logger := T.CL'UNCHECKED_ACCESS;
       Load_Tokens_Into_Engine(T, Logger, (id, plus, id, times, id, eof));
       T.Assert(T.Engine.Has_Accepted, "Expected the token sequence to be accepted.");

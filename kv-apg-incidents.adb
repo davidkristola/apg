@@ -19,7 +19,14 @@ package body kv.apg.incidents is
 
    ----------------------------------------------------------------------------
    function Image(Self : Incident_Class) return String_Type is
-      Answer : String_Type := To_String_Type(Severity_Type'IMAGE(Self.Severity)&" ("&Image(Self.Location)&"): ");
+      function Flag return String is
+      begin
+         if Self.Severity = Error then
+            return "***";
+         end if;
+         return "";
+      end Flag;
+      Answer : String_Type := To_String_Type(Flag & Severity_Type'IMAGE(Self.Severity) & Flag & " ("&Image(Self.Location)&"): ");
    begin
       Answer := Answer & Self.Reason & To_String_Type(" (""") & Self.Citation & To_String_Type(""").");
       return Answer;
@@ -56,9 +63,16 @@ package body kv.apg.incidents is
       (Self        : in     Writer_Report_Class;
        Severity    : in     Severity_Type;
        Information : in     String) is
+      function Flag return String is
+      begin
+         if Severity = Error then
+            return "***";
+         end if;
+         return "";
+      end Flag;
    begin
       if Severity >= Self.Level then
-         Self.Writer.Write_Line(Severity_Type'IMAGE(Severity) & ": " & Information);
+         Self.Writer.Write_Line(Flag & Severity_Type'IMAGE(Severity) & Flag &  ": " & Information);
       end if;
    end Note;
 
