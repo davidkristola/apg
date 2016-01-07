@@ -8,6 +8,7 @@ with Ada.Text_IO; use Ada.Text_IO;
 
 with kv.apg.lex;
 with kv.apg.tokens;
+with kv.apg.enum;
 with kv.apg.parse;
 with kv.apg.directives;
 with kv.apg.regex;
@@ -538,6 +539,7 @@ package body kv.apg.tests.lex_parse is
    procedure Run(T : in out Parse_Left_Token_Test) is
       Directive : kv.apg.directives.Directive_Pointer_Type;
       use kv.apg.directives;
+      use kv.apg.enum;
    begin
       Parse_This(T, "token foo : left 42 = ""foo"";");
       Check_States(T, Errors => 0, Directives => 1);

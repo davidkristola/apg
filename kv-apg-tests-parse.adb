@@ -1105,8 +1105,8 @@ package body kv.apg.tests.parse is
    procedure Add_4_22_Enum(T : in out Grammar_Test_Class'CLASS) is
    begin
       T.Enum.Initialize(+"Enum_Type");
-      T.Enum.Append(+"plus");        -- 1
-      T.Enum.Append(+"times");       -- 2
+      T.Enum.Append(+"plus", kv.apg.enum.Left, 10);        -- 1
+      T.Enum.Append(+"times", kv.apg.enum.Left, 20);       -- 2
       T.Enum.Append(+"id");          -- 3
       T.Enum.Append(+"open");          -- 4
       T.Enum.Append(+"close");          -- 5
@@ -1391,10 +1391,10 @@ package body kv.apg.tests.parse is
       use Grammar_4_22_Tokens;
       Logger : kv.apg.logger.Safe_Logger_Pointer := T.Logger'UNCHECKED_ACCESS;
    begin
-      --Logger := T.CL'UNCHECKED_ACCESS;
+      Logger := T.CL'UNCHECKED_ACCESS;
       Load_4_22_Into_Engine(T, Logger);
       Put_Line("==========================================");
-      --Logger := T.CL'UNCHECKED_ACCESS;
+      Logger := T.CL'UNCHECKED_ACCESS;
       Load_Tokens_Into_Engine(T, Logger, (id, plus, id, times, id, eof));
       T.Assert(T.Engine.Has_Accepted, "Expected the token sequence to be accepted.");
       T.Assert(T.Engine.Error_Count = 0, "Expected the error count to be 0, got" & Natural'IMAGE(T.Engine.Error_Count));

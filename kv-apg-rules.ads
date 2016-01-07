@@ -151,6 +151,8 @@ package kv.apg.rules is
 
    function Get_Number(Self : Production_Class) return Production_Index_Type;
 
+   function Get_Precedence(Self : Production_Class) return kv.apg.enum.Token_Precedence_Type;
+
 
 
 
@@ -425,6 +427,13 @@ package kv.apg.rules is
        Terminal : in     Terminal_Index_Type;
        Logger   : in     kv.apg.logger.Safe_Logger_Pointer);
 
+   procedure Replace_Action
+      (Self     : in out Action_Table_Class;
+       Action   : in     Action_Entry_Type;
+       State    : in     State_Index_Type;
+       Terminal : in     Terminal_Index_Type;
+       Logger   : in     kv.apg.logger.Safe_Logger_Pointer);
+
    function Get_Action
       (Self     : Action_Table_Class;
        State    : State_Index_Type;
@@ -467,7 +476,6 @@ package kv.apg.rules is
    function Top_State(Self : Stack_Class) return State_Index_Type;
 
 
-
    type Parser_Engine_Class is tagged private;
    procedure Initialize
       (Self    : in out Parser_Engine_Class;
@@ -508,6 +516,7 @@ private
          Rule       : Rule_Pointer;
          Vanishable : Boolean;
          Number     : Production_Index_Type := Production_Index_Type'LAST; -- Will be nominal once it is resolved
+         Precedence : kv.apg.enum.Token_Precedence_Type := 0;
       end record;
 
    type Kernel_Class is tagged

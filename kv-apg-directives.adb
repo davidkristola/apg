@@ -83,25 +83,25 @@ package body kv.apg.directives is
    end Get_Subtype;
 
    ----------------------------------------------------------------------------
-   not overriding function Get_Associativity(Self : Token_Class) return Token_Associativity_Type is
+   not overriding function Get_Associativity(Self : Token_Class) return kv.apg.enum.Token_Associativity_Type is
    begin
       return Self.Associativity;
    end Get_Associativity;
 
    ----------------------------------------------------------------------------
-   not overriding function Get_Precedence(Self : Token_Class) return Token_Precedence_Type is
+   not overriding function Get_Precedence(Self : Token_Class) return kv.apg.enum.Token_Precedence_Type is
    begin
       return Self.Precedence;
    end Get_Precedence;
 
    ----------------------------------------------------------------------------
-   not overriding procedure Set_Associativity(Self : in out Token_Class; Associativity : in Token_Associativity_Type) is
+   not overriding procedure Set_Associativity(Self : in out Token_Class; Associativity : in kv.apg.enum.Token_Associativity_Type) is
    begin
       Self.Associativity := Associativity;
    end Set_Associativity;
 
    ----------------------------------------------------------------------------
-   not overriding procedure Set_Precedence(Self : in out Token_Class; Precedence : in Token_Precedence_Type) is
+   not overriding procedure Set_Precedence(Self : in out Token_Class; Precedence : in kv.apg.enum.Token_Precedence_Type) is
    begin
       Self.Precedence := Precedence;
    end Set_Precedence;

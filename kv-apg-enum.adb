@@ -25,6 +25,22 @@ package body kv.apg.enum is
    end Append;
 
    ----------------------------------------------------------------------------
+   procedure Append
+      (Self          : in out Enumeration_Class;
+       Name          : in     kv.apg.tokens.Token_Class;
+       Associativity : in     Token_Associativity_Type;
+       Precedence    : in     Token_Precedence_Type) is
+      V : Value_Type;
+   begin
+      Self.Last := Self.Last + 1;
+      V.Value := Self.Last;
+      V.Name := Name;
+      V.Associativity := Associativity;
+      V.Precedence := Precedence;
+      Self.Values.Append(V);
+   end Append;
+
+   ----------------------------------------------------------------------------
    function Get_Count(Self : Enumeration_Class) return Natural is
    begin
       return Natural(Self.Values.Length);
@@ -84,5 +100,27 @@ package body kv.apg.enum is
       end loop;
       return Not_Found_Error;
    end Get;
+
+   ----------------------------------------------------------------------------
+   function Get_Associativity(Self : Enumeration_Class; Index : Positive) return Token_Associativity_Type is
+   begin
+      for V of Self.Values loop
+         if V.Value = Index then
+            return V.Associativity;
+         end if;
+      end loop;
+      return Neither;
+   end Get_Associativity;
+
+   ----------------------------------------------------------------------------
+   function Get_Precedence(Self : Enumeration_Class; Index : Positive) return Token_Precedence_Type is
+   begin
+      for V of Self.Values loop
+         if V.Value = Index then
+            return V.Precedence;
+         end if;
+      end loop;
+      return 0;
+   end Get_Precedence;
 
 end kv.apg.enum;

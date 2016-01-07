@@ -79,11 +79,11 @@ package body kv.apg.parse.token is
        Token : in     kv.apg.tokens.Token_Class) is
    begin
       if Token.Get_Kind = A_Number then
-         Self.Precedence := kv.apg.directives.Token_Precedence_Type'VALUE(Token.Get_Data_As_String);
+         Self.Precedence := kv.apg.enum.Token_Precedence_Type'VALUE(Token.Get_Data_As_String);
       elsif Token.Get_Data_As_String = "left" then
-         Self.Associativity := kv.apg.directives.Left;
+         Self.Associativity := kv.apg.enum.Left;
       elsif Token.Get_Data_As_String = "right" then
-         Self.Associativity := kv.apg.directives.Right;
+         Self.Associativity := kv.apg.enum.Right;
       else
          Self.Status := Done_Error;
       end if;

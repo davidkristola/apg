@@ -322,6 +322,12 @@ package body kv.apg.rules is
       return Self.Number;
    end Get_Number;
 
+   ----------------------------------------------------------------------------
+   function Get_Precedence(Self : Production_Class) return kv.apg.enum.Token_Precedence_Type is
+   begin
+      return Self.Precedence;
+   end Get_Precedence;
+
 
 
 
@@ -747,6 +753,7 @@ package body kv.apg.rules is
       Rule_Hash : Ada.Containers.Hash_Type := 1;
 
       use Symbol_Vectors;
+      use kv.apg.enum;
       use Ada.Strings.UTF_Encoding;
       use Ada.Strings.UTF_Encoding.Strings;
       use Ada.Containers;
@@ -775,6 +782,10 @@ package body kv.apg.rules is
                elsif Self.Find_Terminal(Symbol.Token.Get_Data) /= kv.apg.enum.Not_Found_Error then
                   Logger.Note_Debug(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "    Symbol <" & Symbol.Token.Get_Data_As_String & "> is a terminal (token)");
                   Index := Self.Find_Terminal(Symbol.Token.Get_Data);
+                  if Self.Tokens.Get_Precedence(Index) > Production.Get_Precedence then
+                     Logger.Note_Debug(Symbol.Token.Get_Location, Symbol.Token.Get_Data, "    Increase production precedence to " & Token_Precedence_Type'IMAGE(Self.Tokens.Get_Precedence(Index)));
+                     Production.Precedence := Self.Tokens.Get_Precedence(Index);
+                  end if;
                   To_Be_Deleted := Symbol;
                   Updated_Symbol := new Terminal_Class'(Token => Self.Tokens.Get(Index), Key => kv.apg.fast.Key_Type(Index));
                   Collect_Grammar_Symbol(Self, Updated_Symbol);
@@ -1628,6 +1639,18 @@ package body kv.apg.rules is
    end Set_Action;
 
    ----------------------------------------------------------------------------
+   procedure Replace_Action
+      (Self     : in out Action_Table_Class;
+       Action   : in     Action_Entry_Type;
+       State    : in     State_Index_Type;
+       Terminal : in     Terminal_Index_Type;
+       Logger   : in     kv.apg.logger.Safe_Logger_Pointer) is
+   begin
+      Logger.Note_By_Severity(Debug, Image(Self.Table(State, Terminal)) & " replaced by " & Image(Action) & " in state " & Img(State) & " for terminal " & Terminal_Index_Type'IMAGE(Terminal));
+      Self.Table(State, Terminal) := Action;
+   end Replace_Action;
+
+   ----------------------------------------------------------------------------
    function Get_Action
       (Self     : Action_Table_Class;
        State    : State_Index_Type;
@@ -1723,6 +1746,8 @@ package body kv.apg.rules is
       Rule : Rule_Pointer;
       Symbol : Constant_Symbol_Pointer;
 
+      use kv.apg.enum;
+
    begin
       Logger.Note_By_Severity(Debug, "Parser_Engine_Class.Initialize Start");
       Self.Grammar := Grammar;
@@ -1767,7 +1792,16 @@ package body kv.apg.rules is
                   Logger.Note_By_Severity(Debug,
                      Img(State.Index) & ": add RUDUCE by production" & Production_Index_Type'IMAGE(Item.Get_Production_Number) &
                      ", terminal " & To_String(Symbol.Name));
-                  Self.Actions.Set_Action(Action, State.Index, T, Logger);
+                  if Self.Actions.Get_Action(State.Index, T) = Default_Action_Entry then
+                     Self.Actions.Set_Action(Action, State.Index, T, Logger);
+                  else
+                     -- There is already an action in place. Trump it?
+                     if Item.Production.Get_Precedence > Grammar.Tokens.Get_Precedence(Natural(T)) then
+                        Self.Actions.Replace_Action(Action, State.Index, T, Logger);
+                     else
+                        Logger.Note_By_Severity(Debug, "Precedence overrides addition of reduction -- keeping current action.");
+                     end if;
+                  end if;
                end loop;
             end if;
          end loop;
@@ -1791,13 +1825,13 @@ package body kv.apg.rules is
        Token  : in     Terminal_Index_Type;
        Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
 
-      Unshifted : Boolean := True;
+      Unshifted     : Boolean := True;
       Current_State : State_Entry_Type;
-      State_Index : State_Index_Type;
-      Action : Action_Entry_Type;
-      Rule : Rule_Pointer;
-      Symbol : Constant_Symbol_Pointer;
-      Production : Production_Pointer;
+      State_Index   : State_Index_Type;
+      Action        : Action_Entry_Type;
+      Rule          : Rule_Pointer;
+      Symbol        : Constant_Symbol_Pointer;
+      Production    : Production_Pointer;
 
    begin
       Symbol := Self.Grammar.Translate(Token);

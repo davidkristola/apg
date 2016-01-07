@@ -7,6 +7,9 @@ with kv.apg.writer;
 
 package kv.apg.enum is
 
+   type Token_Associativity_Type is (Neither, Left, Right);
+   type Token_Precedence_Type is new Natural;
+
    type Enumeration_Class is tagged private;
 
    procedure Initialize
@@ -16,6 +19,12 @@ package kv.apg.enum is
    procedure Append
       (Self : in out Enumeration_Class;
        Name : in     kv.apg.tokens.Token_Class);
+
+   procedure Append
+      (Self          : in out Enumeration_Class;
+       Name          : in     kv.apg.tokens.Token_Class;
+       Associativity : in     Token_Associativity_Type;
+       Precedence    : in     Token_Precedence_Type);
 
    function Get_Count(Self : Enumeration_Class) return Natural;
 
@@ -28,12 +37,17 @@ package kv.apg.enum is
    function Get(Self : Enumeration_Class; Name : String_Type) return Integer;
    Not_Found_Error : constant Integer := -1;
 
+   function Get_Associativity(Self : Enumeration_Class; Index : Positive) return Token_Associativity_Type;
+   function Get_Precedence(Self : Enumeration_Class; Index : Positive) return Token_Precedence_Type;
+
 private
 
    type Value_Type is
       record
          Value : Integer;
          Name  : kv.apg.tokens.Token_Class;
+         Associativity : Token_Associativity_Type := Neither;
+         Precedence : Token_Precedence_Type := 0;
       end record;
 
    package Value_List is new Ada.Containers.Doubly_Linked_Lists(Value_Type);
