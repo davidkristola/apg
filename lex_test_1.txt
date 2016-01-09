@@ -9,6 +9,9 @@ token Key_Constructor = "constructor";
 skipover White_Space = (' ' | '   ') +;
 skipover New_Line = (U000A | U000D);
 
+token times : left 20 = '*';
+token plus : left 10 = '+';
+
 token Id_Token = (('a'-'z') | ('A'-'Z')) * ('_'? (('a'-'z')|('A'-'Z')|('0'-'9')))*;
 token Integer_Literal = ('0'-'9') + ('_'? ('0'-'9'))*;
 

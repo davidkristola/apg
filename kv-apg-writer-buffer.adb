@@ -61,4 +61,17 @@ package body kv.apg.writer.buffer is
       return Self.Lines.Element(Line);
    end Get_Line;
 
+   ----------------------------------------------------------------------------
+   overriding function Line_With_Pattern
+      (Self    : Buffer_Writer_Class;
+       Pattern : String) return Natural is
+   begin
+      for Line in 1..Natural(Self.Lines.Length) loop
+         if Index(Source => Self.Lines(Line), Pattern => To_WWS(Pattern), From => 1) > 0 then
+            return Line;
+         end if;
+      end loop;
+      return 0;
+   end Line_With_Pattern;
+
 end kv.apg.writer.buffer;

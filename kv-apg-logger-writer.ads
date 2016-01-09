@@ -11,6 +11,9 @@ package kv.apg.logger.writer is
       (Self   : in out Writer_Logger_Class;
        Writer : not null access kv.apg.writer.Writer_Class'CLASS;
        Level  : in     kv.apg.incidents.Severity_Type);
+   not overriding procedure Set_New_Level
+      (Self  : in out Writer_Logger_Class;
+       Level : in     kv.apg.incidents.Severity_Type);
    overriding procedure Note_By_Severity
       (Self        : in out Writer_Logger_Class;
        Severity    : in     kv.apg.incidents.Severity_Type;

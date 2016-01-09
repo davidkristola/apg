@@ -1,6 +1,6 @@
 case    actor
 a_name # comment
-255
+255 + 1 * 10
 empty_string ""
 "easy string"
 " this is a string with a # sign in it!"

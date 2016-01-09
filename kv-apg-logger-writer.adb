@@ -11,6 +11,14 @@ package body kv.apg.logger.writer is
    end Initialize;
 
    ----------------------------------------------------------------------------
+   not overriding procedure Set_New_Level
+      (Self  : in out Writer_Logger_Class;
+       Level : in     kv.apg.incidents.Severity_Type) is
+   begin
+      Self.Reporter.Set_Filter_Level(Level);
+   end Set_New_Level;
+
+   ----------------------------------------------------------------------------
    overriding procedure Note_By_Severity
       (Self        : in out Writer_Logger_Class;
        Severity    : in     kv.apg.incidents.Severity_Type;

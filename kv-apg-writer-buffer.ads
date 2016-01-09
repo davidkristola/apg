@@ -10,6 +10,10 @@ package kv.apg.writer.buffer is
    function Get_Line
       (Self : Buffer_Class;
        Line : Positive) return String_Type is abstract;
+   function Line_With_Pattern
+      (Self    : Buffer_Class;
+       Pattern : String) return Natural is abstract;
+
 
    type Buffer_Writer_Class is new Writer_Class and Buffer_Class with private;
 
@@ -37,6 +41,10 @@ package kv.apg.writer.buffer is
    overriding function Get_Line
       (Self : Buffer_Writer_Class;
        Line : Positive) return String_Type;
+
+   overriding function Line_With_Pattern
+      (Self    : Buffer_Writer_Class;
+       Pattern : String) return Natural;
 
 private
 

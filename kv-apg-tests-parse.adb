@@ -1390,14 +1390,23 @@ package body kv.apg.tests.parse is
       use kv.apg.rules;
       use Grammar_4_22_Tokens;
       Logger : kv.apg.logger.Safe_Logger_Pointer := T.Logger'UNCHECKED_ACCESS;
+      L_1 : Natural;
+      E_1 : constant String := "REDUCE by E -> ( E times E )";
+      L_2 : Natural;
+      E_2 : constant String := "REDUCE by E -> ( E plus E )";
    begin
-      Logger := T.CL'UNCHECKED_ACCESS;
+      T.Logger.Set_New_Level(Debug);
+      --Logger := T.CL'UNCHECKED_ACCESS;
       Load_4_22_Into_Engine(T, Logger);
-      Put_Line("==========================================");
-      Logger := T.CL'UNCHECKED_ACCESS;
+      --Put_Line("==========================================");
+      --Logger := T.CL'UNCHECKED_ACCESS;
       Load_Tokens_Into_Engine(T, Logger, (id, plus, id, times, id, eof));
       T.Assert(T.Engine.Has_Accepted, "Expected the token sequence to be accepted.");
       T.Assert(T.Engine.Error_Count = 0, "Expected the error count to be 0, got" & Natural'IMAGE(T.Engine.Error_Count));
+      L_1 := T.Buffer.Line_With_Pattern(E_1);
+      L_2 := T.Buffer.Line_With_Pattern(E_2);
+      -- Note: this will fail if the log output is sent to the console!
+      T.Assert(L_1 < L_2, "Expected <"&E_1&">@"&Natural'IMAGE(L_1)&" to be before <"&E_2&">@"&Natural'IMAGE(L_2)&" in the log buffer.");
    end Run;
 
 
