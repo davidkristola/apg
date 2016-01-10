@@ -27,12 +27,15 @@ package body kv.apg.tests.parse is
 
    use Ada.Characters.Conversions;
    use Ada.Strings.Wide_Wide_Unbounded;
+   use Ada.Containers;
    use kv.core.wwstr;
    use kv.apg.lex;
    use kv.apg.tokens;
    use kv.apg.logger.writer;
    use kv.apg.writer.buffer;
    use kv.apg.incidents;
+   use kv.apg.rules;
+   use kv.apg.enum;
 
    use kv.apg.tests.lex_lex;
    use kv.apg.tests.lex_parse;
@@ -105,8 +108,7 @@ package body kv.apg.tests.parse is
 
 
 
-   ----------------------------------------------------------------------------
-   ----------------------------------------------------------------------------
+   --##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
    type Grammar_Test_Class is abstract new Rule_Test_Class with
       record
          Grammar : aliased kv.apg.rules.Grammar_Class;
@@ -201,7 +203,6 @@ package body kv.apg.tests.parse is
       Rule : kv.apg.rules.Rule_Pointer;
       Expected : constant String := "***ERROR*** (File: , line 3, column 31): Symbol of production rule ""program"" not found. (""Epsilon"").";
       Expected_1 : constant String := "beta_list -> ( Beta beta_list ) => null;";
-      use kv.apg.rules;
    begin
       Add_ABG_Enum(T);
       Run_Basic_Grammar_Test(T, 3,
@@ -428,7 +429,6 @@ package body kv.apg.tests.parse is
       Rule : kv.apg.rules.Rule_Pointer;
       Sp : kv.apg.rules.Constant_Symbol_Pointer;
       Pp : kv.apg.rules.Production_Pointer;
-      use kv.apg.rules;
    begin
       Set_Up_ABG_Grammar(T);
 
@@ -499,7 +499,6 @@ package body kv.apg.tests.parse is
    procedure Run(T : in out Can_Disappear_3_Test) is
       Rule : kv.apg.rules.Rule_Pointer;
       Pp : kv.apg.rules.Production_Pointer;
-      use kv.apg.rules;
    begin
       Add_ABG_Enum(T);
       Run_Basic_Grammar_Test(T, 4,
@@ -580,9 +579,7 @@ package body kv.apg.tests.parse is
        Rule_Name : in     String;
        Included  : in     Terminal_Tuple_Array) is
 
-      use kv.apg.rules;
       use kv.apg.rules.Terminal_Sets;
-      use Ada.Containers;
 
       Rule : kv.apg.rules.Rule_Pointer;
       Answer : Set;
@@ -636,9 +633,7 @@ package body kv.apg.tests.parse is
        Rule_Name : in     String;
        Included  : in     Terminal_Tuple_Array) is
 
-      use kv.apg.rules;
       use kv.apg.rules.Terminal_Sets;
-      use Ada.Containers;
 
       Rule : kv.apg.rules.Rule_Pointer;
       Answer : Set;
@@ -688,7 +683,6 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Item_Neg_1_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Item_Neg_1_Test) is
-      use kv.apg.rules;
       Rule : Rule_Pointer;
       Production : Production_Pointer;
       Item : Constant_Item_Pointer;
@@ -710,7 +704,6 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Item_Neg_2_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Item_Neg_2_Test) is
-      use kv.apg.rules;
       Rule : Rule_Pointer;
       Production : Production_Pointer;
       Item : Constant_Item_Pointer;
@@ -732,7 +725,6 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Item_Neg_3_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Item_Neg_3_Test) is
-      use kv.apg.rules;
       Rule : Rule_Pointer;
       Production : Production_Pointer;
       Item : Constant_Item_Pointer;
@@ -757,7 +749,6 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Item_Image_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Item_Image_Test) is
-      use kv.apg.rules;
       Rule : Rule_Pointer;
       Production : Production_Pointer;
       Item : Constant_Item_Pointer;
@@ -774,7 +765,6 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Item_Closure_Support_Functions_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Item_Closure_Support_Functions_Test) is
-      use kv.apg.rules;
       Rule : Rule_Pointer;
       Production : Production_Pointer;
       Item : Constant_Item_Pointer;
@@ -797,7 +787,6 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Item_Closure_Support_Functions_2_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Item_Closure_Support_Functions_2_Test) is
-      use kv.apg.rules;
       Rule : Rule_Pointer;
       Production : Production_Pointer;
       Item : Constant_Item_Pointer;
@@ -821,7 +810,6 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Item_Closure_Support_Functions_3_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Item_Closure_Support_Functions_3_Test) is
-      use kv.apg.rules;
       Rule : Rule_Pointer;
       Production : Production_Pointer;
       Item : Constant_Item_Pointer;
@@ -845,7 +833,6 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Table_Support_Functions_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Table_Support_Functions_Test) is
-      use kv.apg.rules;
       Rule : Rule_Pointer;
       Production : Production_Pointer;
    begin
@@ -867,8 +854,6 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Kernels_1_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Kernels_1_Test) is
-      use kv.apg.rules;
-      use Ada.Containers;
       I0 : Item_Sets.Set;
       Item : Constant_Item_Pointer;
       Expected : constant String_Type := To_String_Type("[program -> . alpha_list Gamma]");
@@ -926,9 +911,6 @@ package body kv.apg.tests.parse is
        S : in     String;
        E : in     String_Type) is
 
-      use kv.apg.rules;
-      use Ada.Containers;
-
       Item : Constant_Item_Pointer;
 
    begin
@@ -944,7 +926,6 @@ package body kv.apg.tests.parse is
        R : in     String;
        P : in     Positive;
        O : in     Positive) return kv.apg.rules.Constant_Symbol_Pointer is
-      use kv.apg.rules;
       Symbol : Constant_Symbol_Pointer;
    begin
       Symbol := T.Grammar.Get_Symbol(To_String_Type(R), P, O);
@@ -956,8 +937,6 @@ package body kv.apg.tests.parse is
    type Kernels_2_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Kernels_2_Test) is
       -- This test checks the states listed in Figure 4.42 of the Dragon Book (page 241).
-      use kv.apg.rules;
-      use Ada.Containers;
       I0 : Item_Sets.Set;
       I1 : Item_Sets.Set;
       I2 : Item_Sets.Set;
@@ -1042,9 +1021,7 @@ package body kv.apg.tests.parse is
        All_Symbols : kv.apg.rules.Symbol_Vectors.Vector;
        State_Info : kv.apg.rules.State_Information_Type) is
 
-      use kv.apg.rules;
-      use Ada.Containers;
-
+      -------------------------------------------------------------------------
       function Safe_Name(S : Constant_Symbol_Pointer) return String is
       begin
          if S = null then
@@ -1080,8 +1057,6 @@ package body kv.apg.tests.parse is
    type Kernels_3_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Kernels_3_Test) is
       -- This test checks the states listed in Figure 4.42 of the Dragon Book (page 241).
-      use kv.apg.rules;
-      use Ada.Containers;
       All_Symbols : Symbol_Vectors.Vector;
       State_Info : State_Information_Type;
       Logger : kv.apg.logger.Safe_Logger_Pointer := T.Logger'UNCHECKED_ACCESS;
@@ -1141,8 +1116,6 @@ package body kv.apg.tests.parse is
    type Kernels_4_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Kernels_4_Test) is
       -- This test checks the states listed in Figure 4.46 of the Dragon Book (page 248).
-      use kv.apg.rules;
-      use Ada.Containers;
       All_Symbols : Symbol_Vectors.Vector;
       State_Info : State_Information_Type;
       Logger : kv.apg.logger.Safe_Logger_Pointer := T.Logger'UNCHECKED_ACCESS;
@@ -1167,8 +1140,7 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Kernels_5_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Kernels_5_Test) is
-      use kv.apg.rules;
-      use Ada.Containers;
+
       All_Symbols : Symbol_Vectors.Vector;
       State_Info : State_Information_Type;
 
@@ -1204,27 +1176,87 @@ package body kv.apg.tests.parse is
 
 
 
+   --##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
+   type Action_Table_Test_Class is abstract new Grammar_Test_Class with
+      record
+         Table : Action_Table_Class;
+         Action : Action_Entry_Type;
+      end record;
+
    ----------------------------------------------------------------------------
-   type Action_Table_1_Test is new Grammar_Test_Class with null record;
-   procedure Run(T : in out Action_Table_1_Test) is
-      use kv.apg.rules;
-      Table : Action_Table_Class;
-      Action : Action_Entry_Type;
+   overriding procedure Set_Up(T : in out Action_Table_Test_Class) is
    begin
-      Table.Initialize(5, kv.apg.rules.End_Of_File, 5);
-      Action := (What => Shift, Where => 2);
-      Table.Set_Action(Action, 0, 0, T.Logger'UNCHECKED_ACCESS);
-      Action := Table.Get_Action(0, 0);
-      T.Assert(Action.What = Shift, "Expected Shift");
-      T.Assert(Action.Where = 2, "Expected 2");
-      Action := Table.Get_Action(1, 1);
-      T.Assert(Action.What = Error, "Expected Error");
+      Set_Up(Grammar_Test_Class(T));
+      T.Table.Initialize(5, kv.apg.rules.End_Of_File, 5);
+      T.Action := (What => Shift, Where => 2, Precedence => 0, Associativity => Neither);
+   end Set_Up;
+
+
+   ----------------------------------------------------------------------------
+   type Action_Table_Get_Unset_Test is new Action_Table_Test_Class with null record;
+   procedure Run(T : in out Action_Table_Get_Unset_Test) is
+   begin
+      T.Action := T.Table.Get_Action(1, 1);
+      T.Assert(T.Action.What = Error, "Expected Error");
+      T.Assert(T.Table.Error_Count = 0, "Expected no processing errors");
    end Run;
+
+   ----------------------------------------------------------------------------
+   type Action_Table_Simple_Set_Test is new Action_Table_Test_Class with null record;
+   procedure Run(T : in out Action_Table_Simple_Set_Test) is
+   begin
+      T.Table.Set_Action(T.Action, 0, 0, T.Logger'UNCHECKED_ACCESS);
+      T.Action := T.Table.Get_Action(0, 0);
+      T.Assert(T.Action.What = Shift, "Expected Shift");
+      T.Assert(T.Action.Where = 2, "Expected 2");
+      T.Assert(T.Table.Error_Count = 0, "Expected no processing errors");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Action_Table_Double_Set_Test is new Action_Table_Test_Class with null record;
+   procedure Run(T : in out Action_Table_Double_Set_Test) is
+   begin
+      T.Table.Set_Action(T.Action, 0, 0, T.Logger'UNCHECKED_ACCESS);
+      T.Table.Set_Action(T.Action, 0, 0, T.Logger'UNCHECKED_ACCESS);
+      T.Assert(T.Table.Error_Count = 1, "Expected 1 processing error (shift/shift conflict)");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Action_Table_Higher_Reduce_Replaces_Test is new Action_Table_Test_Class with null record;
+   procedure Run(T : in out Action_Table_Higher_Reduce_Replaces_Test) is
+   begin
+      T.Action.Precedence := 1;
+      T.Table.Set_Action(T.Action, 0, 0, T.Logger'UNCHECKED_ACCESS);
+
+      T.Action := (What => Reduce, Production => 3, Precedence => 2, Associativity => Neither);
+      T.Table.Set_Action(T.Action, 0, 0, T.Logger'UNCHECKED_ACCESS);
+
+      T.Action := T.Table.Get_Action(0, 0);
+      T.Assert(T.Action.What = Reduce, "Expected Reduce");
+      T.Assert(T.Table.Error_Count = 0, "Expected no processing errors");
+   end Run;
+
+   ----------------------------------------------------------------------------
+   type Action_Table_Lower_Reduce_Dropped_Test is new Action_Table_Test_Class with null record;
+   procedure Run(T : in out Action_Table_Lower_Reduce_Dropped_Test) is
+   begin
+      T.Action.Precedence := 3;
+      T.Table.Set_Action(T.Action, 0, 0, T.Logger'UNCHECKED_ACCESS);
+
+      T.Action := (What => Reduce, Production => 3, Precedence => 2, Associativity => Neither);
+      T.Table.Set_Action(T.Action, 0, 0, T.Logger'UNCHECKED_ACCESS);
+
+      T.Action := T.Table.Get_Action(0, 0);
+      T.Assert(T.Action.What = Shift, "Expected Shift to not be replaced by lower precedence reduce");
+      T.Assert(T.Table.Error_Count = 0, "Expected no processing errors");
+   end Run;
+
+
+
 
    ----------------------------------------------------------------------------
    type State_Stack_1_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out State_Stack_1_Test) is
-      use kv.apg.rules;
       Stack : Stack_Class;
       State : State_Entry_Type;
    begin
@@ -1243,7 +1275,7 @@ package body kv.apg.tests.parse is
 
 
 
-   ----------------------------------------------------------------------------
+   --##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
    type Parser_Engine_Test_Class is abstract new Grammar_Test_Class with
       record
          Engine : aliased kv.apg.rules.Parser_Engine_Class;
@@ -1253,7 +1285,6 @@ package body kv.apg.tests.parse is
 
    ----------------------------------------------------------------------------
    overriding procedure Set_Up(T : in out Parser_Engine_Test_Class) is
-      use kv.apg.rules;
    begin
       Set_Up(Grammar_Test_Class(T));
       T.CL.Initialize
@@ -1307,7 +1338,6 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Parser_Engine_1_Test is new Parser_Engine_Test_Class with null record;
    procedure Run(T : in out Parser_Engine_1_Test) is
-      use kv.apg.rules;
       Logger : kv.apg.logger.Safe_Logger_Pointer := T.Logger'UNCHECKED_ACCESS;
    begin
       --Logger := T.CL'UNCHECKED_ACCESS;
@@ -1322,7 +1352,6 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Parser_Engine_2_Test is new Parser_Engine_Test_Class with null record;
    procedure Run(T : in out Parser_Engine_2_Test) is
-      use kv.apg.rules;
       Logger : kv.apg.logger.Safe_Logger_Pointer := T.Logger'UNCHECKED_ACCESS;
    begin
       --Logger := T.CL'UNCHECKED_ACCESS;
@@ -1337,7 +1366,6 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Parser_Engine_3_Test is new Parser_Engine_Test_Class with null record;
    procedure Run(T : in out Parser_Engine_3_Test) is
-      use kv.apg.rules;
       use ETF_Tokens;
       Logger : kv.apg.logger.Safe_Logger_Pointer := T.Logger'UNCHECKED_ACCESS;
    begin
@@ -1353,7 +1381,6 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Parser_Engine_4_Test is new Parser_Engine_Test_Class with null record;
    procedure Run(T : in out Parser_Engine_4_Test) is
-      use kv.apg.rules;
       use ETF_Tokens;
       Logger : kv.apg.logger.Safe_Logger_Pointer := T.Logger'UNCHECKED_ACCESS;
    begin
@@ -1387,7 +1414,6 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Parser_Engine_5_Test is new Parser_Engine_Test_Class with null record;
    procedure Run(T : in out Parser_Engine_5_Test) is
-      use kv.apg.rules;
       use Grammar_4_22_Tokens;
       Logger : kv.apg.logger.Safe_Logger_Pointer := T.Logger'UNCHECKED_ACCESS;
       L_1 : Natural;
@@ -1457,7 +1483,12 @@ package body kv.apg.tests.parse is
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 
-      suite.register(new Action_Table_1_Test, "Action_Table_1_Test");
+      suite.register(new Action_Table_Get_Unset_Test, "Action_Table_Get_Unset_Test");
+      suite.register(new Action_Table_Simple_Set_Test, "Action_Table_Simple_Set_Test");
+      suite.register(new Action_Table_Higher_Reduce_Replaces_Test, "Action_Table_Higher_Reduce_Replaces_Test");
+      suite.register(new Action_Table_Lower_Reduce_Dropped_Test, "Action_Table_Lower_Reduce_Dropped_Test");
+      suite.register(new Action_Table_Double_Set_Test, "Action_Table_Double_Set_Test");
+
       suite.register(new State_Stack_1_Test, "State_Stack_1_Test");
       suite.register(new Parser_Engine_1_Test, "Parser_Engine_1_Test");
       suite.register(new Parser_Engine_2_Test, "Parser_Engine_2_Test");

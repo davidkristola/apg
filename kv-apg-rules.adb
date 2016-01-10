@@ -815,6 +815,8 @@ package body kv.apg.rules is
    end Rule_Of;
 
 
+   function Img(Arg : Terminal_Index_Type) return String renames Terminal_Index_Type'IMAGE;
+
    ----------------------------------------------------------------------------
    procedure Resolve_Productions
       (Self   : in out Grammar_Class;
@@ -940,7 +942,7 @@ package body kv.apg.rules is
       use Terminal_Sets;
    begin
       for Current of Self loop
-         Answer := Answer & To_String_Type(",") & To_String_Type(Terminal_Index_Type'IMAGE(Current));
+         Answer := Answer & To_String_Type(",") & To_String_Type(Img(Current));
       end loop;
       return Answer & To_String_Type("}");
    end Image;
@@ -1577,7 +1579,7 @@ package body kv.apg.rules is
 
 
 
-
+   function Img(Arg : Production_Index_Type) return String renames Production_Index_Type'IMAGE;
 
 
    ----------------------------------------------------------------------------
@@ -1593,7 +1595,7 @@ package body kv.apg.rules is
             end;
          when Reduce =>
             declare
-               Answer : String := Production_Index_Type'IMAGE(Action_Entry.Production);
+               Answer : String := Img(Action_Entry.Production);
             begin
                Answer(1) := 'r';
                return Answer;
@@ -1607,7 +1609,7 @@ package body kv.apg.rules is
 
 
 
-   Default_Action_Entry : constant Action_Entry_Type := (What => Error);
+   Default_Action_Entry : constant Action_Entry_Type := (What => Error, Precedence => 0, Associativity => kv.apg.enum.Neither);
 
 
    ----------------------------------------------------------------------------
@@ -1629,11 +1631,20 @@ package body kv.apg.rules is
        State    : in     State_Index_Type;
        Terminal : in     Terminal_Index_Type;
        Logger   : in     kv.apg.logger.Safe_Logger_Pointer) is
+      Current : constant Action_Entry_Type := Self.Table(State, Terminal);
+      use kv.apg.enum;
    begin
-      if Self.Table(State, Terminal) = Default_Action_Entry then
+      if Current = Default_Action_Entry then
          Self.Table(State, Terminal) := Action;
+      elsif Action.Precedence > Current.Precedence then
+         Logger.Note_By_Severity(Information, Image(Current) & " replaced by " & Image(Action) & " in state " & Img(State) & " for terminal " & Img(Terminal));
+         Self.Table(State, Terminal) := Action;
+         Self.Replacements := Self.Replacements + 1;
+      elsif Current.What = Shift and Action.What = Reduce then
+         Logger.Note_By_Severity(Debug, "Keeping " & Image(Current) & ", dropping " & Image(Action) & " in state " & Img(State) & " for terminal " & Img(Terminal));
+         Self.Keeps := Self.Keeps + 1;
       else
-         Logger.Note_By_Severity(Error, Image(Self.Table(State, Terminal)) & "/" & Image(Action) & " conflict in state " & Img(State) & " for terminal " & Terminal_Index_Type'IMAGE(Terminal));
+         Logger.Note_By_Severity(Error, Image(Current) & "/" & Image(Action) & " conflict in state " & Img(State) & " for terminal " & Img(Terminal));
          Self.Errors := Self.Errors + 1;
       end if;
    end Set_Action;
@@ -1646,7 +1657,7 @@ package body kv.apg.rules is
        Terminal : in     Terminal_Index_Type;
        Logger   : in     kv.apg.logger.Safe_Logger_Pointer) is
    begin
-      Logger.Note_By_Severity(Debug, Image(Self.Table(State, Terminal)) & " replaced by " & Image(Action) & " in state " & Img(State) & " for terminal " & Terminal_Index_Type'IMAGE(Terminal));
+      Logger.Note_By_Severity(Debug, Image(Self.Table(State, Terminal)) & " replaced by " & Image(Action) & " in state " & Img(State) & " for terminal " & Img(Terminal));
       Self.Table(State, Terminal) := Action;
    end Replace_Action;
 
@@ -1733,6 +1744,107 @@ package body kv.apg.rules is
 
 
 
+
+
+   ----------------------------------------------------------------------------
+   procedure Process_Hint_Action
+      (Self   : in out Parser_Engine_Class;
+       Hint   : in     Action_Hint_Type;
+       Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
+
+      Action : Action_Entry_Type;
+
+   begin
+      if Hint.Symbol.Get_Number = End_Of_File then
+         -- Special case: Add an accept action
+         Action := (What => Accept_Input, Precedence => 0, Associativity => kv.apg.enum.Neither);
+         Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add ACCEPT " & To_String(Hint.Symbol.Name));
+      else
+         -- Add a shift action
+         Action := (What => Shift, Where => Hint.To_State, Precedence => Self.Grammar.Tokens.Get_Precedence(Natural(Hint.Symbol.Get_Number)), Associativity => kv.apg.enum.Neither);
+         Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add SHIFT " & To_String(Hint.Symbol.Name) & " and goto " & Img(Hint.To_State));
+      end if;
+      Self.Actions.Set_Action(Action, Hint.From_State, Hint.Symbol.Get_Number, Logger);
+   end Process_Hint_Action;
+
+   ----------------------------------------------------------------------------
+   procedure Process_Hint_Goto
+      (Self   : in out Parser_Engine_Class;
+       Hint   : in     Action_Hint_Type;
+       Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
+   begin
+      -- Add a non-terminal goto
+      Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add GOTO " & To_String(Hint.Symbol.Name) & " and goto " & Img(Hint.To_State));
+      Self.Gotos.Set_Goto(Hint.To_State, Hint.From_State, Rule_Of(Hint.Symbol).Get_Number);
+   end Process_Hint_Goto;
+
+   ----------------------------------------------------------------------------
+   procedure Process_Hint
+      (Self   : in out Parser_Engine_Class;
+       Hint   : in     Action_Hint_Type;
+       Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
+   begin
+      if Hint.Symbol.Is_Terminal then
+         Process_Hint_Action(Self, Hint, Logger);
+      else
+         Process_Hint_Goto(Self, Hint, Logger);
+      end if;
+   end Process_Hint;
+
+   ----------------------------------------------------------------------------
+   procedure Process_Hints
+      (Self   : in out Parser_Engine_Class;
+       Hints  : in     Action_Space.Vector;
+       Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
+
+   begin
+      for Hint of Hints loop
+         if Hint.Symbol /= null then
+            Process_Hint(Self, Hint, Logger);
+         end if;
+      end loop;
+   end Process_Hints;
+
+
+   ----------------------------------------------------------------------------
+   procedure Process_State_Item
+      (Self   : in out Parser_Engine_Class;
+       Index  : in     State_Index_Type;
+       Item   : in     Constant_Item_Pointer;
+       Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
+
+      Rule   : Rule_Pointer;
+      Symbol : Constant_Symbol_Pointer;
+      Action : Action_Entry_Type;
+
+      use kv.apg.enum;
+
+   begin
+      Rule := Item.Get_Big_A; -- Get this Item's rule
+      for T of Rule.Follow loop -- Consider everything that can follow this rule...
+         Symbol := Self.Grammar.Translate(T);
+         -- Add a reduce action
+         Action := (What => Reduce, Production => Item.Get_Production_Number, Precedence => Item.Production.Get_Precedence, Associativity => kv.apg.enum.Neither);
+         Logger.Note_By_Severity(Debug, Img(Index) & ": add RUDUCE by production" & Img(Item.Get_Production_Number) & ", terminal " & To_String(Symbol.Name));
+         Self.Actions.Set_Action(Action, Index, T, Logger);
+      end loop;
+   end Process_State_Item;
+
+   ----------------------------------------------------------------------------
+   procedure Process_States
+      (Self   : in out Parser_Engine_Class;
+       States : in     State_Space.Vector;
+       Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
+   begin
+      for State of States loop
+         for Item of State.Kernels loop
+            if not Item.Has_Next then -- If the dot is at the end of the item...
+               Process_State_Item(Self, State.Index, Item, Logger);
+            end if;
+         end loop;
+      end loop;
+   end Process_States;
+
    ----------------------------------------------------------------------------
    procedure Initialize
       (Self    : in out Parser_Engine_Class;
@@ -1740,74 +1852,18 @@ package body kv.apg.rules is
        Logger  : in     kv.apg.logger.Safe_Logger_Pointer) is
 
       Start_State : State_Entry_Type := (Symbol => null, State => 0);
-      Info : State_Information_Type;
+      Info        : State_Information_Type;
       State_Count : State_Index_Type;
-      Action : Action_Entry_Type;
-      Rule : Rule_Pointer;
-      Symbol : Constant_Symbol_Pointer;
-
-      use kv.apg.enum;
 
    begin
-      Logger.Note_By_Severity(Debug, "Parser_Engine_Class.Initialize Start");
       Self.Grammar := Grammar;
       Info := Grammar.Generate_Parser_States(Logger);
       State_Count := State_Index_Type(Info.States.Length)+1;
-      Logger.Note_By_Severity(Debug, "Push state 0");
       Self.Stack.Push_State(Start_State);
-      Logger.Note_By_Severity(Debug, "Set up action table");
       Self.Actions.Initialize(State_Count, Grammar.Terminal_Lo, Grammar.Terminal_Hi);
-      Logger.Note_By_Severity(Debug, "Set up goto table");
       Self.Gotos.Initialize(State_Count, Grammar.Rule_Number_Lo, Grammar.Rule_Number_Hi);
-
-      for Hint of Info.Hints loop
-         if Hint.Symbol /= null then
-            if Hint.Symbol.Is_Terminal then
-               if Hint.Symbol.Get_Number = End_Of_File then
-                  -- Add an accept action
-                  Action := (What => Accept_Input);
-                  Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add ACCEPT " & To_String(Hint.Symbol.Name));
-               else
-                  -- Add a shift action
-                  Action := (What => Shift, Where => Hint.To_State);
-                  Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add SHIFT " & To_String(Hint.Symbol.Name) & " and goto " & Img(Hint.To_State));
-               end if;
-               Self.Actions.Set_Action(Action, Hint.From_State, Hint.Symbol.Get_Number, Logger);
-            else
-               -- Add a non-terminal goto
-               Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add GOTO " & To_String(Hint.Symbol.Name) & " and goto " & Img(Hint.To_State));
-               Self.Gotos.Set_Goto(Hint.To_State, Hint.From_State, Rule_Of(Hint.Symbol).Get_Number);
-            end if;
-         end if;
-      end loop;
-
-      for State of Info.States loop
-         for Item of State.Kernels loop
-            if not Item.Has_Next then
-               Rule := Item.Get_Big_A;
-               for T of Rule.Follow loop
-                  Symbol := Grammar.Translate(T);
-                  -- Add a reduce action
-                  Action := (What => Reduce, Production => Item.Get_Production_Number);
-                  Logger.Note_By_Severity(Debug,
-                     Img(State.Index) & ": add RUDUCE by production" & Production_Index_Type'IMAGE(Item.Get_Production_Number) &
-                     ", terminal " & To_String(Symbol.Name));
-                  if Self.Actions.Get_Action(State.Index, T) = Default_Action_Entry then
-                     Self.Actions.Set_Action(Action, State.Index, T, Logger);
-                  else
-                     -- There is already an action in place. Trump it?
-                     if Item.Production.Get_Precedence > Grammar.Tokens.Get_Precedence(Natural(T)) then
-                        Self.Actions.Replace_Action(Action, State.Index, T, Logger);
-                     else
-                        Logger.Note_By_Severity(Debug, "Precedence overrides addition of reduction -- keeping current action.");
-                     end if;
-                  end if;
-               end loop;
-            end if;
-         end loop;
-      end loop;
-
-      Logger.Note_By_Severity(Debug, "Parser_Engine_Class.Initialize Done");
+      Process_Hints(Self, Info.Hints, Logger);
+      Process_States(Self, Info.States, Logger);
    end Initialize;
 
    ----------------------------------------------------------------------------

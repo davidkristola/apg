@@ -400,6 +400,8 @@ package kv.apg.rules is
 
    type Action_Entry_Type(What : Action_Type := Error) is
       record
+         Precedence    : kv.apg.enum.Token_Precedence_Type := 0;
+         Associativity : kv.apg.enum.Token_Associativity_Type := kv.apg.enum.Neither;
          case What is
             when Shift =>
                Where : State_Index_Type;
@@ -560,8 +562,10 @@ private
 
    type Action_Table_Class is tagged
       record
-         Table  : Action_Table_Matrix_Pointer;
-         Errors : Natural := 0;
+         Table        : Action_Table_Matrix_Pointer;
+         Errors       : Natural := 0;
+         Replacements : Natural := 0;
+         Keeps        : Natural := 0;
       end record;
 
 
