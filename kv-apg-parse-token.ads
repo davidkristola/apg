@@ -23,6 +23,6 @@ private package kv.apg.parse.token is
    overriding procedure Ingest_Token
       (Self  : in out Token_State_Class;
        Token : in     kv.apg.tokens.Token_Class);
-   overriding function Get_Directive(Self : Token_State_Class) return kv.apg.directives.Directive_Pointer_Type;
+   overriding function Get_Directive(Self : in out Token_State_Class) return kv.apg.directives.Directive_Pointer_Type;
 
 end kv.apg.parse.token;

@@ -12,9 +12,14 @@ skipover New_Line = (U000A | U000D);
 token times : left 20 = '*';
 token plus : left 10 = '+';
 
+keywords : key_* = import attribute predicate message returns actor constructor extends;
+
+token eos = ';';
+
 token Id_Token = (('a'-'z') | ('A'-'Z')) * ('_'? (('a'-'z')|('A'-'Z')|('0'-'9')))*;
 token Integer_Literal = ('0'-'9') + ('_'? ('0'-'9'))*;
 
 token String_Literal = '"' (U000B | U0020 | U0021 | ( U0023 - UFFFF ) ) * '"';
 skipover Comment_Line = '#' (U000E-UFFFF) * (U000A | U000D);
+
 

@@ -1,3 +1,4 @@
+import foo;
 case    actor
 a_name # comment
 255 + 1 * 10

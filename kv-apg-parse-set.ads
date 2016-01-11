@@ -14,7 +14,7 @@ private package kv.apg.parse.set is
    overriding procedure Ingest_Token
       (Self  : in out Set_State_Class;
        Token : in     kv.apg.tokens.Token_Class);
-   overriding function Get_Directive(Self : Set_State_Class) return kv.apg.directives.Directive_Pointer_Type;
+   overriding function Get_Directive(Self : in out Set_State_Class) return kv.apg.directives.Directive_Pointer_Type;
 
    not overriding procedure Expect_Name
       (Self  : in out Set_State_Class;
@@ -28,10 +28,5 @@ private package kv.apg.parse.set is
    not overriding procedure Expect_Eos
       (Self  : in out Set_State_Class;
        Token : in     kv.apg.tokens.Token_Class);
-
---   not overriding procedure Handle_Error
---      (Self   : in out Set_State_Class;
---       Token  : in     kv.apg.tokens.Token_Class;
---       Reason : in     String);
 
 end kv.apg.parse.set;

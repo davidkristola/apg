@@ -172,10 +172,14 @@ package body kv.apg.parse.rule is
    end Ingest_Token;
 
    -------------------------------------------------------------------------
-   function Get_Directive(Self : Rule_State_Class) return kv.apg.directives.Directive_Pointer_Type is
+   function Get_Directive(Self : in out Rule_State_Class) return kv.apg.directives.Directive_Pointer_Type is
       Rule_Directive : access kv.apg.directives.Rule_Class;
       Rule : kv.apg.rules.Rule_Pointer;
    begin
+      if Self.Status /= Done_Good then
+         return null;
+      end if;
+      Self.Status := Done_Done;
       Rule_Directive := new kv.apg.directives.Rule_Class;
       Rule := new kv.apg.rules.Rule_Class;
       Rule.Initialize(Self.Name_Token, Self.Productions);

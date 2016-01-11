@@ -554,6 +554,27 @@ package body kv.apg.tests.lex_parse is
 
 
 
+   ----------------------------------------------------------------------------
+   type Parse_Keywords_1_Test is new Parser_Test_Class with null record;
+   procedure Run(T : in out Parse_Keywords_1_Test) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
+      use kv.apg.directives;
+   begin
+      --kv.apg.regex.Set_Debug(True);
+      Parse_This(T, "keywords : key_* = foo bar and or;");
+      Check_States(T, Errors => 0, Directives => 4);
+      Directive := T.Parser.Next_Directive;
+      T.Assert(kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Subtype = Accepting, "Expected subtype to be Accepting");
+      T.Assert(kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Name_Token.Get_Data_As_String = "key_foo", "Expected the first token name to be 'key_foo', got '" &
+         kv.apg.directives.Token_Class'CLASS(Directive.all).Get_Name_Token.Get_Data_As_String & "'!");
+      kv.apg.directives.Free(Directive);
+      --kv.apg.regex.Set_Debug(False);
+   end Run;
+
+
+
+
+
 
    ----------------------------------------------------------------------------
    procedure register(suite : in kv.core.ut.Suite_Pointer_Type) is
@@ -591,8 +612,10 @@ package body kv.apg.tests.lex_parse is
       suite.register(new Parse_Bad_Regex_3_Token_Test, "Parse_Bad_Regex_3_Token_Test");
       suite.register(new Parse_Bad_Regex_4_Token_Test, "Parse_Bad_Regex_4_Token_Test");
       suite.register(new Parse_Bad_Regex_5_Token_Test, "Parse_Bad_Regex_5_Token_Test");
-
       suite.register(new Parse_Left_Token_Test, "Parse_Left_Token_Test");
+      suite.register(new Parse_Keywords_1_Test, "Parse_Keywords_1_Test");
+--      suite.register(new XXX, "XXX");
+--      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
 --      suite.register(new XXX, "XXX");
    end register;

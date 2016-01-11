@@ -41,8 +41,8 @@ package kv.apg.parse is
 
 private
 
-   type Status_Type is (Working, Done_Good, Done_Error);
-   subtype Done_Status_Type is Status_Type range Done_Good .. Done_Error;
+   type Status_Type is (Working, Done_Good, Done_Error, Done_Done);
+   subtype Done_Status_Type is Status_Type range Done_Good .. Done_Done;
    type State_Class is abstract tagged
       record
          Status : Status_Type := Working;
@@ -55,7 +55,7 @@ private
       (Self  : in out State_Class;
        Token : in     kv.apg.tokens.Token_Class) is abstract;
    function Status(Self : State_Class) return Status_Type;
-   function Get_Directive(Self : State_Class) return kv.apg.directives.Directive_Pointer_Type is abstract;
+   function Get_Directive(Self : in out State_Class) return kv.apg.directives.Directive_Pointer_Type is abstract;
    procedure Handle_Error
       (Self   : in out State_Class;
        Token  : in     kv.apg.tokens.Token_Class;

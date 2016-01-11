@@ -227,9 +227,13 @@ package body kv.apg.parse.token is
    end Ingest_Token;
 
    -------------------------------------------------------------------------
-   function Get_Directive(Self : Token_State_Class) return kv.apg.directives.Directive_Pointer_Type is
+   function Get_Directive(Self : in out Token_State_Class) return kv.apg.directives.Directive_Pointer_Type is
       Directive : access kv.apg.directives.Token_Class;
    begin
+      if Self.Status /= Done_Good then
+         return null;
+      end if;
+      Self.Status := Done_Done;
       Directive := new kv.apg.directives.Token_Class;
       Directive.Initialize(Name => Self.Name_Token, Tree => Self.Tree, Kind => Self.Kind);
       Directive.Set_Associativity(Self.Associativity);

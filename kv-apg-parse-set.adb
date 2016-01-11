@@ -87,24 +87,13 @@ package body kv.apg.parse.set is
    end Expect_Eos;
 
    -------------------------------------------------------------------------
---   not overriding procedure Handle_Error
---      (Self   : in out Set_State_Class;
---       Token  : in     kv.apg.tokens.Token_Class;
---       Reason : in     String) is
---   begin
---      Self.Status := Done_Error;
---      if Self.Logger /= null then
---         Self.Logger.Note_Error
---            (Location => Token.Get_Location,
---             Citation => Token.Get_Data,
---             Reason   => Reason);
---      end if;
---   end Handle_Error;
-
-   -------------------------------------------------------------------------
-   function Get_Directive(Self : Set_State_Class) return kv.apg.directives.Directive_Pointer_Type is
+   function Get_Directive(Self : in out Set_State_Class) return kv.apg.directives.Directive_Pointer_Type is
       Set_Directive : access kv.apg.directives.Set_Class;
    begin
+      if Self.Status /= Done_Good then
+         return null;
+      end if;
+      Self.Status := Done_Done;
       Set_Directive := new kv.apg.directives.Set_Class;
       Set_Directive.Initialize(Name => Self.Name_Token, Value => Self.Value_Token.Get_Data);
       return kv.apg.directives.Directive_Pointer_Type(Set_Directive);

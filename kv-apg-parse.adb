@@ -12,6 +12,7 @@ with kv.core.wwstr;
 with kv.apg.parse.set;
 with kv.apg.parse.token;
 with kv.apg.parse.rule;
+with kv.apg.parse.keywords;
 
 package body kv.apg.parse is
 
@@ -120,6 +121,17 @@ package body kv.apg.parse is
    end Start_Processing_Rule_Directive;
 
    ----------------------------------------------------------------------------
+   procedure Start_Processing_Keywords_Directive
+      (Self : in out Parser_Class;
+       Kind : in     String) is
+   begin
+      Self.Action := Process;
+      Self.Substate := new kv.apg.parse.keywords.Keywords_State_Class;
+      Self.Substate.Set_Logger(Self.Logger);
+   end Start_Processing_Keywords_Directive;
+
+
+   ----------------------------------------------------------------------------
    procedure Handle_Scan_Error
       (Self  : in out Parser_Class;
        Token : in     kv.apg.tokens.Token_Class) is
@@ -156,6 +168,8 @@ package body kv.apg.parse is
          Start_Processing_Token_Directive(Self, Token.Get_Data_As_String);
       elsif Token.Get_Data_As_String = "rule" then
          Start_Processing_Rule_Directive(Self, Token.Get_Data_As_String);
+      elsif Token.Get_Data_As_String = "keywords" then
+         Start_Processing_Keywords_Directive(Self, Token.Get_Data_As_String);
       else
          Handle_Scan_Error(Self, Token);
       end if;
@@ -164,8 +178,13 @@ package body kv.apg.parse is
    ----------------------------------------------------------------------------
    procedure Save_Completed_Directive
       (Self : in out Parser_Class) is
+      Directive : kv.apg.directives.Directive_Pointer_Type;
    begin
-      Self.Directives.Append(Self.Substate.Get_Directive);
+      loop
+         Directive := Self.Substate.Get_Directive;
+      exit when Directive = null;
+         Self.Directives.Append(Directive);
+      end loop;
    end Save_Completed_Directive;
 
    ----------------------------------------------------------------------------

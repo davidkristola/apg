@@ -20,6 +20,6 @@ private package kv.apg.parse.rule is
    overriding procedure Ingest_Token
       (Self  : in out Rule_State_Class;
        Token : in     kv.apg.tokens.Token_Class);
-   overriding function Get_Directive(Self : Rule_State_Class) return kv.apg.directives.Directive_Pointer_Type;
+   overriding function Get_Directive(Self : in out Rule_State_Class) return kv.apg.directives.Directive_Pointer_Type;
 
 end kv.apg.parse.rule;
