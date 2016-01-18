@@ -95,7 +95,7 @@ package kv.apg.rules is
 
 
 
-
+   function Rule_Of(Symbol : Constant_Symbol_Pointer) return Rule_Pointer;
 
 
    function Equal(L, R : Constant_Symbol_Pointer) return Boolean;
@@ -464,33 +464,33 @@ package kv.apg.rules is
 
 
 
-   type State_Entry_Type is
-      record
-         Symbol : Constant_Symbol_Pointer;
-         State  : State_Index_Type;
-      end record;
+--   type State_Entry_Type is
+--      record
+--         Symbol : Constant_Symbol_Pointer;
+--         State  : State_Index_Type;
+--      end record;
+--
+--   type Stack_Class is tagged private;
+--   procedure Push_State
+--      (Self  : in out Stack_Class;
+--       State : in     State_Entry_Type);
+--   function Pop_State(Self : in out Stack_Class) return State_Entry_Type;
+--   function Top_State(Self : Stack_Class) return State_Index_Type;
 
-   type Stack_Class is tagged private;
-   procedure Push_State
-      (Self  : in out Stack_Class;
-       State : in     State_Entry_Type);
-   function Pop_State(Self : in out Stack_Class) return State_Entry_Type;
-   function Top_State(Self : Stack_Class) return State_Index_Type;
 
-
-   type Parser_Engine_Class is tagged private;
-   procedure Initialize
-      (Self    : in out Parser_Engine_Class;
-       Grammar : in     Grammar_Pointer;
-       Logger  : in     kv.apg.logger.Safe_Logger_Pointer);
-
-   procedure Parse_Token
-      (Self   : in out Parser_Engine_Class;
-       Token  : in     Terminal_Index_Type;
-       Logger : in     kv.apg.logger.Safe_Logger_Pointer);
-
-   function Error_Count(Self : Parser_Engine_Class) return Natural;
-   function Has_Accepted(Self : Parser_Engine_Class) return Boolean;
+--   type Parser_Engine_Class is tagged private;
+--   procedure Initialize
+--      (Self    : in out Parser_Engine_Class;
+--       Grammar : in     Grammar_Pointer;
+--       Logger  : in     kv.apg.logger.Safe_Logger_Pointer);
+--
+--   procedure Parse_Token
+--      (Self   : in out Parser_Engine_Class;
+--       Token  : in     Terminal_Index_Type;
+--       Logger : in     kv.apg.logger.Safe_Logger_Pointer);
+--
+--   function Error_Count(Self : Parser_Engine_Class) return Natural;
+--   function Has_Accepted(Self : Parser_Engine_Class) return Boolean;
 
 private
 
@@ -576,26 +576,26 @@ private
          Table : Goto_Table_Matrix_Pointer;
       end record;
 
-   package State_Vector is new Ada.Containers.Vectors
-      (Index_Type   => Natural,
-       Element_Type => State_Entry_Type);
+--   package State_Vector is new Ada.Containers.Vectors
+--      (Index_Type   => Natural,
+--       Element_Type => State_Entry_Type);
+--
+--   type Stack_Class is tagged
+--      record
+--         Stack : State_Vector.Vector;
+--      end record;
 
-   type Stack_Class is tagged
-      record
-         Stack : State_Vector.Vector;
-      end record;
 
-
-   type Parser_Engine_Class is tagged
-      record
-         Grammar  : Grammar_Pointer;
-         States   : State_Space.Vector;
-         Stack    : Stack_Class;
-         Actions  : Action_Table_Class;
-         Gotos    : Goto_Table_Class;
-         Accepted : Boolean := False;
-         Errors   : Natural := 0;
-      end record;
+--   type Parser_Engine_Class is tagged
+--      record
+--         Grammar  : Grammar_Pointer;
+--         States   : State_Space.Vector;
+--         Stack    : Stack_Class;
+--         Actions  : Action_Table_Class;
+--         Gotos    : Goto_Table_Class;
+--         Accepted : Boolean := False;
+--         Errors   : Natural := 0;
+--      end record;
 
 
 end kv.apg.rules;

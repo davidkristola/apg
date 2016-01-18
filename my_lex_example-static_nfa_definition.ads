@@ -20,7 +20,7 @@ package my_lex_example.Static_Nfa_Definition is
        2 => (2, False, Invalid, T2'ACCESS),
        3 => (3, False, Invalid, T3'ACCESS),
        4 => (4, False, Invalid, T4'ACCESS),
-       5 => (5, True, One, T5'ACCESS)
+       5 => (5, True, key_id, T5'ACCESS)
        );
    Nfa_Definition : aliased constant Nfa_Class := (Start => 1, States => State_List'ACCESS);
 

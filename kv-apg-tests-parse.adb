@@ -18,6 +18,8 @@ with kv.apg.writer.buffer;
 with kv.apg.writer.console;
 with kv.apg.incidents;
 with kv.apg.rules;
+with kv.apg.rules.stacks;
+with kv.apg.rules.engines;
 with kv.apg.enum;
 with kv.apg.locations;
 
@@ -35,6 +37,8 @@ package body kv.apg.tests.parse is
    use kv.apg.writer.buffer;
    use kv.apg.incidents;
    use kv.apg.rules;
+   use kv.apg.rules.stacks;
+   use kv.apg.rules.engines;
    use kv.apg.enum;
 
    use kv.apg.tests.lex_lex;
@@ -1278,7 +1282,7 @@ package body kv.apg.tests.parse is
    --##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
    type Parser_Engine_Test_Class is abstract new Grammar_Test_Class with
       record
-         Engine : aliased kv.apg.rules.Parser_Engine_Class;
+         Engine : aliased kv.apg.rules.engines.Parser_Engine_Class;
          CW : aliased kv.apg.writer.console.Console_Writer_Class;
          CL : aliased kv.apg.logger.writer.Writer_Logger_Class;
       end record;

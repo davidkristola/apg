@@ -12,7 +12,7 @@ skipover New_Line = (U000A | U000D);
 token times : left 20 = '*';
 token plus : left 10 = '+';
 
-keywords : key_* = import attribute predicate message returns actor constructor extends;
+keywords : key_* = import if predicate message returns then else extends;
 
 token eos = ';';
 
