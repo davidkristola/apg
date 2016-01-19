@@ -16,6 +16,7 @@ with kv.apg.lex;
 with kv.apg.logger.writer;
 with kv.apg.parse;
 with kv.apg.rules.engines;
+with kv.apg.rules.grammars;
 with kv.apg.tests.lex_lex;
 with kv.apg.tests.lex_parse;
 with kv.apg.tokens;
@@ -47,7 +48,7 @@ package body kv.apg.tests.yaccgen is
          Logger  : aliased kv.apg.logger.writer.Writer_Logger_Class;
          CL      : aliased kv.apg.logger.writer.Writer_Logger_Class;
 
-         Grammar : aliased kv.apg.rules.Grammar_Class;
+         Grammar : aliased kv.apg.rules.grammars.Grammar_Class;
          Enum    : aliased kv.apg.enum.Enumeration_Class;
          Engine  : aliased kv.apg.rules.engines.Parser_Engine_Class;
 

@@ -38,7 +38,7 @@ package body kv.apg.rules.stacks is
    end Pop_State;
 
    ----------------------------------------------------------------------------
-   function Top_State(Self : Stack_Class) return State_Index_Type is
+   function Top_State(Self : Stack_Class) return kv.apg.rules.grammars.State_Index_Type is
       Answer : State_Entry_Type;
    begin
       Answer := Self.Stack.Last_Element;

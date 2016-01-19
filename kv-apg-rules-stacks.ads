@@ -1,10 +1,11 @@
+with kv.apg.rules.grammars;
 
 package kv.apg.rules.stacks is
 
    type State_Entry_Type is
       record
          Symbol : Constant_Symbol_Pointer;
-         State  : State_Index_Type;
+         State  : kv.apg.rules.grammars.State_Index_Type;
       end record;
 
    type Stack_Class is tagged private;
@@ -12,7 +13,7 @@ package kv.apg.rules.stacks is
       (Self  : in out Stack_Class;
        State : in     State_Entry_Type);
    function Pop_State(Self : in out Stack_Class) return State_Entry_Type;
-   function Top_State(Self : Stack_Class) return State_Index_Type;
+   function Top_State(Self : Stack_Class) return kv.apg.rules.grammars.State_Index_Type;
 
 private
 

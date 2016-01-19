@@ -13,6 +13,7 @@ with Ada.Text_IO; use Ada.Text_IO;
 with kv.apg.locations;
 with kv.apg.incidents;
 with kv.apg.rules.stacks;
+with kv.apg.rules.tables;
 
 package body kv.apg.rules.engines is
 
@@ -21,11 +22,7 @@ package body kv.apg.rules.engines is
 
    use kv.apg.incidents; -- Severity_Type
    use kv.apg.rules.stacks;
-
---   procedure Free_Symbol_Instance is new Ada.Unchecked_Deallocation(Symbol_Class'CLASS, Symbol_Pointer);
---   procedure Free_Item_Instance is new Ada.Unchecked_Deallocation(Kernel_Class'CLASS, Item_Pointer);
---   function Remove_Constant is new Ada.Unchecked_Conversion(Source => Constant_Item_Pointer, Target => Item_Pointer);
---   function Remove_Constant is new Ada.Unchecked_Conversion(Source => Constant_Symbol_Pointer, Target => Symbol_Pointer);
+   use kv.apg.rules.tables;
 
 
    function Img(Arg : Production_Index_Type) return String renames Production_Index_Type'IMAGE;
@@ -46,7 +43,7 @@ package body kv.apg.rules.engines is
          Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add ACCEPT " & To_String(Hint.Symbol.Name));
       else
          -- Add a shift action
-         Action := (What => Shift, Where => Hint.To_State, Precedence => Self.Grammar.Tokens.Get_Precedence(Natural(Hint.Symbol.Get_Number)), Associativity => kv.apg.enum.Neither);
+         Action := (What => Shift, Where => Hint.To_State, Precedence => Self.Grammar.Get_Tokens.Get_Precedence(Natural(Hint.Symbol.Get_Number)), Associativity => kv.apg.enum.Neither);
          Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add SHIFT " & To_String(Hint.Symbol.Name) & " and goto " & Img(Hint.To_State));
       end if;
       Self.Actions.Set_Action(Action, Hint.From_State, Hint.Symbol.Get_Number, Logger);

@@ -20,6 +20,8 @@ with kv.apg.incidents;
 with kv.apg.rules;
 with kv.apg.rules.stacks;
 with kv.apg.rules.engines;
+with kv.apg.rules.tables;
+with kv.apg.rules.grammars;
 with kv.apg.enum;
 with kv.apg.locations;
 
@@ -39,6 +41,8 @@ package body kv.apg.tests.parse is
    use kv.apg.rules;
    use kv.apg.rules.stacks;
    use kv.apg.rules.engines;
+   use kv.apg.rules.tables;
+   use kv.apg.rules.grammars;
    use kv.apg.enum;
 
    use kv.apg.tests.lex_lex;
@@ -115,7 +119,7 @@ package body kv.apg.tests.parse is
    --##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
    type Grammar_Test_Class is abstract new Rule_Test_Class with
       record
-         Grammar : aliased kv.apg.rules.Grammar_Class;
+         Grammar : aliased kv.apg.rules.grammars.Grammar_Class;
          Enum : aliased kv.apg.enum.Enumeration_Class;
       end record;
 
@@ -377,21 +381,21 @@ package body kv.apg.tests.parse is
 
       Ep := T.Grammar.Get_Symbol(To_String_Type("F"), 1, 1);
       T.Assert(Ep.Name = To_String_Type("open_paren"), "Expected Ep.Name to be open_paren, got " & To_UTF(Ep.Name));
-      T.Assert(not Ep.Can_Disappear, "Expected not Ep.Can_Disappear");
+--      T.Assert(not Ep.Can_Disappear, "Expected not Ep.Can_Disappear");
 
       Ep := T.Grammar.Get_Symbol(To_String_Type("F"), 2, 1);
       T.Assert(Ep.Name = To_String_Type("id"), "Expected Ep.Name to be id, got " & To_UTF(Ep.Name));
-      T.Assert(not Ep.Can_Disappear, "Expected not Ep.Can_Disappear"); -- Not a stressful test
+--      T.Assert(not Ep.Can_Disappear, "Expected not Ep.Can_Disappear"); -- Not a stressful test
       T.Assert(Ep.Is_Terminal, "Expected id to be a terminal element.");
 
       Ep := T.Grammar.Get_Symbol(To_String_Type("T"), 1, 3);
       T.Assert(Ep.Name = To_String_Type("F"), "Expected Ep.Name to be F, got " & To_UTF(Ep.Name));
-      T.Assert(not Ep.Can_Disappear, "Expected not Ep.Can_Disappear");
+--      T.Assert(not Ep.Can_Disappear, "Expected not Ep.Can_Disappear");
       T.Assert(not Ep.Is_Terminal, "Expected F to be a nonterminal element.");
 
       Ep := T.Grammar.Get_Symbol(To_String_Type("E"), 1, 3);
       T.Assert(Ep.Name = To_String_Type("T"), "Expected Ep.Name to be T, got " & To_UTF(Ep.Name));
-      T.Assert(not Ep.Can_Disappear, "Expected not Ep.Can_Disappear");
+--      T.Assert(not Ep.Can_Disappear, "Expected not Ep.Can_Disappear");
       T.Assert(not Ep.Is_Terminal, "Expected T to be a nonterminal element.");
       T.Assert(Ep.Is_Same_As(T.Grammar.Get_Symbol(To_String_Type("E"), 2, 1).all), "Expected two different T's to be 'Is_Same_As'.");
    end Run;
@@ -494,7 +498,7 @@ package body kv.apg.tests.parse is
       Sp := T.Grammar.Get_Symbol(To_String_Type("program"), 1, 1);
       T.Assert(Sp.Name = To_String_Type("alpha_list"), "Expected Ep.Name to be alpha_list, got " & To_UTF(Sp.Name));
       T.Assert(not Sp.Is_Terminal, "Expected T to be a nonterminal element.");
-      T.Assert(Sp.Can_Disappear, "Expected alpha_list Ep.Can_Disappear");
+--      T.Assert(Sp.Can_Disappear, "Expected alpha_list Ep.Can_Disappear");
       T.Assert(Sp.Is_Same_As(T.Grammar.Get_Symbol(To_String_Type("alpha_list"), 1, 1).all), "Expected two different alpha_list's to be 'Is_Same_As'.");
    end Run;
 
@@ -1023,7 +1027,7 @@ package body kv.apg.tests.parse is
    procedure Debug_Print_States
       (T : in     Grammar_Test_Class'CLASS;
        All_Symbols : kv.apg.rules.Symbol_Vectors.Vector;
-       State_Info : kv.apg.rules.State_Information_Type) is
+       State_Info : kv.apg.rules.grammars.State_Information_Type) is
 
       -------------------------------------------------------------------------
       function Safe_Name(S : Constant_Symbol_Pointer) return String is
