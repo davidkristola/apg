@@ -51,8 +51,9 @@ package kv.apg.rules is
 --   function Can_Disappear(Self : Symbol_Class) return Boolean is abstract;
    function Is_Terminal(Self : Symbol_Class) return Boolean is abstract;
    function Is_Same_As(Self : Symbol_Class; Other : Symbol_Class'CLASS) return Boolean is abstract;
-   function First(Self : Symbol_Class) return Terminal_Sets.Set is abstract;
+--   function First(Self : Symbol_Class) return Terminal_Sets.Set is abstract;
    function Get_Number(Self : Symbol_Class) return Terminal_Index_Type is abstract;
+   function Get_Index(Self : Symbol_Class) return Integer is abstract;
 
 
 
@@ -65,8 +66,9 @@ package kv.apg.rules is
 --   function Can_Disappear(Self : Terminal_Class) return Boolean is (False);
    function Is_Terminal(Self : Terminal_Class) return Boolean is (True);
    function Is_Same_As(Self : Terminal_Class; Other : Symbol_Class'CLASS) return Boolean;
-   function First(Self : Terminal_Class) return Terminal_Sets.Set;
+--   function First(Self : Terminal_Class) return Terminal_Sets.Set;
    function Get_Number(Self : Terminal_Class) return Terminal_Index_Type;
+   function Get_Index(Self : Terminal_Class) return Integer;
 
 
    type Non_Terminal_Class is new Symbol_Class with private;
@@ -74,8 +76,9 @@ package kv.apg.rules is
 --   function Can_Disappear(Self : Non_Terminal_Class) return Boolean;
    function Is_Terminal(Self : Non_Terminal_Class) return Boolean is (False);
    function Is_Same_As(Self : Non_Terminal_Class; Other : Symbol_Class'CLASS) return Boolean;
-   function First(Self : Non_Terminal_Class) return Terminal_Sets.Set;
+--   function First(Self : Non_Terminal_Class) return Terminal_Sets.Set;
    function Get_Number(Self : Non_Terminal_Class) return Terminal_Index_Type; -- will raise Terminal_Expected_Error
+   function Get_Index(Self : Non_Terminal_Class) return Integer;
 
    function New_Non_Terminal_From_Rule(Rule : Rule_Pointer) return Constant_Symbol_Pointer;
    function New_Non_Terminal_Symbol(Token : kv.apg.tokens.Token_Class; Rule : Non_Terminal_Index_Type) return Constant_Symbol_Pointer;
@@ -93,13 +96,14 @@ package kv.apg.rules is
 --   function Can_Disappear(Self : Pre_Symbol_Class) return Boolean;
    function Is_Terminal(Self : Pre_Symbol_Class) return Boolean;
    function Is_Same_As(Self : Pre_Symbol_Class; Other : Symbol_Class'CLASS) return Boolean;
-   function First(Self : Pre_Symbol_Class) return Terminal_Sets.Set;
+--   function First(Self : Pre_Symbol_Class) return Terminal_Sets.Set;
    function Get_Number(Self : Pre_Symbol_Class) return Terminal_Index_Type;
+   function Get_Index(Self : Pre_Symbol_Class) return Integer;
 
 
 
 
-   function Rule_Of(Symbol : Constant_Symbol_Pointer) return Rule_Pointer;
+--   function Rule_Of(Symbol : Constant_Symbol_Pointer) return Rule_Pointer;
 
 
    function Equal(L, R : Constant_Symbol_Pointer) return Boolean;
@@ -151,7 +155,7 @@ package kv.apg.rules is
 
    function Has_A_Terminal(Self : Production_Class) return Boolean;
 
-   function First(Self : Production_Class) return Terminal_Sets.Set;
+--   function First(Self : Production_Class) return Terminal_Sets.Set;
 
    function Get_Number(Self : Production_Class) return Production_Index_Type;
 
@@ -511,7 +515,7 @@ private
 
    type Non_Terminal_Class is new Symbol_Class with
       record
-         Rule : Rule_Pointer;
+--         Rule : Rule_Pointer;
          Rule_Number : Non_Terminal_Index_Type;
       end record;
 

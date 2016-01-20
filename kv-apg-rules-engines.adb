@@ -57,7 +57,7 @@ package body kv.apg.rules.engines is
    begin
       -- Add a non-terminal goto
       Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add GOTO " & To_String(Hint.Symbol.Name) & " and goto " & Img(Hint.To_State));
-      Self.Gotos.Set_Goto(Hint.To_State, Hint.From_State, Rule_Of(Hint.Symbol).Get_Number);
+      Self.Gotos.Set_Goto(Hint.To_State, Hint.From_State, Self.Grammar.Rule_Of(Hint.Symbol).Get_Number);
    end Process_Hint_Goto;
 
    ----------------------------------------------------------------------------

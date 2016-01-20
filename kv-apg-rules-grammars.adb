@@ -140,7 +140,9 @@ package body kv.apg.rules.grammars is
                   Logger.Note_Debug(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "    Symbol <" & Symbol.Token.Get_Data_As_String & "> is a nonterminal (rule)");
                   To_Be_Deleted := Symbol;
                   Symbol_Rule := Self.Find_Non_Terminal(Symbol.Token.Get_Data);
-                  Updated_Symbol := new Non_Terminal_Class'(Token => Symbol.Token, Rule => Symbol_Rule, Rule_Number => Symbol_Rule.Get_Number);
+                  Updated_Symbol := New_Non_Terminal_From_Rule(Symbol_Rule);
+--                  Updated_Symbol := new Non_Terminal_Class'(Token => Symbol.Token, Rule_Number => Symbol_Rule.Get_Number);
+--                  Updated_Symbol := new Non_Terminal_Class'(Token => Symbol.Token, Rule => Symbol_Rule, Rule_Number => Symbol_Rule.Get_Number);
                   --Updated_Symbol := New_Non_Terminal_Symbol(Symbol.Token, Symbol_Rule.Get_Number);
                   Collect_Grammar_Symbol(Self, Updated_Symbol);
                   Production.Symbols.Replace_Element(Current, Updated_Symbol);
@@ -175,10 +177,10 @@ package body kv.apg.rules.grammars is
    end Resolve_Rules;
 
    ----------------------------------------------------------------------------
-   function Rule_Of(Symbol : Constant_Symbol_Pointer) return Rule_Pointer is
-   begin
-      return Non_Terminal_Class(Symbol.all).Rule;
-   end Rule_Of;
+--   function Rule_Of(Symbol : Constant_Symbol_Pointer) return Rule_Pointer is
+--   begin
+--      return Non_Terminal_Class(Symbol.all).Rule;
+--   end Rule_Of;
 
 
    ----------------------------------------------------------------------------
@@ -237,10 +239,10 @@ package body kv.apg.rules.grammars is
       function Symbol_By_Symbol_Check(Production : Production_Pointer) return Can_Vanish_Answer_Type is
       begin
          for Symbol of Production.Symbols loop
-            if Rule_Of(Symbol).Has_An_Empty_Sequence or else Rule_Has_A_Yes(Rule_Of(Symbol)) then
+            if Self.Rule_Of(Symbol).Has_An_Empty_Sequence or else Rule_Has_A_Yes(Self.Rule_Of(Symbol)) then
                null; -- Need to check the rest of the elements
             else
-               if Rule_Is_All_No(Rule_Of(Symbol)) then
+               if Rule_Is_All_No(Self.Rule_Of(Symbol)) then
                   return No;
                else
                   return Maybe; -- We need to resolve more non terminals before we can be sure
@@ -413,6 +415,18 @@ package body kv.apg.rules.grammars is
 
 
    ----------------------------------------------------------------------------
+   function First_Of(Self : Grammar_Class; Symbol : Constant_Symbol_Pointer) return Terminal_Sets.Set is
+      Answer : Terminal_Sets.Set;
+   begin
+      if Symbol.Is_Terminal then
+         Answer.Insert(Terminal_Index_Type(Symbol.Get_Index));
+         return Answer;
+      else
+         return Self.Rule_Of(Symbol).First;
+      end if;
+   end First_Of;
+
+   ----------------------------------------------------------------------------
    procedure Resolve_Firsts
       (Self   : in out Grammar_Class;
        Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
@@ -425,12 +439,13 @@ package body kv.apg.rules.grammars is
             Production_Loop: for Production of Rule.Productions loop
                Symbol_Loop: for Symbol of Production.Symbols loop
                   if Symbol.Is_Terminal then
-                     Rule.Firsts.Union(Symbol.First);
+                     --Rule.Firsts.Union(Symbol.First);
+                     Rule.Firsts.Union(Self.First_Of(Symbol));
                      exit Symbol_Loop;
                   else -- is nonterminal
                      -- Rule depends on Symbol, but that can't be resolved just now.
-                     Add_Dependency(Dependencies, Rule_Of(Symbol), Rule);
-                     if not Rule_Of(Symbol).Can_Disappear then
+                     Add_Dependency(Dependencies, Self.Rule_Of(Symbol), Rule);
+                     if not Self.Rule_Of(Symbol).Can_Disappear then
                         exit Symbol_Loop;
                      end if;
                   end if;
@@ -480,7 +495,13 @@ package body kv.apg.rules.grammars is
           Source   : in     Constant_Symbol_Pointer) is
          Working : Terminal_Sets.Set;
       begin
-         Working := Source.First;
+--
+--         if Source.Is_Terminal then
+--            Working := Source.First;
+--         else
+--            Working := Self.Rule_Of(Source).First;
+--         end if;
+         Working := Self.First_Of(Source);
          Working.Exclude(Epsilon); -- Remove Epsilon
          --Put_Line("Adding First of " & To_S(Source.Name) & To_S(Image(Working)) & " to " & To_S(Receiver.Get_Name) & To_S(Image(Receiver.Follows)));
          Receiver.Follows.Union(Working);
@@ -500,7 +521,7 @@ package body kv.apg.rules.grammars is
                for Index in 1 .. Symbol_Count-1 loop
                   Symbol := Production.Symbols(Index);
                   if not Symbol.Is_Terminal then
-                     Add_Sans_Epsilon(Rule_Of(Symbol), Production.Symbols(Index + 1));
+                     Add_Sans_Epsilon(Self.Rule_Of(Symbol), Production.Symbols(Index + 1));
                   end if;
                end loop;
             end loop Production_Loop;
@@ -526,12 +547,12 @@ package body kv.apg.rules.grammars is
                   if Symbol.Is_Terminal then
                      exit Production_Loop;
                   end if;
-                  if Rule_Of(Symbol) = Rule then
+                  if Self.Rule_Of(Symbol) = Rule then
                      exit Production_Loop; -- Recursive production
                   end if;
-                  Add_Dependency(Dependencies, Rule, Rule_Of(Symbol));
+                  Add_Dependency(Dependencies, Rule, Self.Rule_Of(Symbol));
                   --Put_Line("Rule "&To_S(Rule.Get_Name)&" passes its Follow terminals to rule " & To_S(Symbol.Name) & ".");
-                  if not Rule_Of(Symbol).Can_Disappear then
+                  if not Self.Rule_Of(Symbol).Can_Disappear then
                      exit Production_Loop;
                   end if;
                end loop;
@@ -570,6 +591,17 @@ package body kv.apg.rules.grammars is
       end if;
    end Validate;
 
+
+   ----------------------------------------------------------------------------
+   function Rule_Of(Self : Grammar_Class; Symbol : Constant_Symbol_Pointer) return Rule_Pointer is
+   begin
+      for R of Self.Rules loop
+         if not Symbol.Is_Terminal and then Integer(R.Get_Number) = Non_Terminal_Class(Symbol.all).Get_Index then
+            return R;
+         end if;
+      end loop;
+      return null;
+   end Rule_Of;
 
    ----------------------------------------------------------------------------
    function Find_Non_Terminal(Self : Grammar_Class; Name : String_Type) return Rule_Pointer is
@@ -821,7 +853,7 @@ package body kv.apg.rules.grammars is
                      end if;
                      -- * right most => ; but this is really a left most dive
                      if not Production.Get_Symbol(1).Is_Terminal then
-                        First := Rule_Of(Production.Get_Symbol(1));
+                        First := Self.Rule_Of(Production.Get_Symbol(1));
                         if not Examined(First.Get_Number) then
                            Logger.Note_By_Severity(Debug, "Follow this up: " & To_String(First.Get_Name));
                            Follow_Up.Append(First);

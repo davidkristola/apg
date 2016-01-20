@@ -44,8 +44,12 @@ package kv.apg.rules.grammars is
       (Self   : in out Grammar_Class;
        Logger : in     kv.apg.logger.Safe_Logger_Pointer);
 
+   function Rule_Of(Self : Grammar_Class; Symbol : Constant_Symbol_Pointer) return Rule_Pointer;
    function Find_Non_Terminal(Self : Grammar_Class; Name : String_Type) return Rule_Pointer;
    function Find_Terminal(Self : Grammar_Class; Name : String_Type) return Integer;
+
+   function First_Of(Self : Grammar_Class; Symbol : Constant_Symbol_Pointer) return Terminal_Sets.Set;
+
 
    function Production_Count(Self : Grammar_Class; Name : String_Type) return Natural;
    function Symbol_Count(Self : Grammar_Class; Name : String_Type; Production : Positive) return Natural;

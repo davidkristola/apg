@@ -91,27 +91,36 @@ package body kv.apg.rules is
    end Get_Number;
 
    ----------------------------------------------------------------------------
+   function Get_Index(Self : Terminal_Class) return Integer is
+   begin
+      return Integer(Self.Key);
+   end Get_Index;
+
+   ----------------------------------------------------------------------------
    function Name(Self : Symbol_Class) return String_Type is
    begin
       return Self.Token.Get_Data;
    end Name;
 
    ----------------------------------------------------------------------------
-   function Can_Disappear(Self : Non_Terminal_Class) return Boolean is
-   begin
-      return Self.Rule.Can_Disappear;
-   end Can_Disappear;
+--   function Can_Disappear(Self : Non_Terminal_Class) return Boolean is
+--   begin
+--      return Self.Rule.Can_Disappear;
+--   end Can_Disappear;
 
    ----------------------------------------------------------------------------
    function Is_Same_As(Self : Non_Terminal_Class; Other : Symbol_Class'CLASS) return Boolean is
    begin
-      return (not Other.Is_Terminal) and then Non_Terminal_Class(Other).Rule = Self.Rule;
+      return (not Other.Is_Terminal) and then Non_Terminal_Class(Other).Rule_Number = Self.Rule_Number;
+--      return (not Other.Is_Terminal) and then Non_Terminal_Class(Other).Rule = Self.Rule;
    end Is_Same_As;
 
    ----------------------------------------------------------------------------
    function First(Self : Non_Terminal_Class) return Terminal_Sets.Set is
+      Answer : Terminal_Sets.Set;
    begin
-      return Self.Rule.First; --TODO: could be recursive loop
+      return Answer; -- TODO
+--      return Self.Rule.First; --TODO: could be recursive loop
    end First;
 
    ----------------------------------------------------------------------------
@@ -122,11 +131,18 @@ package body kv.apg.rules is
    end Get_Number;
 
    ----------------------------------------------------------------------------
+   function Get_Index(Self : Non_Terminal_Class) return Integer is
+   begin
+      return Integer(Self.Rule_Number);
+   end Get_Index;
+
+   ----------------------------------------------------------------------------
    function New_Non_Terminal_From_Rule(Rule : Rule_Pointer) return Constant_Symbol_Pointer is
       N : access Non_Terminal_Class := new Non_Terminal_Class;
    begin
       N.Token := Rule.Name_Token;
-      N.Rule := Rule;
+--      N.Rule := Rule;
+      N.Rule_Number := Rule.Get_Number;
       return Constant_Symbol_Pointer(N);
    end New_Non_Terminal_From_Rule;
 
@@ -135,6 +151,7 @@ package body kv.apg.rules is
       N : access Non_Terminal_Class := new Non_Terminal_Class;
    begin
       N.Token := Token;
+      N.Rule_Number := Rule;
 --      N.Rule := Rule;
       return Constant_Symbol_Pointer(N);
    end New_Non_Terminal_Symbol;
@@ -143,11 +160,11 @@ package body kv.apg.rules is
 
 
    ----------------------------------------------------------------------------
-   function Can_Disappear(Self : Pre_Symbol_Class) return Boolean is
-   begin
-      raise Unresolved_Error;
-      return False;
-   end Can_Disappear;
+--   function Can_Disappear(Self : Pre_Symbol_Class) return Boolean is
+--   begin
+--      raise Unresolved_Error;
+--      return False;
+--   end Can_Disappear;
 
    ----------------------------------------------------------------------------
    function Is_Terminal(Self : Pre_Symbol_Class) return Boolean is
@@ -177,6 +194,14 @@ package body kv.apg.rules is
       raise Unresolved_Error;
       return Terminal_Index_Type(Epsilon);
    end Get_Number;
+
+   ----------------------------------------------------------------------------
+   function Get_Index(Self : Pre_Symbol_Class) return Integer is
+   begin
+      raise Unresolved_Error;
+      return Integer(Epsilon);
+   end Get_Index;
+
 
    ----------------------------------------------------------------------------
    function Equal(L, R : Constant_Symbol_Pointer) return Boolean is
@@ -302,25 +327,25 @@ package body kv.apg.rules is
    end Has_A_Terminal;
 
    ----------------------------------------------------------------------------
-   function First(Self : Production_Class) return Terminal_Sets.Set is
-      Answer  : Terminal_Sets.Set;
-      Current : Terminal_Sets.Set;
-   begin
-      Put_Line("First of " & Decode(To_String(Self.Image), UTF_8));
-      if Self.Vanishable then
-         Put_Line("   Add Epsilon");
-         Answer.Include(Epsilon);
-      end if;
-      for Symbol of Self.Symbols loop
-         Current := Symbol.First;
-         Put_Line("   Add First(" & Decode(To_String(Symbol.Name), UTF_8) & ")");
-         Answer.Union(Current);
-         if not Current.Contains(Epsilon) then
-            exit;
-         end if;
-      end loop;
-      return Answer;
-   end First;
+--   function First(Self : Production_Class) return Terminal_Sets.Set is
+--      Answer  : Terminal_Sets.Set;
+--      Current : Terminal_Sets.Set;
+--   begin
+--      Put_Line("First of " & Decode(To_String(Self.Image), UTF_8));
+--      if Self.Vanishable then
+--         Put_Line("   Add Epsilon");
+--         Answer.Include(Epsilon);
+--      end if;
+--      for Symbol of Self.Symbols loop
+--         Current := Symbol.First;
+--         Put_Line("   Add First(" & Decode(To_String(Symbol.Name), UTF_8) & ")");
+--         Answer.Union(Current);
+--         if not Current.Contains(Epsilon) then
+--            exit;
+--         end if;
+--      end loop;
+--      return Answer;
+--   end First;
 
    ----------------------------------------------------------------------------
    function Get_Number(Self : Production_Class) return Production_Index_Type is
@@ -662,10 +687,8 @@ package body kv.apg.rules is
 
    ----------------------------------------------------------------------------
    function Get_Symbol(Self : Rule_Class) return Constant_Symbol_Pointer is
-      Symbol : access Non_Terminal_Class;
    begin
-      Symbol := new Non_Terminal_Class'(Token => Self.Name_Token, Rule => Self.Me, Rule_Number => Self.Number);
-      return Constant_Symbol_Pointer(Symbol);
+      return New_Non_Terminal_From_Rule(Self.Me);
    end Get_Symbol;
 
 
@@ -819,10 +842,10 @@ package body kv.apg.rules is
 --   end Resolve_Rules;
 
    ----------------------------------------------------------------------------
-   function Rule_Of(Symbol : Constant_Symbol_Pointer) return Rule_Pointer is
-   begin
-      return Non_Terminal_Class(Symbol.all).Rule;
-   end Rule_Of;
+--   function Rule_Of(Symbol : Constant_Symbol_Pointer) return Rule_Pointer is
+--   begin
+--      return Non_Terminal_Class(Symbol.all).Rule;
+--   end Rule_Of;
 
 
    ----------------------------------------------------------------------------
