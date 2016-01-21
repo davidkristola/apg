@@ -17,10 +17,6 @@ package kv.apg.rules is
    use kv.apg.tokens;
    use Ada.Strings.Wide_Wide_Unbounded;
 
-   type Rule_Class;
-   type Rule_Pointer is access all Rule_Class;
-   type Non_Terminal_Index_Type is new Positive; -- Rule index
-
 
    Unresolved_Error : exception;
    Rule_Not_Found_Error : exception;
@@ -35,6 +31,7 @@ package kv.apg.rules is
    Terminal_1  : constant := 1;
 
    type Terminal_Index_Type is range End_Of_File .. Integer'LAST;
+   type Non_Terminal_Index_Type is new Positive; -- Rule index
 
    function Img(Arg : Terminal_Index_Type) return String;
 
@@ -80,7 +77,7 @@ package kv.apg.rules is
    function Get_Number(Self : Non_Terminal_Class) return Terminal_Index_Type; -- will raise Terminal_Expected_Error
    function Get_Index(Self : Non_Terminal_Class) return Integer;
 
-   function New_Non_Terminal_From_Rule(Rule : Rule_Pointer) return Constant_Symbol_Pointer;
+--   function New_Non_Terminal_From_Rule(Rule : Rule_Pointer) return Constant_Symbol_Pointer;
    function New_Non_Terminal_Symbol(Token : kv.apg.tokens.Token_Class; Rule : Non_Terminal_Index_Type) return Constant_Symbol_Pointer;
 
 
@@ -112,6 +109,16 @@ package kv.apg.rules is
       (Index_Type   => Positive,
        Element_Type => Constant_Symbol_Pointer,
        "=" => Equal);
+
+
+
+
+
+
+
+   type Rule_Class;
+   type Rule_Pointer is access all Rule_Class;
+
 
 
 
@@ -247,6 +254,8 @@ package kv.apg.rules is
    function Follow(Self : Rule_Class) return Terminal_Sets.Set;
 
    function Hash(Self : Rule_Pointer) return Ada.Containers.Hash_Type;
+
+   function Get_Token(Self : Rule_Class) return kv.apg.tokens.Token_Class;
 
    function Get_Number(Self : Rule_Class) return Non_Terminal_Index_Type;
 

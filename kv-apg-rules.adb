@@ -137,14 +137,14 @@ package body kv.apg.rules is
    end Get_Index;
 
    ----------------------------------------------------------------------------
-   function New_Non_Terminal_From_Rule(Rule : Rule_Pointer) return Constant_Symbol_Pointer is
-      N : access Non_Terminal_Class := new Non_Terminal_Class;
-   begin
-      N.Token := Rule.Name_Token;
---      N.Rule := Rule;
-      N.Rule_Number := Rule.Get_Number;
-      return Constant_Symbol_Pointer(N);
-   end New_Non_Terminal_From_Rule;
+--   function New_Non_Terminal_From_Rule(Rule : Rule_Pointer) return Constant_Symbol_Pointer is
+--      N : access Non_Terminal_Class := new Non_Terminal_Class;
+--   begin
+--      N.Token := Rule.Name_Token;
+----      N.Rule := Rule;
+--      N.Rule_Number := Rule.Get_Number;
+--      return Constant_Symbol_Pointer(N);
+--   end New_Non_Terminal_From_Rule;
 
    ----------------------------------------------------------------------------
    function New_Non_Terminal_Symbol(Token : kv.apg.tokens.Token_Class; Rule : Non_Terminal_Index_Type) return Constant_Symbol_Pointer is
@@ -680,6 +680,12 @@ package body kv.apg.rules is
    end Equivalent_Elements;
 
    ----------------------------------------------------------------------------
+   function Get_Token(Self : Rule_Class) return kv.apg.tokens.Token_Class is
+   begin
+      return Self.Name_Token;
+   end Get_Token;
+
+   ----------------------------------------------------------------------------
    function Get_Number(Self : Rule_Class) return Non_Terminal_Index_Type is
    begin
       return Self.Number;
@@ -688,7 +694,8 @@ package body kv.apg.rules is
    ----------------------------------------------------------------------------
    function Get_Symbol(Self : Rule_Class) return Constant_Symbol_Pointer is
    begin
-      return New_Non_Terminal_From_Rule(Self.Me);
+      --return New_Non_Terminal_From_Rule(Self.Me);
+      return New_Non_Terminal_Symbol(Self.Name_Token, Self.Number);
    end Get_Symbol;
 
 

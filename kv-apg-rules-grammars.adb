@@ -80,7 +80,8 @@ package body kv.apg.rules.grammars is
       end if;
       Logger.Note_By_Severity(Debug, S.Name_Token.Cite("Is a start rule"));
       P := New_Production_Class;
-      P.Append(New_Non_Terminal_From_Rule(S));
+      --P.Append(New_Non_Terminal_From_Rule(S));
+      P.Append(New_Non_Terminal_Symbol(S.Get_Token, S.Get_Number));
       P.Append(New_End_Of_File_Terminal);
       P_V.Append(P);
       R.Initialize(kv.apg.tokens.Meta_Start_Rule_Token, P_V);
@@ -140,7 +141,8 @@ package body kv.apg.rules.grammars is
                   Logger.Note_Debug(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "    Symbol <" & Symbol.Token.Get_Data_As_String & "> is a nonterminal (rule)");
                   To_Be_Deleted := Symbol;
                   Symbol_Rule := Self.Find_Non_Terminal(Symbol.Token.Get_Data);
-                  Updated_Symbol := New_Non_Terminal_From_Rule(Symbol_Rule);
+                  Updated_Symbol := New_Non_Terminal_Symbol(Symbol_Rule.Get_Token, Symbol_Rule.Get_Number);
+--                  Updated_Symbol := New_Non_Terminal_From_Rule(Symbol_Rule);
 --                  Updated_Symbol := new Non_Terminal_Class'(Token => Symbol.Token, Rule_Number => Symbol_Rule.Get_Number);
 --                  Updated_Symbol := new Non_Terminal_Class'(Token => Symbol.Token, Rule => Symbol_Rule, Rule_Number => Symbol_Rule.Get_Number);
                   --Updated_Symbol := New_Non_Terminal_Symbol(Symbol.Token, Symbol_Rule.Get_Number);
