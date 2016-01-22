@@ -80,7 +80,6 @@ package body kv.apg.rules.grammars is
       end if;
       Logger.Note_By_Severity(Debug, S.Name_Token.Cite("Is a start rule"));
       P := New_Production_Class;
-      --P.Append(New_Non_Terminal_From_Rule(S));
       P.Append(New_Non_Terminal_Symbol(S.Get_Token, S.Get_Number));
       P.Append(New_End_Of_File_Terminal);
       P_V.Append(P);
@@ -142,10 +141,6 @@ package body kv.apg.rules.grammars is
                   To_Be_Deleted := Symbol;
                   Symbol_Rule := Self.Find_Non_Terminal(Symbol.Token.Get_Data);
                   Updated_Symbol := New_Non_Terminal_Symbol(Symbol_Rule.Get_Token, Symbol_Rule.Get_Number);
---                  Updated_Symbol := New_Non_Terminal_From_Rule(Symbol_Rule);
---                  Updated_Symbol := new Non_Terminal_Class'(Token => Symbol.Token, Rule_Number => Symbol_Rule.Get_Number);
---                  Updated_Symbol := new Non_Terminal_Class'(Token => Symbol.Token, Rule => Symbol_Rule, Rule_Number => Symbol_Rule.Get_Number);
-                  --Updated_Symbol := New_Non_Terminal_Symbol(Symbol.Token, Symbol_Rule.Get_Number);
                   Collect_Grammar_Symbol(Self, Updated_Symbol);
                   Production.Symbols.Replace_Element(Current, Updated_Symbol);
                   Free(To_Be_Deleted);
@@ -177,12 +172,6 @@ package body kv.apg.rules.grammars is
          end loop;
       end loop;
    end Resolve_Rules;
-
-   ----------------------------------------------------------------------------
---   function Rule_Of(Symbol : Constant_Symbol_Pointer) return Rule_Pointer is
---   begin
---      return Non_Terminal_Class(Symbol.all).Rule;
---   end Rule_Of;
 
 
    ----------------------------------------------------------------------------
@@ -272,14 +261,10 @@ package body kv.apg.rules.grammars is
          return Top;
       end Pop_Unresolved_Production;
 
-      --Production_Number : Positive := 1;
-
       -------------------------------------------------------------------------
       procedure Number
          (Production : in     Production_Pointer) is
       begin
-         --Production.Number := Production_Number;
-         --Production_Number := Production_Number + 1;
          Self.Max_P := Self.Max_P + 1;
          Production.Number := Production_Index_Type(Self.Max_P);
       end Number;
@@ -384,8 +369,6 @@ package body kv.apg.rules.grammars is
          while Current /= No_Element loop
             Source := Key(Current);
             for Destination of Dependencies.Element(Source) loop
-               --Put_Line("Follows Union "&To_S(Source.Get_Name) & To_S(Image(Source.Follows)) &" and " & To_S(Destination.Get_Name) & To_S(Image(Destination.Follows)) & ".");
-               --Destination.Follows.Union(Source.Follows);
                Transfer(Source, Destination);
             end loop;
             Current := Next(Current);
@@ -441,7 +424,6 @@ package body kv.apg.rules.grammars is
             Production_Loop: for Production of Rule.Productions loop
                Symbol_Loop: for Symbol of Production.Symbols loop
                   if Symbol.Is_Terminal then
-                     --Rule.Firsts.Union(Symbol.First);
                      Rule.Firsts.Union(Self.First_Of(Symbol));
                      exit Symbol_Loop;
                   else -- is nonterminal
@@ -497,12 +479,6 @@ package body kv.apg.rules.grammars is
           Source   : in     Constant_Symbol_Pointer) is
          Working : Terminal_Sets.Set;
       begin
---
---         if Source.Is_Terminal then
---            Working := Source.First;
---         else
---            Working := Self.Rule_Of(Source).First;
---         end if;
          Working := Self.First_Of(Source);
          Working.Exclude(Epsilon); -- Remove Epsilon
          --Put_Line("Adding First of " & To_S(Source.Name) & To_S(Image(Working)) & " to " & To_S(Receiver.Get_Name) & To_S(Image(Receiver.Follows)));
@@ -772,7 +748,6 @@ package body kv.apg.rules.grammars is
       (Self   : Grammar_Class;
        Kernel : Item_Sets.Set;
        Logger : kv.apg.logger.Safe_Logger_Pointer) return Item_Sets.Set is
-      --Answer : Item_Sets.Set;
    begin
       return Kernel;
    end Closure;
