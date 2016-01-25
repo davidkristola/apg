@@ -12,7 +12,7 @@ with kv.apg.fast;
 with kv.apg.enum;
 with kv.apg.logger;
 
-package kv.apg.rules is
+package kv.apg.lalr is
 
    use kv.apg.tokens;
    use Ada.Strings.Wide_Wide_Unbounded;
@@ -316,4 +316,4 @@ private
       end record;
 
 
-end kv.apg.rules;
+end kv.apg.lalr;

@@ -2,7 +2,7 @@ with kv.core.wwstr; use kv.core.wwstr;
 
 with kv.apg.tokens;
 with kv.apg.regex;
-with kv.apg.rules;
+with kv.apg.lalr;
 with kv.apg.enum;
 
 package kv.apg.directives is
@@ -71,9 +71,9 @@ package kv.apg.directives is
    not overriding procedure Initialize
       (Self : in out Rule_Class;
        Name : in     kv.apg.tokens.Token_Class;
-       Rule : in     kv.apg.rules.Rule_Pointer);
+       Rule : in     kv.apg.lalr.Rule_Pointer);
    overriding procedure Process(Self : in out Rule_Class; Visitor : in out Directive_Visitor_Class'CLASS);
-   not overriding function Get_Rule(Self : Rule_Class) return kv.apg.rules.Rule_Pointer;
+   not overriding function Get_Rule(Self : Rule_Class) return kv.apg.lalr.Rule_Pointer;
 
 
    --
@@ -109,7 +109,7 @@ private
 
    type Rule_Class is new Directive_Class with
       record
-         Rule : kv.apg.rules.Rule_Pointer;
+         Rule : kv.apg.lalr.Rule_Pointer;
       end record;
 
 end kv.apg.directives;

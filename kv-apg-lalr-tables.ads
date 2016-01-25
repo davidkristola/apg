@@ -1,8 +1,8 @@
-with kv.apg.rules.grammars;
+with kv.apg.lalr.grammars;
 
-package kv.apg.rules.tables is
+package kv.apg.lalr.tables is
 
-   use kv.apg.rules.grammars;
+   use kv.apg.lalr.grammars;
 
    type Action_Type is (Shift, Reduce, Accept_Input, Error);
 
@@ -91,4 +91,4 @@ private
          Table : Goto_Table_Matrix_Pointer;
       end record;
 
-end kv.apg.rules.tables;
+end kv.apg.lalr.tables;

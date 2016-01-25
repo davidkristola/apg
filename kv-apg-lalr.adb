@@ -13,7 +13,7 @@ with Ada.Text_IO; use Ada.Text_IO;
 with kv.apg.locations;
 with kv.apg.incidents;
 
-package body kv.apg.rules is
+package body kv.apg.lalr is
 
    use Ada.Strings.UTF_Encoding;
    use Ada.Strings.UTF_Encoding.Strings;
@@ -638,4 +638,4 @@ package body kv.apg.rules is
       return Terminal_Index_Type'IMAGE(Arg);
    end Img;
 
-end kv.apg.rules;
+end kv.apg.lalr;

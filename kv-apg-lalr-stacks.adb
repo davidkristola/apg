@@ -13,7 +13,7 @@ with Ada.Text_IO; use Ada.Text_IO;
 with kv.apg.locations;
 with kv.apg.incidents;
 
-package body kv.apg.rules.stacks is
+package body kv.apg.lalr.stacks is
 
    use Ada.Strings.UTF_Encoding;
    use Ada.Strings.UTF_Encoding.Strings;
@@ -38,11 +38,11 @@ package body kv.apg.rules.stacks is
    end Pop_State;
 
    ----------------------------------------------------------------------------
-   function Top_State(Self : Stack_Class) return kv.apg.rules.grammars.State_Index_Type is
+   function Top_State(Self : Stack_Class) return kv.apg.lalr.grammars.State_Index_Type is
       Answer : State_Entry_Type;
    begin
       Answer := Self.Stack.Last_Element;
       return Answer.State;
    end Top_State;
 
-end kv.apg.rules.stacks;
+end kv.apg.lalr.stacks;

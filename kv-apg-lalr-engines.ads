@@ -1,10 +1,10 @@
-with kv.apg.rules.tables;
-with kv.apg.rules.stacks;
-with kv.apg.rules.grammars;
+with kv.apg.lalr.tables;
+with kv.apg.lalr.stacks;
+with kv.apg.lalr.grammars;
 
-package kv.apg.rules.engines is
+package kv.apg.lalr.engines is
 
-   use kv.apg.rules.grammars;
+   use kv.apg.lalr.grammars;
 
    type Parser_Engine_Class is tagged private;
    procedure Initialize
@@ -27,12 +27,12 @@ private
       record
          Grammar  : Grammar_Pointer;
          States   : State_Space.Vector;
-         Stack    : kv.apg.rules.stacks.Stack_Class;
-         Actions  : kv.apg.rules.tables.Action_Table_Class;
-         Gotos    : kv.apg.rules.tables.Goto_Table_Class;
+         Stack    : kv.apg.lalr.stacks.Stack_Class;
+         Actions  : kv.apg.lalr.tables.Action_Table_Class;
+         Gotos    : kv.apg.lalr.tables.Goto_Table_Class;
          Accepted : Boolean := False;
          Errors   : Natural := 0;
       end record;
 
 
-end kv.apg.rules.engines;
+end kv.apg.lalr.engines;

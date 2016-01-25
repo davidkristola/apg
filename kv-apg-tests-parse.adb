@@ -17,11 +17,11 @@ with kv.apg.logger.writer;
 with kv.apg.writer.buffer;
 with kv.apg.writer.console;
 with kv.apg.incidents;
-with kv.apg.rules;
-with kv.apg.rules.stacks;
-with kv.apg.rules.engines;
-with kv.apg.rules.tables;
-with kv.apg.rules.grammars;
+with kv.apg.lalr;
+with kv.apg.lalr.stacks;
+with kv.apg.lalr.engines;
+with kv.apg.lalr.tables;
+with kv.apg.lalr.grammars;
 with kv.apg.enum;
 with kv.apg.locations;
 
@@ -38,11 +38,11 @@ package body kv.apg.tests.parse is
    use kv.apg.logger.writer;
    use kv.apg.writer.buffer;
    use kv.apg.incidents;
-   use kv.apg.rules;
-   use kv.apg.rules.stacks;
-   use kv.apg.rules.engines;
-   use kv.apg.rules.tables;
-   use kv.apg.rules.grammars;
+   use kv.apg.lalr;
+   use kv.apg.lalr.stacks;
+   use kv.apg.lalr.engines;
+   use kv.apg.lalr.tables;
+   use kv.apg.lalr.grammars;
    use kv.apg.enum;
 
    use kv.apg.tests.lex_lex;
@@ -79,7 +79,7 @@ package body kv.apg.tests.parse is
    type Multi_Line_Rule_Test is new Rule_Test_Class with null record;
    procedure Run(T : in out Multi_Line_Rule_Test) is
       Directive : kv.apg.directives.Directive_Pointer_Type;
-      Rule : kv.apg.rules.Rule_Pointer;
+      Rule : kv.apg.lalr.Rule_Pointer;
       use kv.apg.directives;
       Expected_1 : constant String := "( import_list class_list eos_token ) => null;";
       Expected_2 : constant String := "( pragma_token name_token eos_token ) => jump;";
@@ -119,7 +119,7 @@ package body kv.apg.tests.parse is
    --##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
    type Grammar_Test_Class is abstract new Rule_Test_Class with
       record
-         Grammar : aliased kv.apg.rules.grammars.Grammar_Class;
+         Grammar : aliased kv.apg.lalr.grammars.Grammar_Class;
          Enum : aliased kv.apg.enum.Enumeration_Class;
       end record;
 
@@ -151,7 +151,7 @@ package body kv.apg.tests.parse is
        Definition : in     String_Array_Type) is
 
       Directive : kv.apg.directives.Directive_Pointer_Type;
-      Rule : kv.apg.rules.Rule_Pointer;
+      Rule : kv.apg.lalr.Rule_Pointer;
 
    begin
       for I in Definition'RANGE loop
@@ -172,7 +172,7 @@ package body kv.apg.tests.parse is
    type Init_Gramar_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Init_Gramar_Test) is
 
-      Rule : kv.apg.rules.Rule_Pointer;
+      Rule : kv.apg.lalr.Rule_Pointer;
 
       Expected_1 : constant String := "( Alpha Gamma ) => null;";
       Expected_2 : constant String := "( Beta Gamma ) => null;";
@@ -208,7 +208,7 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Resolve_Gramar_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Resolve_Gramar_Test) is
-      Rule : kv.apg.rules.Rule_Pointer;
+      Rule : kv.apg.lalr.Rule_Pointer;
       Expected : constant String := "***ERROR*** (File: , line 3, column 31): Symbol of production rule ""program"" not found. (""Epsilon"").";
       Expected_1 : constant String := "beta_list -> ( Beta beta_list ) => null;";
    begin
@@ -369,7 +369,7 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Can_Disappear_1_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Can_Disappear_1_Test) is
-      Ep : kv.apg.rules.Constant_Symbol_Pointer;
+      Ep : kv.apg.lalr.Constant_Symbol_Pointer;
    begin
       Set_Up_ETF_Grammar(T);
       T.Grammar.Resolve_Rules(T.Logger'UNCHECKED_ACCESS);
@@ -434,9 +434,9 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Can_Disappear_2_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Can_Disappear_2_Test) is
-      Rule : kv.apg.rules.Rule_Pointer;
-      Sp : kv.apg.rules.Constant_Symbol_Pointer;
-      Pp : kv.apg.rules.Production_Pointer;
+      Rule : kv.apg.lalr.Rule_Pointer;
+      Sp : kv.apg.lalr.Constant_Symbol_Pointer;
+      Pp : kv.apg.lalr.Production_Pointer;
    begin
       Set_Up_ABG_Grammar(T);
 
@@ -505,8 +505,8 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Can_Disappear_3_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Can_Disappear_3_Test) is
-      Rule : kv.apg.rules.Rule_Pointer;
-      Pp : kv.apg.rules.Production_Pointer;
+      Rule : kv.apg.lalr.Rule_Pointer;
+      Pp : kv.apg.lalr.Production_Pointer;
    begin
       Add_ABG_Enum(T);
       Run_Basic_Grammar_Test(T, 4,
@@ -575,7 +575,7 @@ package body kv.apg.tests.parse is
 
    type Terminal_Tuple_Type is
       record
-         V : kv.apg.rules.Terminal_Index_Type;
+         V : kv.apg.lalr.Terminal_Index_Type;
          N : String_Type;
       end record;
 
@@ -587,9 +587,9 @@ package body kv.apg.tests.parse is
        Rule_Name : in     String;
        Included  : in     Terminal_Tuple_Array) is
 
-      use kv.apg.rules.Terminal_Sets;
+      use kv.apg.lalr.Terminal_Sets;
 
-      Rule : kv.apg.rules.Rule_Pointer;
+      Rule : kv.apg.lalr.Rule_Pointer;
       Answer : Set;
 
    begin
@@ -605,7 +605,7 @@ package body kv.apg.tests.parse is
    Id_Tuple : constant Terminal_Tuple_Type := (Terminal_id, To_String_Type("id"));
    Times_Tuple : constant Terminal_Tuple_Type := (Terminal_times, To_String_Type("times"));
    Plus_Tuple : constant Terminal_Tuple_Type := (Terminal_plus, To_String_Type("plus"));
-   Epsilon_Tuple : constant Terminal_Tuple_Type := (kv.apg.rules.Epsilon, To_String_Type("Epsilon"));
+   Epsilon_Tuple : constant Terminal_Tuple_Type := (kv.apg.lalr.Epsilon, To_String_Type("Epsilon"));
 
    ----------------------------------------------------------------------------
    type First_1_Test is new Grammar_Test_Class with null record;
@@ -641,9 +641,9 @@ package body kv.apg.tests.parse is
        Rule_Name : in     String;
        Included  : in     Terminal_Tuple_Array) is
 
-      use kv.apg.rules.Terminal_Sets;
+      use kv.apg.lalr.Terminal_Sets;
 
-      Rule : kv.apg.rules.Rule_Pointer;
+      Rule : kv.apg.lalr.Rule_Pointer;
       Answer : Set;
 
    begin
@@ -657,7 +657,7 @@ package body kv.apg.tests.parse is
 
 
    Close_Tuple : constant Terminal_Tuple_Type := (Termianl_close_paren, To_String_Type("close_paren"));
-   EOF_Tuple : constant Terminal_Tuple_Type := (kv.apg.rules.End_Of_File, To_String_Type("end_of_file"));
+   EOF_Tuple : constant Terminal_Tuple_Type := (kv.apg.lalr.End_Of_File, To_String_Type("end_of_file"));
 
    ----------------------------------------------------------------------------
    type Follow_1_Test is new Grammar_Test_Class with null record;
@@ -915,7 +915,7 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    procedure Check_Kernel_Set_First
       (T : in out Grammar_Test_Class'CLASS;
-       I : in     kv.apg.rules.Item_Sets.Set;
+       I : in     kv.apg.lalr.Item_Sets.Set;
        S : in     String;
        E : in     String_Type) is
 
@@ -933,7 +933,7 @@ package body kv.apg.tests.parse is
        S : in     String;
        R : in     String;
        P : in     Positive;
-       O : in     Positive) return kv.apg.rules.Constant_Symbol_Pointer is
+       O : in     Positive) return kv.apg.lalr.Constant_Symbol_Pointer is
       Symbol : Constant_Symbol_Pointer;
    begin
       Symbol := T.Grammar.Get_Symbol(To_String_Type(R), P, O);
@@ -1026,8 +1026,8 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    procedure Debug_Print_States
       (T : in     Grammar_Test_Class'CLASS;
-       All_Symbols : kv.apg.rules.Symbol_Vectors.Vector;
-       State_Info : kv.apg.rules.grammars.State_Information_Type) is
+       All_Symbols : kv.apg.lalr.Symbol_Vectors.Vector;
+       State_Info : kv.apg.lalr.grammars.State_Information_Type) is
 
       -------------------------------------------------------------------------
       function Safe_Name(S : Constant_Symbol_Pointer) return String is
@@ -1195,7 +1195,7 @@ package body kv.apg.tests.parse is
    overriding procedure Set_Up(T : in out Action_Table_Test_Class) is
    begin
       Set_Up(Grammar_Test_Class(T));
-      T.Table.Initialize(5, kv.apg.rules.End_Of_File, 5);
+      T.Table.Initialize(5, kv.apg.lalr.End_Of_File, 5);
       T.Action := (What => Shift, Where => 2, Precedence => 0, Associativity => Neither);
    end Set_Up;
 
@@ -1286,7 +1286,7 @@ package body kv.apg.tests.parse is
    --##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
    type Parser_Engine_Test_Class is abstract new Grammar_Test_Class with
       record
-         Engine : aliased kv.apg.rules.engines.Parser_Engine_Class;
+         Engine : aliased kv.apg.lalr.engines.Parser_Engine_Class;
          CW : aliased kv.apg.writer.console.Console_Writer_Class;
          CL : aliased kv.apg.logger.writer.Writer_Logger_Class;
       end record;
@@ -1322,14 +1322,14 @@ package body kv.apg.tests.parse is
 
    package ETF_Tokens is
       eof         : constant := -1;
-      plus        : constant kv.apg.rules.Terminal_Index_Type := 1;
-      times       : constant kv.apg.rules.Terminal_Index_Type := 2;
-      id          : constant kv.apg.rules.Terminal_Index_Type := 3;
-      open_paren  : constant kv.apg.rules.Terminal_Index_Type := 4;
-      close_paren : constant kv.apg.rules.Terminal_Index_Type := 5;
+      plus        : constant kv.apg.lalr.Terminal_Index_Type := 1;
+      times       : constant kv.apg.lalr.Terminal_Index_Type := 2;
+      id          : constant kv.apg.lalr.Terminal_Index_Type := 3;
+      open_paren  : constant kv.apg.lalr.Terminal_Index_Type := 4;
+      close_paren : constant kv.apg.lalr.Terminal_Index_Type := 5;
    end ETF_Tokens;
 
-   type Token_Array_Type is array (Positive range <>) of kv.apg.rules.Terminal_Index_Type;
+   type Token_Array_Type is array (Positive range <>) of kv.apg.lalr.Terminal_Index_Type;
 
    ----------------------------------------------------------------------------
    procedure Load_Tokens_Into_Engine
@@ -1412,11 +1412,11 @@ package body kv.apg.tests.parse is
 
    package Grammar_4_22_Tokens is
       eof   : constant := -1;
-      plus  : constant kv.apg.rules.Terminal_Index_Type := 1;
-      times : constant kv.apg.rules.Terminal_Index_Type := 2;
-      id    : constant kv.apg.rules.Terminal_Index_Type := 3;
-      open  : constant kv.apg.rules.Terminal_Index_Type := 4;
-      close : constant kv.apg.rules.Terminal_Index_Type := 5;
+      plus  : constant kv.apg.lalr.Terminal_Index_Type := 1;
+      times : constant kv.apg.lalr.Terminal_Index_Type := 2;
+      id    : constant kv.apg.lalr.Terminal_Index_Type := 3;
+      open  : constant kv.apg.lalr.Terminal_Index_Type := 4;
+      close : constant kv.apg.lalr.Terminal_Index_Type := 5;
    end Grammar_4_22_Tokens;
 
    ----------------------------------------------------------------------------

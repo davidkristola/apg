@@ -1,5 +1,5 @@
 
-package kv.apg.rules.grammars is
+package kv.apg.lalr.grammars is
 
 
    type Grammar_Class is tagged private;
@@ -159,4 +159,4 @@ private
          Errors : Natural := 0;
       end record;
 
-end kv.apg.rules.grammars;
+end kv.apg.lalr.grammars;

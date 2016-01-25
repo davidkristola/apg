@@ -13,7 +13,7 @@ with Ada.Text_IO; use Ada.Text_IO;
 with kv.apg.locations;
 with kv.apg.incidents;
 
-package body kv.apg.rules.tables is
+package body kv.apg.lalr.tables is
 
    use Ada.Strings.UTF_Encoding;
    use Ada.Strings.UTF_Encoding.Strings;
@@ -150,4 +150,4 @@ package body kv.apg.rules.tables is
       return Self.Table(State, Symbol);
    end Get_Goto;
 
-end kv.apg.rules.tables;
+end kv.apg.lalr.tables;

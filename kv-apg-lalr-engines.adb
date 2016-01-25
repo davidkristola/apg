@@ -12,17 +12,17 @@ with Ada.Text_IO; use Ada.Text_IO;
 
 with kv.apg.locations;
 with kv.apg.incidents;
-with kv.apg.rules.stacks;
-with kv.apg.rules.tables;
+with kv.apg.lalr.stacks;
+with kv.apg.lalr.tables;
 
-package body kv.apg.rules.engines is
+package body kv.apg.lalr.engines is
 
    use Ada.Strings.UTF_Encoding;
    use Ada.Strings.UTF_Encoding.Strings;
 
    use kv.apg.incidents; -- Severity_Type
-   use kv.apg.rules.stacks;
-   use kv.apg.rules.tables;
+   use kv.apg.lalr.stacks;
+   use kv.apg.lalr.tables;
 
 
    function Img(Arg : Production_Index_Type) return String renames Production_Index_Type'IMAGE;
@@ -220,4 +220,4 @@ package body kv.apg.rules.engines is
    end Has_Accepted;
 
 
-end kv.apg.rules.engines;
+end kv.apg.lalr.engines;

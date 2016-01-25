@@ -13,7 +13,7 @@ with Ada.Text_IO; use Ada.Text_IO;
 with kv.apg.locations;
 with kv.apg.incidents;
 
-package body kv.apg.rules.grammars is
+package body kv.apg.lalr.grammars is
 
    use Ada.Strings.UTF_Encoding;
    use Ada.Strings.UTF_Encoding.Strings;
@@ -952,4 +952,4 @@ package body kv.apg.rules.grammars is
       return Answer;
    end Generate_Parser_States;
 
-end kv.apg.rules.grammars;
+end kv.apg.lalr.grammars;
