@@ -1081,7 +1081,9 @@ package body kv.apg.tests.parse is
       Set_Up_SLR_Grammar(T, Logger);
       All_Symbols := T.Grammar.Grammar_Symbols;
       T.Assert(All_Symbols.Length = 7, "Expected 7 symbols in the SLR grammar.");
-      State_Info := T.Grammar.Generate_Parser_States(Logger);
+--      State_Info := T.Grammar.Generate_Parser_States(Logger);
+--      State_Info := kv.apg.lalr.grammars.Generate_Parser_States(T.Grammar'UNCHECKED_ACCESS, Logger);
+      State_Info.Initialize(T.Grammar'UNCHECKED_ACCESS, Logger);
       T.Assert(State_Info.States.Length = 11, "Expected 11 parser states in the SLR grammar, got " & Natural'IMAGE(Natural(State_Info.States.Length)));
       --Debug_Print_States(T, All_Symbols, State_Info);
    end Run;
@@ -1141,7 +1143,9 @@ package body kv.apg.tests.parse is
       Set_Up_4_22_Grammar(T, Logger);
       All_Symbols := T.Grammar.Grammar_Symbols;
       T.Assert(All_Symbols.Length = 7, "Expected 7 symbols in the 4.22 grammar.");
-      State_Info := T.Grammar.Generate_Parser_States(Logger);
+--      State_Info := T.Grammar.Generate_Parser_States(Logger);
+--      State_Info := kv.apg.lalr.grammars.Generate_Parser_States(T.Grammar'UNCHECKED_ACCESS, Logger);
+      State_Info.Initialize(T.Grammar'UNCHECKED_ACCESS, Logger);
       T.Assert(State_Info.States.Length = 11, "Expected 11 parser states in the 4.22 grammar, got " & Natural'IMAGE(Natural(State_Info.States.Length)));
       --Debug_Print_States(T, All_Symbols, State_Info);
    end Run;
@@ -1176,7 +1180,9 @@ package body kv.apg.tests.parse is
 
       All_Symbols := T.Grammar.Grammar_Symbols;
       T.Assert(All_Symbols.Length = 9, "Expected 9 symbols in the ETF grammar, got " & Natural'IMAGE(Natural(All_Symbols.Length)));
-      State_Info := T.Grammar.Generate_Parser_States(Logger);
+--      State_Info := T.Grammar.Generate_Parser_States(Logger);
+--      State_Info := kv.apg.lalr.grammars.Generate_Parser_States(T.Grammar'UNCHECKED_ACCESS, Logger);
+      State_Info.Initialize(T.Grammar'UNCHECKED_ACCESS, Logger);
       T.Assert(State_Info.States.Length = 13, "Expected 13 parser states in the ETF grammar, got " & Natural'IMAGE(Natural(State_Info.States.Length)));
 --      Debug_Print_States(T, All_Symbols, State_Info);
    end Run;

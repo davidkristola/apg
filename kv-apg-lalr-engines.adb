@@ -142,7 +142,9 @@ package body kv.apg.lalr.engines is
 
    begin
       Self.Grammar := Grammar;
-      Info := Grammar.Generate_Parser_States(Logger);
+--      Info := Grammar.Generate_Parser_States(Logger);
+--      Info := kv.apg.lalr.grammars.Generate_Parser_States(Grammar, Logger);
+      Info.Initialize(Grammar, Logger);
       State_Count := State_Index_Type(Info.States.Length)+1;
       Self.Stack.Push_State(Start_State);
       Self.Actions.Initialize(State_Count, Grammar.Terminal_Lo, Grammar.Terminal_Hi);

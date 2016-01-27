@@ -136,17 +136,38 @@ package kv.apg.lalr.grammars is
        Element_Type => State_Definition_Type);
 
 
-   type State_Information_Type is
+   type State_Information_Type is tagged
       record
          States : State_Space.Vector;
          Hints  : Action_Space.Vector;
+         Count  : State_Index_Type := 0;
+         Found_More : Boolean := False;
+         Working_Hint : Action_Hint_Type;
       end record;
 
+   procedure Initialize
+      (Self    : in out State_Information_Type;
+       Grammar : in     Grammar_Pointer;
+       Logger  : in     kv.apg.logger.Safe_Logger_Pointer);
 
-   function Generate_Parser_States(Self : Grammar_Class; Logger : kv.apg.logger.Safe_Logger_Pointer) return State_Information_Type;
+--   function Generate_Parser_States(Self : Grammar_Pointer; Logger : kv.apg.logger.Safe_Logger_Pointer) return State_Information_Type;
 
 
 private
+
+   procedure Process_Source_Kernels
+      (Self    : in out State_Information_Type;
+       Grammar : in     Grammar_Pointer;
+       Logger  : in     kv.apg.logger.Safe_Logger_Pointer;
+       Current : in     State_Index_Type);
+
+   procedure Add_State
+      (Self    : in out State_Information_Type;
+       Logger  : in     kv.apg.logger.Safe_Logger_Pointer;
+       Kernels : in     kv.apg.lalr.rules.Item_Sets.Set);
+
+
+
 
    type Grammar_Class is tagged
       record

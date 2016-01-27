@@ -879,78 +879,166 @@ package body kv.apg.lalr.grammars is
       return Answer;
    end Img;
 
+
+
+
+
+
+
    ----------------------------------------------------------------------------
-   function Generate_Parser_States(Self : Grammar_Class; Logger : kv.apg.logger.Safe_Logger_Pointer) return State_Information_Type is
+   procedure Initialize
+      (Self    : in out State_Information_Type;
+       Grammar : in     Grammar_Pointer;
+       Logger  : in     kv.apg.logger.Safe_Logger_Pointer) is
 
-      Answer : State_Information_Type;
-      Count : State_Index_Type := 0;
       Current : State_Index_Type := 0;
-      Found_More : Boolean := False;
-      Hint : Action_Hint_Type;
-
-      -------------------------------------------------------------------------
-      procedure Add_State(Kernels : in kv.apg.lalr.rules.Item_Sets.Set) is
-         use Item_Sets;
-
-         State_Def : State_Definition_Type;
-
-      begin
-         for S in State_Index_Type(0) .. Count-1 loop
-            if Answer.States(S).Kernels = Kernels then
-               Logger.Note_By_Severity(Debug, "Not adding state definition because it matches: " & Img(S));
-               Hint.To_State := S;
-               State_Def := Answer.States(S);
-               Answer.Hints.Append(Hint);
-               Answer.States.Replace_Element(S, State_Def);
-               return;
-            end if;
-         end loop;
-         Logger.Note_By_Severity(Debug, "Adding state definition for: " & Img(Count));
-         Hint.To_State := Count;
-         State_Def.Index := Count;
-         State_Def.Kernels := Kernels;
-         Answer.Hints.Append(Hint);
-         Answer.States.Append(State_Def);
-         Count := Count + 1;
-      end Add_State;
-
-      -------------------------------------------------------------------------
-      procedure Process_Source_Kernels
-         (Symbol : in Constant_Symbol_Pointer;
-          Kernels : in kv.apg.lalr.rules.Item_Sets.Set) is
-
-         Working : kv.apg.lalr.rules.Item_Sets.Set;
-
-      begin
-         for K of Kernels loop -- kv.apg.lalr.rules.Constant_Item_Pointer
-            Working.Union(Self.Goto_Step_Over_One(K, Current, Symbol, Logger));
-            Working.Union(Self.Goto_Step_Into_One(K, Current, Symbol, Logger));
-         end loop;
-         if not Working.Is_Empty then
-            Add_State(Working);
-            Found_More := True;
-         end if;
-      end Process_Source_Kernels;
-
       K : kv.apg.lalr.rules.Item_Sets.Set;
 
    begin
-      Hint.From_State := 0;
-      Add_State(Self.First_Kernel_Set);
+      Self.Working_Hint.From_State := 0;
+      Self.Add_State(Logger, Grammar.First_Kernel_Set);
       loop
          Logger.Note_By_Severity(Debug, "Processing " & Img(Current));
-         Hint.From_State := Current;
-         for Symbol of Self.All_Symbols loop
-            Hint.Symbol := Symbol;
-            K := Answer.States.Constant_Reference(Current).Kernels;
-            Process_Source_Kernels(Symbol, K);
+         Self.Working_Hint.From_State := Current;
+         for Symbol of Grammar.Grammar_Symbols loop
+            Self.Working_Hint.Symbol := Symbol;
+            Self.Process_Source_Kernels(Grammar, Logger, Current);
          end loop;
          Current := Current + 1;
-      exit when Current > Count; -- Should not be able to get here, but protect against pathological case
-      exit when (not Found_More) and (Current = Count);
-         Found_More := False;
+      exit when Current > Self.Count; -- Should not be able to get here, but protect against pathological case
+      exit when (not Self.Found_More) and (Current = Self.Count);
+         Self.Found_More := False;
       end loop;
-      return Answer;
-   end Generate_Parser_States;
+   end Initialize;
+
+   ----------------------------------------------------------------------------
+   procedure Process_Source_Kernels
+      (Self    : in out State_Information_Type;
+       Grammar : in     Grammar_Pointer;
+       Logger  : in     kv.apg.logger.Safe_Logger_Pointer;
+       Current : in     State_Index_Type) is
+
+      Working : kv.apg.lalr.rules.Item_Sets.Set;
+
+   begin
+      for K of Self.States.Constant_Reference(Current).Kernels loop -- kv.apg.lalr.rules.Constant_Item_Pointer
+         Working.Union(Grammar.Goto_Step_Over_One(K, Current, Self.Working_Hint.Symbol, Logger));
+         Working.Union(Grammar.Goto_Step_Into_One(K, Current, Self.Working_Hint.Symbol, Logger));
+      end loop;
+      if not Working.Is_Empty then
+         Self.Add_State(Logger, Working);
+         Self.Found_More := True;
+      end if;
+   end Process_Source_Kernels;
+
+   ----------------------------------------------------------------------------
+   procedure Add_State
+      (Self    : in out State_Information_Type;
+       Logger  : in     kv.apg.logger.Safe_Logger_Pointer;
+       Kernels : in     kv.apg.lalr.rules.Item_Sets.Set) is
+
+      use Item_Sets;
+
+      State_Def : State_Definition_Type;
+
+   begin
+      for S in State_Index_Type(0) .. Self.Count-1 loop
+         if Self.States(S).Kernels = Kernels then
+            Logger.Note_By_Severity(Debug, "Not adding state definition because it matches: " & Img(S));
+            Self.Working_Hint.To_State := S;
+            State_Def := Self.States(S);
+            Self.Hints.Append(Self.Working_Hint);
+            Self.States.Replace_Element(S, State_Def);
+            return;
+         end if;
+      end loop;
+      Logger.Note_By_Severity(Debug, "Adding state definition for: " & Img(Self.Count));
+      Self.Working_Hint.To_State := Self.Count;
+      State_Def.Index := Self.Count;
+      State_Def.Kernels := Kernels;
+      Self.Hints.Append(Self.Working_Hint);
+      Self.States.Append(State_Def);
+      Self.Count := Self.Count + 1;
+   end Add_State;
+
+
+
+
+
+
+--
+--   ----------------------------------------------------------------------------
+--   function Generate_Parser_States(Self : Grammar_Pointer; Logger : kv.apg.logger.Safe_Logger_Pointer) return State_Information_Type is
+--
+--      Answer : State_Information_Type;
+--      Count : State_Index_Type := 0;
+--      Current : State_Index_Type := 0;
+--      Found_More : Boolean := False;
+--      Hint : Action_Hint_Type;
+--
+--      -------------------------------------------------------------------------
+--      procedure Add_State(Kernels : in kv.apg.lalr.rules.Item_Sets.Set) is
+--         use Item_Sets;
+--
+--         State_Def : State_Definition_Type;
+--
+--      begin
+--         for S in State_Index_Type(0) .. Count-1 loop
+--            if Answer.States(S).Kernels = Kernels then
+--               Logger.Note_By_Severity(Debug, "Not adding state definition because it matches: " & Img(S));
+--               Hint.To_State := S;
+--               State_Def := Answer.States(S);
+--               Answer.Hints.Append(Hint);
+--               Answer.States.Replace_Element(S, State_Def);
+--               return;
+--            end if;
+--         end loop;
+--         Logger.Note_By_Severity(Debug, "Adding state definition for: " & Img(Count));
+--         Hint.To_State := Count;
+--         State_Def.Index := Count;
+--         State_Def.Kernels := Kernels;
+--         Answer.Hints.Append(Hint);
+--         Answer.States.Append(State_Def);
+--         Count := Count + 1;
+--      end Add_State;
+--
+--      -------------------------------------------------------------------------
+--      procedure Process_Source_Kernels
+--         (Symbol : in Constant_Symbol_Pointer;
+--          Kernels : in kv.apg.lalr.rules.Item_Sets.Set) is
+--
+--         Working : kv.apg.lalr.rules.Item_Sets.Set;
+--
+--      begin
+--         for K of Kernels loop -- kv.apg.lalr.rules.Constant_Item_Pointer
+--            Working.Union(Self.Goto_Step_Over_One(K, Current, Symbol, Logger));
+--            Working.Union(Self.Goto_Step_Into_One(K, Current, Symbol, Logger));
+--         end loop;
+--         if not Working.Is_Empty then
+--            Add_State(Working);
+--            Found_More := True;
+--         end if;
+--      end Process_Source_Kernels;
+--
+--      K : kv.apg.lalr.rules.Item_Sets.Set;
+--
+--   begin
+--      Hint.From_State := 0;
+--      Add_State(Self.First_Kernel_Set);
+--      loop
+--         Logger.Note_By_Severity(Debug, "Processing " & Img(Current));
+--         Hint.From_State := Current;
+--         for Symbol of Self.Grammar_Symbols loop
+--            Hint.Symbol := Symbol;
+--            K := Answer.States.Constant_Reference(Current).Kernels;
+--            Process_Source_Kernels(Symbol, K);
+--         end loop;
+--         Current := Current + 1;
+--      exit when Current > Count; -- Should not be able to get here, but protect against pathological case
+--      exit when (not Found_More) and (Current = Count);
+--         Found_More := False;
+--      end loop;
+--      return Answer;
+--   end Generate_Parser_States;
 
 end kv.apg.lalr.grammars;
