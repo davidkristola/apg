@@ -14,6 +14,7 @@ with kv.apg.locations;
 with kv.apg.incidents;
 with kv.apg.lalr.stacks;
 with kv.apg.lalr.tables;
+with kv.apg.lalr.rules;
 
 package body kv.apg.lalr.engines is
 
@@ -23,6 +24,7 @@ package body kv.apg.lalr.engines is
    use kv.apg.incidents; -- Severity_Type
    use kv.apg.lalr.stacks;
    use kv.apg.lalr.tables;
+   use kv.apg.lalr.rules;
 
 
    function Img(Arg : Production_Index_Type) return String renames Production_Index_Type'IMAGE;
@@ -106,7 +108,8 @@ package body kv.apg.lalr.engines is
       for T of Rule.Follow loop -- Consider everything that can follow this rule...
          Symbol := Self.Grammar.Translate(T);
          -- Add a reduce action
-         Action := (What => Reduce, Production => Item.Get_Production_Number, Precedence => Item.Production.Get_Precedence, Associativity => kv.apg.enum.Neither);
+         Action := (What => Reduce, Production => Item.Get_Production_Number, Precedence => Item.Get_Production.Get_Precedence, Associativity => kv.apg.enum.Neither);
+         --TODO: Fix message chain in above (Item.Get_Production.Get_Precedence)
          Logger.Note_By_Severity(Debug, Img(Index) & ": add RUDUCE by production" & Img(Item.Get_Production_Number) & ", terminal " & To_String(Symbol.Name));
          Self.Actions.Set_Action(Action, Index, T, Logger);
       end loop;

@@ -1,3 +1,4 @@
+with kv.apg.lalr.rules;
 
 package kv.apg.lalr.grammars is
 
@@ -15,9 +16,9 @@ package kv.apg.lalr.grammars is
 
    procedure Add_Rule
       (Self : in out Grammar_Class;
-       Rule : in     Rule_Pointer);
+       Rule : in     kv.apg.lalr.rules.Rule_Pointer);
 
-   function Find_Start(Self : Grammar_Class) return Rule_Pointer;
+   function Find_Start(Self : Grammar_Class) return kv.apg.lalr.rules.Rule_Pointer;
 
    procedure Add_Meta_Rule
       (Self   : in out Grammar_Class;
@@ -44,8 +45,8 @@ package kv.apg.lalr.grammars is
       (Self   : in out Grammar_Class;
        Logger : in     kv.apg.logger.Safe_Logger_Pointer);
 
-   function Rule_Of(Self : Grammar_Class; Symbol : Constant_Symbol_Pointer) return Rule_Pointer;
-   function Find_Non_Terminal(Self : Grammar_Class; Name : String_Type) return Rule_Pointer;
+   function Rule_Of(Self : Grammar_Class; Symbol : Constant_Symbol_Pointer) return kv.apg.lalr.rules.Rule_Pointer;
+   function Find_Non_Terminal(Self : Grammar_Class; Name : String_Type) return kv.apg.lalr.rules.Rule_Pointer;
    function Find_Terminal(Self : Grammar_Class; Name : String_Type) return Integer;
 
    function First_Of(Self : Grammar_Class; Symbol : Constant_Symbol_Pointer) return Terminal_Sets.Set;
@@ -56,13 +57,13 @@ package kv.apg.lalr.grammars is
    function Get_Symbol(Self : Grammar_Class; Name : String_Type; Production : Positive; Symbol : Positive) return Constant_Symbol_Pointer;
 
 
-   function Get_Production(Self : Grammar_Class; Number : Production_Index_Type) return Production_Pointer;
-   function Get_Rule(Self : Grammar_Class; Number : Non_Terminal_Index_Type) return Rule_Pointer;
+   function Get_Production(Self : Grammar_Class; Number : kv.apg.lalr.rules.Production_Index_Type) return kv.apg.lalr.rules.Production_Pointer;
+   function Get_Rule(Self : Grammar_Class; Number : Non_Terminal_Index_Type) return kv.apg.lalr.rules.Rule_Pointer;
 
    function Rule_Number_Lo(Self : Grammar_Class) return Non_Terminal_Index_Type;
    function Rule_Number_Hi(Self : Grammar_Class) return Non_Terminal_Index_Type;
-   function Production_Number_Lo(Self : Grammar_Class) return Production_Index_Type;
-   function Production_Number_Hi(Self : Grammar_Class) return Production_Index_Type;
+   function Production_Number_Lo(Self : Grammar_Class) return kv.apg.lalr.rules.Production_Index_Type;
+   function Production_Number_Hi(Self : Grammar_Class) return kv.apg.lalr.rules.Production_Index_Type;
    function Terminal_Lo(Self : Grammar_Class) return Terminal_Index_Type;
    function Terminal_Hi(Self : Grammar_Class) return Terminal_Index_Type;
 
@@ -70,12 +71,12 @@ package kv.apg.lalr.grammars is
    function Translate(Self : Grammar_Class; Terminal : Terminal_Index_Type) return Constant_Symbol_Pointer;
    function Translate(Self : Grammar_Class; Terminals : Terminal_Sets.Set) return Symbol_Vectors.Vector;
 
-   function First_Kernel_Set(Self : Grammar_Class) return Item_Sets.Set;
+   function First_Kernel_Set(Self : Grammar_Class) return kv.apg.lalr.rules.Item_Sets.Set;
 
    function Closure
       (Self   : Grammar_Class;
-       Kernel : Item_Sets.Set;
-       Logger : kv.apg.logger.Safe_Logger_Pointer) return Item_Sets.Set;
+       Kernel : kv.apg.lalr.rules.Item_Sets.Set;
+       Logger : kv.apg.logger.Safe_Logger_Pointer) return kv.apg.lalr.rules.Item_Sets.Set;
 
    type State_Index_Type is new Natural;
    function Img(I : State_Index_Type) return String;
@@ -83,31 +84,31 @@ package kv.apg.lalr.grammars is
 
    function Goto_Step_Over_One -- goto(I, X)
       (Self   : Grammar_Class;
-       Kernel : Constant_Item_Pointer;
+       Kernel : kv.apg.lalr.rules.Constant_Item_Pointer;
        Index  : State_Index_Type;
        Symbol : Constant_Symbol_Pointer;
-       Logger : kv.apg.logger.Safe_Logger_Pointer) return Item_Sets.Set;
+       Logger : kv.apg.logger.Safe_Logger_Pointer) return kv.apg.lalr.rules.Item_Sets.Set;
 
    function Goto_Step_Over -- goto(I, X)
       (Self   : Grammar_Class;
-       Kernel : Item_Sets.Set;
+       Kernel : kv.apg.lalr.rules.Item_Sets.Set;
        Index  : State_Index_Type;
        Symbol : Constant_Symbol_Pointer;
-       Logger : kv.apg.logger.Safe_Logger_Pointer) return Item_Sets.Set;
+       Logger : kv.apg.logger.Safe_Logger_Pointer) return kv.apg.lalr.rules.Item_Sets.Set;
 
    function Goto_Step_Into_One -- goto(I, X)
       (Self   : Grammar_Class;
-       Kernel : Constant_Item_Pointer;
+       Kernel : kv.apg.lalr.rules.Constant_Item_Pointer;
        Index  : State_Index_Type;
        Symbol : Constant_Symbol_Pointer;
-       Logger : kv.apg.logger.Safe_Logger_Pointer) return Item_Sets.Set;
+       Logger : kv.apg.logger.Safe_Logger_Pointer) return kv.apg.lalr.rules.Item_Sets.Set;
 
    function Goto_Step_Into -- goto(I, X)
       (Self   : Grammar_Class;
-       Kernel : Item_Sets.Set;
+       Kernel : kv.apg.lalr.rules.Item_Sets.Set;
        Index  : State_Index_Type;
        Symbol : Constant_Symbol_Pointer;
-       Logger : kv.apg.logger.Safe_Logger_Pointer) return Item_Sets.Set;
+       Logger : kv.apg.logger.Safe_Logger_Pointer) return kv.apg.lalr.rules.Item_Sets.Set;
 
 
 
@@ -127,7 +128,7 @@ package kv.apg.lalr.grammars is
    type State_Definition_Type is
       record
          Index   : State_Index_Type;
-         Kernels : Item_Sets.Set;
+         Kernels : kv.apg.lalr.rules.Item_Sets.Set;
       end record;
 
    package State_Space is new Ada.Containers.Vectors
@@ -150,7 +151,7 @@ private
    type Grammar_Class is tagged
       record
          Tokens : kv.apg.enum.Enumeration_Class;
-         Rules  : Rule_Maps.Map;
+         Rules  : kv.apg.lalr.rules.Rule_Maps.Map;
          All_Symbols : Symbol_Vectors.Vector;
          Start  : String_Type;
          Count  : Natural := 0; -- Count of rules

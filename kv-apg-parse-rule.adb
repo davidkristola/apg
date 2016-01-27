@@ -57,7 +57,7 @@ package body kv.apg.parse.rule is
        Token : in     kv.apg.tokens.Token_Class) is
    begin
       Self.Expect := Element_Or_Causes; -- TODO
-      Self.Working := kv.apg.lalr.New_Production_Class;
+      Self.Working := kv.apg.lalr.rules.New_Production_Class;
    end Process_Production;
 
    -------------------------------------------------------------------------
@@ -174,14 +174,14 @@ package body kv.apg.parse.rule is
    -------------------------------------------------------------------------
    function Get_Directive(Self : in out Rule_State_Class) return kv.apg.directives.Directive_Pointer_Type is
       Rule_Directive : access kv.apg.directives.Rule_Class;
-      Rule : kv.apg.lalr.Rule_Pointer;
+      Rule : kv.apg.lalr.rules.Rule_Pointer;
    begin
       if Self.Status /= Done_Good then
          return null;
       end if;
       Self.Status := Done_Done;
       Rule_Directive := new kv.apg.directives.Rule_Class;
-      Rule := new kv.apg.lalr.Rule_Class;
+      Rule := new kv.apg.lalr.rules.Rule_Class;
       Rule.Initialize(Self.Name_Token, Self.Productions);
       Rule.Set_Is_Start(Self.Start_Flag);
       Rule_Directive.Initialize(Name => Self.Name_Token, Rule => Rule);

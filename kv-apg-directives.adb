@@ -111,7 +111,7 @@ package body kv.apg.directives is
    not overriding procedure Initialize
       (Self : in out Rule_Class;
        Name : in     kv.apg.tokens.Token_Class;
-       Rule : in     kv.apg.lalr.Rule_Pointer) is
+       Rule : in     kv.apg.lalr.rules.Rule_Pointer) is
    begin
       Self.Name := Name;
       Self.Rule := Rule;
@@ -124,7 +124,7 @@ package body kv.apg.directives is
    end Process;
 
    ----------------------------------------------------------------------------
-   not overriding function Get_Rule(Self : Rule_Class) return kv.apg.lalr.Rule_Pointer is
+   not overriding function Get_Rule(Self : Rule_Class) return kv.apg.lalr.rules.Rule_Pointer is
    begin
       return Self.Rule;
    end Get_Rule;

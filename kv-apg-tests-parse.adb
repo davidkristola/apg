@@ -22,6 +22,7 @@ with kv.apg.lalr.stacks;
 with kv.apg.lalr.engines;
 with kv.apg.lalr.tables;
 with kv.apg.lalr.grammars;
+with kv.apg.lalr.rules;
 with kv.apg.enum;
 with kv.apg.locations;
 
@@ -43,6 +44,7 @@ package body kv.apg.tests.parse is
    use kv.apg.lalr.engines;
    use kv.apg.lalr.tables;
    use kv.apg.lalr.grammars;
+   use kv.apg.lalr.rules;
    use kv.apg.enum;
 
    use kv.apg.tests.lex_lex;
@@ -79,7 +81,7 @@ package body kv.apg.tests.parse is
    type Multi_Line_Rule_Test is new Rule_Test_Class with null record;
    procedure Run(T : in out Multi_Line_Rule_Test) is
       Directive : kv.apg.directives.Directive_Pointer_Type;
-      Rule : kv.apg.lalr.Rule_Pointer;
+      Rule : kv.apg.lalr.rules.Rule_Pointer;
       use kv.apg.directives;
       Expected_1 : constant String := "( import_list class_list eos_token ) => null;";
       Expected_2 : constant String := "( pragma_token name_token eos_token ) => jump;";
@@ -151,7 +153,7 @@ package body kv.apg.tests.parse is
        Definition : in     String_Array_Type) is
 
       Directive : kv.apg.directives.Directive_Pointer_Type;
-      Rule : kv.apg.lalr.Rule_Pointer;
+      Rule : kv.apg.lalr.rules.Rule_Pointer;
 
    begin
       for I in Definition'RANGE loop
@@ -172,7 +174,7 @@ package body kv.apg.tests.parse is
    type Init_Gramar_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Init_Gramar_Test) is
 
-      Rule : kv.apg.lalr.Rule_Pointer;
+      Rule : kv.apg.lalr.rules.Rule_Pointer;
 
       Expected_1 : constant String := "( Alpha Gamma ) => null;";
       Expected_2 : constant String := "( Beta Gamma ) => null;";
@@ -208,7 +210,7 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Resolve_Gramar_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Resolve_Gramar_Test) is
-      Rule : kv.apg.lalr.Rule_Pointer;
+      Rule : kv.apg.lalr.rules.Rule_Pointer;
       Expected : constant String := "***ERROR*** (File: , line 3, column 31): Symbol of production rule ""program"" not found. (""Epsilon"").";
       Expected_1 : constant String := "beta_list -> ( Beta beta_list ) => null;";
    begin
@@ -434,9 +436,9 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Can_Disappear_2_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Can_Disappear_2_Test) is
-      Rule : kv.apg.lalr.Rule_Pointer;
+      Rule : kv.apg.lalr.rules.Rule_Pointer;
       Sp : kv.apg.lalr.Constant_Symbol_Pointer;
-      Pp : kv.apg.lalr.Production_Pointer;
+      Pp : kv.apg.lalr.rules.Production_Pointer;
    begin
       Set_Up_ABG_Grammar(T);
 
@@ -505,8 +507,8 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    type Can_Disappear_3_Test is new Grammar_Test_Class with null record;
    procedure Run(T : in out Can_Disappear_3_Test) is
-      Rule : kv.apg.lalr.Rule_Pointer;
-      Pp : kv.apg.lalr.Production_Pointer;
+      Rule : kv.apg.lalr.rules.Rule_Pointer;
+      Pp : kv.apg.lalr.rules.Production_Pointer;
    begin
       Add_ABG_Enum(T);
       Run_Basic_Grammar_Test(T, 4,
@@ -589,7 +591,7 @@ package body kv.apg.tests.parse is
 
       use kv.apg.lalr.Terminal_Sets;
 
-      Rule : kv.apg.lalr.Rule_Pointer;
+      Rule : kv.apg.lalr.rules.Rule_Pointer;
       Answer : Set;
 
    begin
@@ -643,7 +645,7 @@ package body kv.apg.tests.parse is
 
       use kv.apg.lalr.Terminal_Sets;
 
-      Rule : kv.apg.lalr.Rule_Pointer;
+      Rule : kv.apg.lalr.rules.Rule_Pointer;
       Answer : Set;
 
    begin
@@ -915,7 +917,7 @@ package body kv.apg.tests.parse is
    ----------------------------------------------------------------------------
    procedure Check_Kernel_Set_First
       (T : in out Grammar_Test_Class'CLASS;
-       I : in     kv.apg.lalr.Item_Sets.Set;
+       I : in     kv.apg.lalr.rules.Item_Sets.Set;
        S : in     String;
        E : in     String_Type) is
 

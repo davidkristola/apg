@@ -2,7 +2,7 @@ with kv.core.wwstr; use kv.core.wwstr;
 
 with kv.apg.directives;
 with kv.apg.tokens;
-with kv.apg.lalr;
+with kv.apg.lalr.rules;
 
 private package kv.apg.parse.rule is
 
@@ -12,8 +12,8 @@ private package kv.apg.parse.rule is
       record
          Expect      : Expectation_Type := Name;
          Name_Token  : kv.apg.tokens.Token_Class;
-         Productions : kv.apg.lalr.Production_Vectors.Vector;
-         Working     : kv.apg.lalr.Production_Pointer;
+         Productions : kv.apg.lalr.rules.Production_Vectors.Vector;
+         Working     : kv.apg.lalr.rules.Production_Pointer;
          Start_Flag  : Boolean := False;
       end record;
 

@@ -19,6 +19,7 @@ package body kv.apg.lalr.grammars is
    use Ada.Strings.UTF_Encoding.Strings;
 
    use kv.apg.incidents; -- Severity_Type
+   use kv.apg.lalr.rules;
 
    ----------------------------------------------------------------------------
    procedure Initialize
@@ -43,19 +44,19 @@ package body kv.apg.lalr.grammars is
    ----------------------------------------------------------------------------
    procedure Add_Rule
       (Self : in out Grammar_Class;
-       Rule : in     Rule_Pointer) is
+       Rule : in     kv.apg.lalr.rules.Rule_Pointer) is
    begin
       Self.Rules.Include(Decode(To_String(Rule.Get_Name), UTF_8), Rule);
       Self.Count := Self.Count + 1;
-      Rule.Number := Non_Terminal_Index_Type(Self.Count);
-      Rule.Me := Rule;
+      Rule.Set_Number(Non_Terminal_Index_Type(Self.Count));
+      Rule.Set_Self_Pointer(Rule);
    end Add_Rule;
 
    ----------------------------------------------------------------------------
-   function Find_Start(Self : Grammar_Class) return Rule_Pointer is
+   function Find_Start(Self : Grammar_Class) return kv.apg.lalr.rules.Rule_Pointer is
    begin
       for Rule of Self.Rules loop
-         if Rule.Start_Rule then
+         if Rule.Is_Start then
             return Rule;
          end if;
       end loop;
@@ -67,10 +68,10 @@ package body kv.apg.lalr.grammars is
       (Self   : in out Grammar_Class;
        Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
 
-      P : Production_Pointer;
+      P : kv.apg.lalr.rules.Production_Pointer;
       P_V : Production_Vectors.Vector;
-      S : Rule_Pointer;
-      R : Rule_Pointer := new Rule_Class;
+      S : kv.apg.lalr.rules.Rule_Pointer;
+      R : kv.apg.lalr.rules.Rule_Pointer := new kv.apg.lalr.rules.Rule_Class;
 
    begin
       Logger.Note_By_Severity(Debug, "Add_Meta_Rule");
@@ -78,15 +79,15 @@ package body kv.apg.lalr.grammars is
       if S = null then
          Logger.Note_By_Severity(Error, "Add_Meta_Rule: No start rule found!");
       end if;
-      Logger.Note_By_Severity(Debug, S.Name_Token.Cite("Is a start rule"));
+      Logger.Note_By_Severity(Debug, S.Get_Token.Cite("Is a start rule"));
       P := New_Production_Class;
       P.Append(New_Non_Terminal_Symbol(S.Get_Token, S.Get_Number));
       P.Append(New_End_Of_File_Terminal);
       P_V.Append(P);
       R.Initialize(kv.apg.tokens.Meta_Start_Rule_Token, P_V);
       P.Set_Rule(R);
-      R.Start_Rule := True;
-      S.Start_Rule := False;
+      R.Set_Is_Start(True);
+      S.Set_Is_Start(False);
       Self.Add_Rule(R);
    end Add_Meta_Rule;
 
@@ -125,44 +126,47 @@ package body kv.apg.lalr.grammars is
 
    begin
       for Rule of Self.Rules loop
-         Rule.My_Hash := Rule_Hash;
+         Rule.Set_Hash(Rule_Hash);
          Rule_Hash := Rule_Hash + 1;
-         Logger.Note_Info(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "Rule <" & Rule.Name_Token.Get_Data_As_String & ">");
-         for Production of Rule.Productions loop
-            Logger.Note_Info(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "  Production <" & Decode(To_String(Production.Image), UTF_8) & ">");
+         Logger.Note_Info(Rule.Get_Token.Get_Location, Rule.Get_Token.Get_Data, "Rule <" & Rule.Get_Token.Get_Data_As_String & ">");
+         for Production of Rule.Get_Productions loop
+            Logger.Note_Info(Rule.Get_Token.Get_Location, Rule.Get_Token.Get_Data, "  Production <" & Decode(To_String(Production.Image), UTF_8) & ">");
             Production.Set_Rule(Rule);
-            Current := First(Production.Symbols);
+--            Current := First(Production.Get_Symbols);
+            Current := Production.Get_First_Symbol_Cursor;
             while Current /= No_Element loop
                Symbol := Symbol_Vectors.Element(Current);
                -- update the element from a Pre_Symbol_Class to either a Terminal_Class (token) or a Non_Terminal_Class (rule)
                -- log an error if the element does not resolve
                if Self.Find_Non_Terminal(Symbol.Token.Get_Data) /= null then
-                  Logger.Note_Debug(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "    Symbol <" & Symbol.Token.Get_Data_As_String & "> is a nonterminal (rule)");
+                  Logger.Note_Debug(Rule.Get_Token.Get_Location, Rule.Get_Token.Get_Data, "    Symbol <" & Symbol.Token.Get_Data_As_String & "> is a nonterminal (rule)");
                   To_Be_Deleted := Symbol;
                   Symbol_Rule := Self.Find_Non_Terminal(Symbol.Token.Get_Data);
                   Updated_Symbol := New_Non_Terminal_Symbol(Symbol_Rule.Get_Token, Symbol_Rule.Get_Number);
                   Collect_Grammar_Symbol(Self, Updated_Symbol);
-                  Production.Symbols.Replace_Element(Current, Updated_Symbol);
+--                  Production.Symbols.Replace_Element(Current, Updated_Symbol);
+                  Production.Replace_Symbol(Current, Updated_Symbol);
                   Free(To_Be_Deleted);
                elsif Self.Find_Terminal(Symbol.Token.Get_Data) /= kv.apg.enum.Not_Found_Error then
-                  Logger.Note_Debug(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "    Symbol <" & Symbol.Token.Get_Data_As_String & "> is a terminal (token)");
+                  Logger.Note_Debug(Rule.Get_Token.Get_Location, Rule.Get_Token.Get_Data, "    Symbol <" & Symbol.Token.Get_Data_As_String & "> is a terminal (token)");
                   Index := Self.Find_Terminal(Symbol.Token.Get_Data);
                   if Self.Tokens.Get_Precedence(Index) > Production.Get_Precedence then
                      Logger.Note_Debug(Symbol.Token.Get_Location, Symbol.Token.Get_Data, "    Increase production precedence to " & Token_Precedence_Type'IMAGE(Self.Tokens.Get_Precedence(Index)));
-                     Production.Precedence := Self.Tokens.Get_Precedence(Index);
+                     Production.Set_Precedence(Self.Tokens.Get_Precedence(Index));
                   end if;
                   To_Be_Deleted := Symbol;
                   Updated_Symbol := new Terminal_Class'(Token => Self.Tokens.Get(Index), Key => kv.apg.fast.Key_Type(Index));
                   Collect_Grammar_Symbol(Self, Updated_Symbol);
-                  Production.Symbols.Replace_Element(Current, Updated_Symbol);
+--                  Production.Symbols.Replace_Element(Current, Updated_Symbol);
+                  Production.Replace_Symbol(Current, Updated_Symbol);
                   Free(To_Be_Deleted);
                else
                   if Symbol.all'TAG = Pre_Symbol_Class'TAG then
-                     Logger.Note_Debug(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "    Symbol <" & Symbol.Token.Get_Data_As_String & "> is undefined (an error)");
-                     Logger.Note_Error(Symbol.Token.Get_Location, Symbol.Token.Get_Data, "Symbol of production rule """ & Rule.Name_Token.Get_Data_As_String & """ not found.");
+                     Logger.Note_Debug(Rule.Get_Token.Get_Location, Rule.Get_Token.Get_Data, "    Symbol <" & Symbol.Token.Get_Data_As_String & "> is undefined (an error)");
+                     Logger.Note_Error(Symbol.Token.Get_Location, Symbol.Token.Get_Data, "Symbol of production rule """ & Rule.Get_Token.Get_Data_As_String & """ not found.");
                      Self.Errors := Self.Errors + 1;
                   else
-                     Logger.Note_Debug(Rule.Name_Token.Get_Location, Rule.Name_Token.Get_Data, "    Symbol <" & Symbol.Token.Get_Data_As_String & "> was previously defined in place.");
+                     Logger.Note_Debug(Rule.Get_Token.Get_Location, Rule.Get_Token.Get_Data, "    Symbol <" & Symbol.Token.Get_Data_As_String & "> was previously defined in place.");
                      -- Including the following line will cause the End_Of_File symbol to be in the collection
                      Collect_Grammar_Symbol(Self, Symbol);
                   end if;
@@ -196,7 +200,7 @@ package body kv.apg.lalr.grammars is
       -------------------------------------------------------------------------
       function Rule_Has_A_Yes(Rule : Rule_Pointer) return Boolean is
       begin
-         for Production of Rule.Productions loop
+         for Production of Rule.Get_Productions loop
             if List_Of(Yes).Contains(Production) then
                return True;
             end if;
@@ -207,7 +211,7 @@ package body kv.apg.lalr.grammars is
       -------------------------------------------------------------------------
       function Rule_Is_All_No(Rule : Rule_Pointer) return Boolean is
       begin
-         for Production of Rule.Productions loop
+         for Production of Rule.Get_Productions loop
             if not List_Of(No).Contains(Production) then
                return False;
             end if;
@@ -216,7 +220,7 @@ package body kv.apg.lalr.grammars is
       end Rule_Is_All_No;
 
       -------------------------------------------------------------------------
-      function Cursory_Check(Production : Production_Pointer) return Can_Vanish_Answer_Type is
+      function Cursory_Check(Production : kv.apg.lalr.rules.Production_Pointer) return Can_Vanish_Answer_Type is
       begin
          if Production.Matches_An_Empty_Sequence then
             return Yes;
@@ -227,9 +231,9 @@ package body kv.apg.lalr.grammars is
       end Cursory_Check;
 
       -------------------------------------------------------------------------
-      function Symbol_By_Symbol_Check(Production : Production_Pointer) return Can_Vanish_Answer_Type is
+      function Symbol_By_Symbol_Check(Production : kv.apg.lalr.rules.Production_Pointer) return Can_Vanish_Answer_Type is
       begin
-         for Symbol of Production.Symbols loop
+         for Symbol of Production.Get_Symbols loop
             if Self.Rule_Of(Symbol).Has_An_Empty_Sequence or else Rule_Has_A_Yes(Self.Rule_Of(Symbol)) then
                null; -- Need to check the rest of the elements
             else
@@ -245,16 +249,16 @@ package body kv.apg.lalr.grammars is
 
       -------------------------------------------------------------------------
       procedure Disposition
-         (Production : in     Production_Pointer;
+         (Production : in     kv.apg.lalr.rules.Production_Pointer;
           Answer     : in     Can_Vanish_Answer_Type) is
       begin
-         Production.Vanishable := (Answer = Yes);
+         Production.Set_Can_Disappear(Answer = Yes);
          List_Of(Answer).Append(Production);
       end Disposition;
 
       -------------------------------------------------------------------------
-      function Pop_Unresolved_Production return Production_Pointer is
-         Top : Production_Pointer;
+      function Pop_Unresolved_Production return kv.apg.lalr.rules.Production_Pointer is
+         Top : kv.apg.lalr.rules.Production_Pointer;
       begin
          Top := First_Element(List_Of(Maybe));
          Delete_First(List_Of(Maybe));
@@ -263,19 +267,19 @@ package body kv.apg.lalr.grammars is
 
       -------------------------------------------------------------------------
       procedure Number
-         (Production : in     Production_Pointer) is
+         (Production : in     kv.apg.lalr.rules.Production_Pointer) is
       begin
          Self.Max_P := Self.Max_P + 1;
-         Production.Number := Production_Index_Type(Self.Max_P);
+         Production.Set_Number(kv.apg.lalr.rules.Production_Index_Type(Self.Max_P));
       end Number;
 
-      Current    : Production_Pointer;
+      Current    : kv.apg.lalr.rules.Production_Pointer;
       Can_Vanish : Can_Vanish_Answer_Type;
 
    begin
       Self.Max_P := 0;
       for Rule of Self.Rules loop
-         for Production of Rule.Productions loop
+         for Production of Rule.Get_Productions loop
             Number(Production);
             Can_Vanish := Cursory_Check(Production);
             Disposition(Production, Can_Vanish);
@@ -288,9 +292,9 @@ package body kv.apg.lalr.grammars is
       exit when Production_Vectors.Is_Empty(List_Of(Maybe));
       end loop;
       for Production of List_Of(Maybe) loop
-         Production.Vanishable := False; -- Productions that cycle around without clearly resolving to true or false must be false (for lack of true).
+         Production.Set_Can_Disappear(False); -- Productions that cycle around without clearly resolving to true or false must be false (for lack of true).
          Self.Errors := Self.Errors + 1;
-         Logger.Note_Error(Production.Get_Rule.Name_Token.Get_Location, Production.Image, "Production could not be resolved!");
+         Logger.Note_Error(Production.Get_Rule.Get_Token.Get_Location, Production.Image, "Production could not be resolved!");
       end loop;
    end Resolve_Productions;
 
@@ -381,7 +385,7 @@ package body kv.apg.lalr.grammars is
       (Source      : in     Rule_Pointer;
        Destination : in     Rule_Pointer) is
    begin
-      Destination.Firsts.Union(Source.Firsts);
+      Destination.Add_First(Source.First);
    end Transfer_First;
 
    ----------------------------------------------------------------------------
@@ -389,7 +393,7 @@ package body kv.apg.lalr.grammars is
       (Source      : in     Rule_Pointer;
        Destination : in     Rule_Pointer) is
    begin
-      Destination.Follows.Union(Source.Follows);
+      Destination.Add_Follow(Source.Follow);
    end Transfer_Follow;
 
    ----------------------------------------------------------------------------
@@ -421,10 +425,10 @@ package body kv.apg.lalr.grammars is
          (Dependencies : in out Dep_Maps.Map) is
       begin
          Rule_Loop: for Rule of Self.Rules loop
-            Production_Loop: for Production of Rule.Productions loop
-               Symbol_Loop: for Symbol of Production.Symbols loop
+            Production_Loop: for Production of Rule.Get_Productions loop
+               Symbol_Loop: for Symbol of Production.Get_Symbols loop
                   if Symbol.Is_Terminal then
-                     Rule.Firsts.Union(Self.First_Of(Symbol));
+                     Rule.Add_First(Self.First_Of(Symbol));
                      exit Symbol_Loop;
                   else -- is nonterminal
                      -- Rule depends on Symbol, but that can't be resolved just now.
@@ -443,7 +447,7 @@ package body kv.apg.lalr.grammars is
       begin
          for Rule of Self.Rules loop
             if Rule.Can_Disappear then
-               Rule.Firsts.Include(Epsilon);
+               Rule.Add_First(Epsilon);
             end if;
          end loop;
       end Add_Non_Propogatable_Terminals;
@@ -467,8 +471,8 @@ package body kv.apg.lalr.grammars is
       procedure Add_Endmarkers is
       begin
          for Rule of Self.Rules loop
-            if Rule.Start_Rule then
-               Rule.Follows.Include(End_Of_File);
+            if Rule.Is_Start then
+               Rule.Add_Follow(End_Of_File);
             end if;
          end loop;
       end Add_Endmarkers;
@@ -482,7 +486,7 @@ package body kv.apg.lalr.grammars is
          Working := Self.First_Of(Source);
          Working.Exclude(Epsilon); -- Remove Epsilon
          --Put_Line("Adding First of " & To_S(Source.Name) & To_S(Image(Working)) & " to " & To_S(Receiver.Get_Name) & To_S(Image(Receiver.Follows)));
-         Receiver.Follows.Union(Working);
+         Receiver.Add_Follow(Working);
       end Add_Sans_Epsilon;
 
       -------------------------------------------------------------------------
@@ -491,15 +495,15 @@ package body kv.apg.lalr.grammars is
          Symbol       : Constant_Symbol_Pointer;
       begin
          for Rule of Self.Rules loop
-            Production_Loop: for Production of Rule.Productions loop
+            Production_Loop: for Production of Rule.Get_Productions loop
                Symbol_Count := Production.Symbol_Count;
                if Symbol_Count = 0 then
                   exit Production_Loop;
                end if;
                for Index in 1 .. Symbol_Count-1 loop
-                  Symbol := Production.Symbols(Index);
+                  Symbol := Production.Get_Symbol(Index);
                   if not Symbol.Is_Terminal then
-                     Add_Sans_Epsilon(Self.Rule_Of(Symbol), Production.Symbols(Index + 1));
+                     Add_Sans_Epsilon(Self.Rule_Of(Symbol), Production.Get_Symbol(Index + 1));
                   end if;
                end loop;
             end loop Production_Loop;
@@ -515,13 +519,13 @@ package body kv.apg.lalr.grammars is
 
       begin
          for Rule of Self.Rules loop
-            Production_Loop: for Production of Rule.Productions loop
+            Production_Loop: for Production of Rule.Get_Productions loop
                Symbol_Count := Production.Symbol_Count;
                if Symbol_Count = 0 then
                   exit Production_Loop;
                end if;
                for Index in reverse 1 .. Symbol_Count loop
-                  Symbol := Production.Symbols(Index);
+                  Symbol := Production.Get_Symbol(Index);
                   if Symbol.Is_Terminal then
                      exit Production_Loop;
                   end if;
@@ -642,10 +646,10 @@ package body kv.apg.lalr.grammars is
 
 
    ----------------------------------------------------------------------------
-   function Get_Production(Self : Grammar_Class; Number : Production_Index_Type) return Production_Pointer is
+   function Get_Production(Self : Grammar_Class; Number : kv.apg.lalr.rules.Production_Index_Type) return kv.apg.lalr.rules.Production_Pointer is
    begin
       for Rule of Self.Rules loop
-         for Production of Rule.Productions loop
+         for Production of Rule.Get_Productions loop
             if Production.Get_Number = Number then
                return Production;
             end if;
@@ -678,15 +682,15 @@ package body kv.apg.lalr.grammars is
    end Rule_Number_Hi;
 
    ----------------------------------------------------------------------------
-   function Production_Number_Lo(Self : Grammar_Class) return Production_Index_Type is
+   function Production_Number_Lo(Self : Grammar_Class) return kv.apg.lalr.rules.Production_Index_Type is
    begin
       return 1;
    end Production_Number_Lo;
 
    ----------------------------------------------------------------------------
-   function Production_Number_Hi(Self : Grammar_Class) return Production_Index_Type is
+   function Production_Number_Hi(Self : Grammar_Class) return kv.apg.lalr.rules.Production_Index_Type is
    begin
-      return Production_Index_Type(Self.Max_P);
+      return kv.apg.lalr.rules.Production_Index_Type(Self.Max_P);
    end Production_Number_Hi;
 
    ----------------------------------------------------------------------------
@@ -733,12 +737,12 @@ package body kv.apg.lalr.grammars is
 
 
    ----------------------------------------------------------------------------
-   function First_Kernel_Set(Self : Grammar_Class) return Item_Sets.Set is
-      Answer : Item_Sets.Set;
+   function First_Kernel_Set(Self : Grammar_Class) return kv.apg.lalr.rules.Item_Sets.Set is
+      Answer : kv.apg.lalr.rules.Item_Sets.Set;
       S : Rule_Pointer := Self.Find_Start;
-      K : Constant_Item_Pointer;
+      K : kv.apg.lalr.rules.Constant_Item_Pointer;
    begin
-      K := New_Kernel_Class(Constant_Production_Pointer(S.Get_Production(1)), 0);
+      K := New_Kernel_Class(kv.apg.lalr.rules.Constant_Production_Pointer(S.Get_Production(1)), 0);
       Answer.Insert(K);
       return Answer;
    end First_Kernel_Set;
@@ -746,8 +750,8 @@ package body kv.apg.lalr.grammars is
    ----------------------------------------------------------------------------
    function Closure -- We are using kernels and closures expand kernels into items
       (Self   : Grammar_Class;
-       Kernel : Item_Sets.Set;
-       Logger : kv.apg.logger.Safe_Logger_Pointer) return Item_Sets.Set is
+       Kernel : kv.apg.lalr.rules.Item_Sets.Set;
+       Logger : kv.apg.logger.Safe_Logger_Pointer) return kv.apg.lalr.rules.Item_Sets.Set is
    begin
       return Kernel;
    end Closure;
@@ -755,12 +759,12 @@ package body kv.apg.lalr.grammars is
    ----------------------------------------------------------------------------
    function Goto_Step_Over_One -- goto(I, X)
       (Self   : Grammar_Class;
-       Kernel : Constant_Item_Pointer;
+       Kernel : kv.apg.lalr.rules.Constant_Item_Pointer;
        Index  : State_Index_Type;
        Symbol : Constant_Symbol_Pointer;
-       Logger : kv.apg.logger.Safe_Logger_Pointer) return Item_Sets.Set is
+       Logger : kv.apg.logger.Safe_Logger_Pointer) return kv.apg.lalr.rules.Item_Sets.Set is
 
-      Answer : Item_Sets.Set;
+      Answer : kv.apg.lalr.rules.Item_Sets.Set;
 
    begin
       if Kernel.Has_Next and then Symbol.Is_Same_As(Kernel.Get_Big_B.all) then
@@ -773,12 +777,12 @@ package body kv.apg.lalr.grammars is
    ----------------------------------------------------------------------------
    function Goto_Step_Over -- goto(I, X)
       (Self   : Grammar_Class;
-       Kernel : Item_Sets.Set;
+       Kernel : kv.apg.lalr.rules.Item_Sets.Set;
        Index  : State_Index_Type;
        Symbol : Constant_Symbol_Pointer;
-       Logger : kv.apg.logger.Safe_Logger_Pointer) return Item_Sets.Set is
+       Logger : kv.apg.logger.Safe_Logger_Pointer) return kv.apg.lalr.rules.Item_Sets.Set is
 
-      Answer : Item_Sets.Set;
+      Answer : kv.apg.lalr.rules.Item_Sets.Set;
 
    begin
       Logger.Note_By_Severity(Debug, "Goto("&Img(Index)&", " & To_String(Symbol.Name) & ") -- over.");
@@ -799,12 +803,12 @@ package body kv.apg.lalr.grammars is
    ----------------------------------------------------------------------------
    function Goto_Step_Into_One -- goto(I, X)
       (Self   : Grammar_Class;
-       Kernel : Constant_Item_Pointer;
+       Kernel : kv.apg.lalr.rules.Constant_Item_Pointer;
        Index  : State_Index_Type;
        Symbol : Constant_Symbol_Pointer;
-       Logger : kv.apg.logger.Safe_Logger_Pointer) return Item_Sets.Set is
+       Logger : kv.apg.logger.Safe_Logger_Pointer) return kv.apg.lalr.rules.Item_Sets.Set is
 
-      Answer : Item_Sets.Set;
+      Answer : kv.apg.lalr.rules.Item_Sets.Set;
       Next : Constant_Symbol_Pointer;
       Rule : Rule_Pointer;
       First : Rule_Pointer;
@@ -821,12 +825,12 @@ package body kv.apg.lalr.grammars is
             while Rule /= null loop
                Examined(Rule.Get_Number) := True;
                Logger.Note_By_Severity(Debug, "Processing rule: " & To_String(Rule.Get_Name));
-               for Production of Rule.Productions loop
+               for Production of Rule.Get_Productions loop
                   Logger.Note_By_Severity(Debug, "Checking production: " & To_String(Production.Image));
                   if Production.Symbol_Count > 0 then -- if production isn't empty
                      if Symbol.Is_Same_As(Production.Get_Symbol(1).all) then
                         Logger.Note_By_Severity(Debug, "Add new kernel for: " & To_String(Production.Image));
-                        Answer.Insert(New_Kernel_Class(Constant_Production_Pointer(Production), 1));
+                        Answer.Insert(New_Kernel_Class(kv.apg.lalr.rules.Constant_Production_Pointer(Production), 1));
                      end if;
                      -- * right most => ; but this is really a left most dive
                      if not Production.Get_Symbol(1).Is_Terminal then
@@ -853,12 +857,12 @@ package body kv.apg.lalr.grammars is
    ----------------------------------------------------------------------------
    function Goto_Step_Into -- goto(I, X)
       (Self   : Grammar_Class;
-       Kernel : Item_Sets.Set;
+       Kernel : kv.apg.lalr.rules.Item_Sets.Set;
        Index  : State_Index_Type;
        Symbol : Constant_Symbol_Pointer;
-       Logger : kv.apg.logger.Safe_Logger_Pointer) return Item_Sets.Set is
+       Logger : kv.apg.logger.Safe_Logger_Pointer) return kv.apg.lalr.rules.Item_Sets.Set is
 
-      Answer : Item_Sets.Set;
+      Answer : kv.apg.lalr.rules.Item_Sets.Set;
 
    begin
       Logger.Note_By_Severity(Debug, "Goto("&Img(Index)&" " & To_String(Symbol.Name) & ") -- into.");
@@ -888,7 +892,7 @@ package body kv.apg.lalr.grammars is
       Hint : Action_Hint_Type;
 
       -------------------------------------------------------------------------
-      procedure Add_State(Kernels : in Item_Sets.Set) is
+      procedure Add_State(Kernels : in kv.apg.lalr.rules.Item_Sets.Set) is
          use Item_Sets;
 
          State_Def : State_Definition_Type;
@@ -916,12 +920,12 @@ package body kv.apg.lalr.grammars is
       -------------------------------------------------------------------------
       procedure Process_Source_Kernels
          (Symbol : in Constant_Symbol_Pointer;
-          Kernels : in Item_Sets.Set) is
+          Kernels : in kv.apg.lalr.rules.Item_Sets.Set) is
 
-         Working : Item_Sets.Set;
+         Working : kv.apg.lalr.rules.Item_Sets.Set;
 
       begin
-         for K of Kernels loop -- Constant_Item_Pointer
+         for K of Kernels loop -- kv.apg.lalr.rules.Constant_Item_Pointer
             Working.Union(Self.Goto_Step_Over_One(K, Current, Symbol, Logger));
             Working.Union(Self.Goto_Step_Into_One(K, Current, Symbol, Logger));
          end loop;
@@ -931,7 +935,7 @@ package body kv.apg.lalr.grammars is
          end if;
       end Process_Source_Kernels;
 
-      K : Item_Sets.Set;
+      K : kv.apg.lalr.rules.Item_Sets.Set;
 
    begin
       Hint.From_State := 0;

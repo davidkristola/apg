@@ -20,7 +20,7 @@ package body kv.apg.lalr.tables is
 
    use kv.apg.incidents; -- Severity_Type
 
-   function Img(Arg : Production_Index_Type) return String renames Production_Index_Type'IMAGE;
+   function Img(Arg : kv.apg.lalr.rules.Production_Index_Type) return String renames kv.apg.lalr.rules.Production_Index_Type'IMAGE;
 
 
    ----------------------------------------------------------------------------

@@ -1,4 +1,5 @@
 with kv.apg.lalr.grammars;
+with kv.apg.lalr.rules;
 
 package kv.apg.lalr.tables is
 
@@ -14,7 +15,7 @@ package kv.apg.lalr.tables is
             when Shift =>
                Where : State_Index_Type;
             when Reduce =>
-               Production : Production_Index_Type;
+               Production : kv.apg.lalr.rules.Production_Index_Type;
             when others =>
                null;
          end case;
