@@ -132,7 +132,6 @@ package body kv.apg.lalr.grammars is
          for Production of Rule.Get_Productions loop
             Logger.Note_Info(Rule.Get_Token.Get_Location, Rule.Get_Token.Get_Data, "  Production <" & Decode(To_String(Production.Image), UTF_8) & ">");
             Production.Set_Rule(Rule);
---            Current := First(Production.Get_Symbols);
             Current := Production.Get_First_Symbol_Cursor;
             while Current /= No_Element loop
                Symbol := Symbol_Vectors.Element(Current);
@@ -144,7 +143,6 @@ package body kv.apg.lalr.grammars is
                   Symbol_Rule := Self.Find_Non_Terminal(Symbol.Token.Get_Data);
                   Updated_Symbol := New_Non_Terminal_Symbol(Symbol_Rule.Get_Token, Symbol_Rule.Get_Number);
                   Collect_Grammar_Symbol(Self, Updated_Symbol);
---                  Production.Symbols.Replace_Element(Current, Updated_Symbol);
                   Production.Replace_Symbol(Current, Updated_Symbol);
                   Free(To_Be_Deleted);
                elsif Self.Find_Terminal(Symbol.Token.Get_Data) /= kv.apg.enum.Not_Found_Error then
@@ -157,7 +155,6 @@ package body kv.apg.lalr.grammars is
                   To_Be_Deleted := Symbol;
                   Updated_Symbol := new Terminal_Class'(Token => Self.Tokens.Get(Index), Key => kv.apg.fast.Key_Type(Index));
                   Collect_Grammar_Symbol(Self, Updated_Symbol);
---                  Production.Symbols.Replace_Element(Current, Updated_Symbol);
                   Production.Replace_Symbol(Current, Updated_Symbol);
                   Free(To_Be_Deleted);
                else
