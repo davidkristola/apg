@@ -961,6 +961,23 @@ package body kv.apg.lalr.grammars is
       Self.Count := Self.Count + 1;
    end Add_State;
 
+   ----------------------------------------------------------------------------
+   function Number_Of_States(Self : State_Information_Type) return State_Index_Type is
+   begin
+      return State_Index_Type(Self.States.Length)+1;
+   end Number_Of_States;
+
+   ----------------------------------------------------------------------------
+   function Get_States(Self : State_Information_Type) return State_Space.Vector is
+   begin
+      return Self.States;
+   end Get_States;
+
+   ----------------------------------------------------------------------------
+   function Get_Hints(Self : State_Information_Type) return Action_Space.Vector is
+   begin
+      return Self.Hints;
+   end Get_Hints;
 
 
 

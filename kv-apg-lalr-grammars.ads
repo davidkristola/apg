@@ -136,19 +136,16 @@ package kv.apg.lalr.grammars is
        Element_Type => State_Definition_Type);
 
 
-   type State_Information_Type is tagged
-      record
-         States : State_Space.Vector;
-         Hints  : Action_Space.Vector;
-         Count  : State_Index_Type := 0;
-         Found_More : Boolean := False;
-         Working_Hint : Action_Hint_Type;
-      end record;
+   type State_Information_Type is tagged private;
 
    procedure Initialize
       (Self    : in out State_Information_Type;
        Grammar : in     Grammar_Pointer;
        Logger  : in     kv.apg.logger.Safe_Logger_Pointer);
+
+   function Number_Of_States(Self : State_Information_Type) return State_Index_Type;
+   function Get_States(Self : State_Information_Type) return State_Space.Vector;
+   function Get_Hints(Self : State_Information_Type) return Action_Space.Vector;
 
 --   function Generate_Parser_States(Self : Grammar_Pointer; Logger : kv.apg.logger.Safe_Logger_Pointer) return State_Information_Type;
 
@@ -180,5 +177,16 @@ private
          Max_T  : Natural := 0;
          Errors : Natural := 0;
       end record;
+
+
+   type State_Information_Type is tagged
+      record
+         States : State_Space.Vector;
+         Hints  : Action_Space.Vector;
+         Count  : State_Index_Type := 0;
+         Found_More : Boolean := False;
+         Working_Hint : Action_Hint_Type;
+      end record;
+
 
 end kv.apg.lalr.grammars;
