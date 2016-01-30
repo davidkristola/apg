@@ -117,6 +117,28 @@ package body kv.apg.lalr.tables is
       return Self.Errors;
    end Error_Count;
 
+   ----------------------------------------------------------------------------
+   procedure Process_Hint_Action
+      (Self   : in out Action_Table_Class;
+       Tokens : in     kv.apg.enum.Enumeration_Class;
+       Hint   : in     kv.apg.lalr.grammars.Action_Hint_Type;
+       Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
+
+      Action : Action_Entry_Type;
+
+   begin
+      if Hint.Symbol.Get_Number = End_Of_File then
+         -- Special case: Add an accept action
+         Action := (What => Accept_Input, Precedence => 0, Associativity => kv.apg.enum.Neither);
+         Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add ACCEPT " & To_String(Hint.Symbol.Name));
+      else
+         -- Add a shift action
+         Action := (What => Shift, Where => Hint.To_State, Precedence => Tokens.Get_Precedence(Natural(Hint.Symbol.Get_Number)), Associativity => kv.apg.enum.Neither);
+         Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add SHIFT " & To_String(Hint.Symbol.Name) & " and goto " & Img(Hint.To_State));
+      end if;
+      Self.Set_Action(Action, Hint.From_State, Hint.Symbol.Get_Number, Logger);
+   end Process_Hint_Action;
+
 
 
 
@@ -149,5 +171,17 @@ package body kv.apg.lalr.tables is
    begin
       return Self.Table(State, Symbol);
    end Get_Goto;
+
+   ----------------------------------------------------------------------------
+   procedure Process_Hint_Goto
+      (Self    : in out Goto_Table_Class;
+       Hint    : in     kv.apg.lalr.grammars.Action_Hint_Type;
+       Grammar : in     kv.apg.lalr.grammars.Grammar_Pointer;
+       Logger  : in     kv.apg.logger.Safe_Logger_Pointer) is
+   begin
+      -- Add a non-terminal goto
+      Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add GOTO " & To_String(Hint.Symbol.Name) & " and goto " & Img(Hint.To_State));
+      Self.Set_Goto(Hint.To_State, Hint.From_State, Grammar.Rule_Of(Hint.Symbol).Get_Number);
+   end Process_Hint_Goto;
 
 end kv.apg.lalr.tables;

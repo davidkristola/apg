@@ -29,38 +29,73 @@ package body kv.apg.lalr.engines is
 
    function Img(Arg : Production_Index_Type) return String renames Production_Index_Type'IMAGE;
 
-
-   ----------------------------------------------------------------------------
-   procedure Process_Hint_Action
-      (Self   : in out Parser_Engine_Class;
-       Hint   : in     Action_Hint_Type;
-       Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
-
-      Action : Action_Entry_Type;
-
-   begin
-      if Hint.Symbol.Get_Number = End_Of_File then
-         -- Special case: Add an accept action
-         Action := (What => Accept_Input, Precedence => 0, Associativity => kv.apg.enum.Neither);
-         Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add ACCEPT " & To_String(Hint.Symbol.Name));
-      else
-         -- Add a shift action
-         Action := (What => Shift, Where => Hint.To_State, Precedence => Self.Grammar.Get_Tokens.Get_Precedence(Natural(Hint.Symbol.Get_Number)), Associativity => kv.apg.enum.Neither);
-         Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add SHIFT " & To_String(Hint.Symbol.Name) & " and goto " & Img(Hint.To_State));
-      end if;
-      Self.Actions.Set_Action(Action, Hint.From_State, Hint.Symbol.Get_Number, Logger);
-   end Process_Hint_Action;
-
-   ----------------------------------------------------------------------------
-   procedure Process_Hint_Goto
-      (Self   : in out Parser_Engine_Class;
-       Hint   : in     Action_Hint_Type;
-       Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
-   begin
-      -- Add a non-terminal goto
-      Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add GOTO " & To_String(Hint.Symbol.Name) & " and goto " & Img(Hint.To_State));
-      Self.Gotos.Set_Goto(Hint.To_State, Hint.From_State, Self.Grammar.Rule_Of(Hint.Symbol).Get_Number);
-   end Process_Hint_Goto;
+--
+--   ----------------------------------------------------------------------------
+--   procedure Process_Hint_Action
+--      (Self   : in out Parser_Engine_Class;
+--       Hint   : in     Action_Hint_Type;
+--       Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
+--
+--      Action : Action_Entry_Type;
+--
+--   begin
+--      if Hint.Symbol.Get_Number = End_Of_File then
+--         -- Special case: Add an accept action
+--         Action := (What => Accept_Input, Precedence => 0, Associativity => kv.apg.enum.Neither);
+--         Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add ACCEPT " & To_String(Hint.Symbol.Name));
+--      else
+--         -- Add a shift action
+--         Action := (What => Shift, Where => Hint.To_State, Precedence => Self.Grammar.Get_Tokens.Get_Precedence(Natural(Hint.Symbol.Get_Number)), Associativity => kv.apg.enum.Neither);
+--         Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add SHIFT " & To_String(Hint.Symbol.Name) & " and goto " & Img(Hint.To_State));
+--      end if;
+--      Self.Actions.Set_Action(Action, Hint.From_State, Hint.Symbol.Get_Number, Logger);
+--   end Process_Hint_Action;
+--
+--
+--   procedure Process_Hint_Action
+--      (Self   : in out kv.apg.lalr.tables.Action_Table_Class;
+--       Tokens : in     kv.apg.enum.Enumeration_Class;
+--       Hint   : in     Action_Hint_Type;
+--       Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
+--
+--      Action : Action_Entry_Type;
+--
+--   begin
+--      if Hint.Symbol.Get_Number = End_Of_File then
+--         -- Special case: Add an accept action
+--         Action := (What => Accept_Input, Precedence => 0, Associativity => kv.apg.enum.Neither);
+--         Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add ACCEPT " & To_String(Hint.Symbol.Name));
+--      else
+--         -- Add a shift action
+--         Action := (What => Shift, Where => Hint.To_State, Precedence => Tokens.Get_Precedence(Natural(Hint.Symbol.Get_Number)), Associativity => kv.apg.enum.Neither);
+--         Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add SHIFT " & To_String(Hint.Symbol.Name) & " and goto " & Img(Hint.To_State));
+--      end if;
+--      Self.Set_Action(Action, Hint.From_State, Hint.Symbol.Get_Number, Logger);
+--   end Process_Hint_Action;
+--
+--
+--   ----------------------------------------------------------------------------
+--   procedure Process_Hint_Goto
+--      (Self   : in out Parser_Engine_Class;
+--       Hint   : in     Action_Hint_Type;
+--       Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
+--   begin
+--      -- Add a non-terminal goto
+--      Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add GOTO " & To_String(Hint.Symbol.Name) & " and goto " & Img(Hint.To_State));
+--      Self.Gotos.Set_Goto(Hint.To_State, Hint.From_State, Self.Grammar.Rule_Of(Hint.Symbol).Get_Number);
+--   end Process_Hint_Goto;
+--
+--   procedure Process_Hint_Goto
+--      (Gotos   : in out kv.apg.lalr.tables.Goto_Table_Class;
+--       Hint    : in     Action_Hint_Type;
+--       Grammar : in     Grammar_Pointer;
+--       Logger  : in     kv.apg.logger.Safe_Logger_Pointer) is
+--   begin
+--      -- Add a non-terminal goto
+--      Logger.Note_By_Severity(Debug, Img(Hint.From_State) & ": Add GOTO " & To_String(Hint.Symbol.Name) & " and goto " & Img(Hint.To_State));
+--      Gotos.Set_Goto(Hint.To_State, Hint.From_State, Grammar.Rule_Of(Hint.Symbol).Get_Number);
+--   end Process_Hint_Goto;
+--
 
    ----------------------------------------------------------------------------
    procedure Process_Hint
@@ -69,9 +104,13 @@ package body kv.apg.lalr.engines is
        Logger : in     kv.apg.logger.Safe_Logger_Pointer) is
    begin
       if Hint.Symbol.Is_Terminal then
-         Process_Hint_Action(Self, Hint, Logger);
+         --Process_Hint_Action(Self, Hint, Logger);
+         --Process_Hint_Action(Self.Actions, Self.Grammar.Get_Tokens, Hint, Logger);
+         Self.Actions.Process_Hint_Action(Self.Grammar.Get_Tokens, Hint, Logger);
       else
-         Process_Hint_Goto(Self, Hint, Logger);
+         --Process_Hint_Goto(Self, Hint, Logger);
+         --Process_Hint_Goto(Self.Gotos, Hint, Self.Grammar, Logger);
+         Self.Gotos.Process_Hint_Goto(Hint, Self.Grammar, Logger);
       end if;
    end Process_Hint;
 

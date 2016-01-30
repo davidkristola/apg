@@ -52,6 +52,12 @@ package kv.apg.lalr.tables is
 
    function Error_Count(Self : Action_Table_Class) return Natural;
 
+   procedure Process_Hint_Action
+      (Self   : in out Action_Table_Class;
+       Tokens : in     kv.apg.enum.Enumeration_Class;
+       Hint   : in     kv.apg.lalr.grammars.Action_Hint_Type;
+       Logger : in     kv.apg.logger.Safe_Logger_Pointer);
+
 
    type Goto_Table_Class is tagged private;
    procedure Initialize
@@ -70,6 +76,12 @@ package kv.apg.lalr.tables is
       (Self   : Goto_Table_Class;
        State  : State_Index_Type;
        Symbol : Non_Terminal_Index_Type) return State_Index_Type;
+
+   procedure Process_Hint_Goto
+      (Self    : in out Goto_Table_Class;
+       Hint    : in     kv.apg.lalr.grammars.Action_Hint_Type;
+       Grammar : in     kv.apg.lalr.grammars.Grammar_Pointer;
+       Logger  : in     kv.apg.logger.Safe_Logger_Pointer);
 
 private
 
