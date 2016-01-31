@@ -147,9 +147,6 @@ package kv.apg.lalr.grammars is
    function Get_States(Self : State_Information_Type) return State_Space.Vector;
    function Get_Hints(Self : State_Information_Type) return Action_Space.Vector;
 
---   function Generate_Parser_States(Self : Grammar_Pointer; Logger : kv.apg.logger.Safe_Logger_Pointer) return State_Information_Type;
-
-
 private
 
    procedure Process_Source_Kernels
