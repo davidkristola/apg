@@ -44,10 +44,10 @@ private
 
    type Value_Type is
       record
-         Value : Integer;
-         Name  : kv.apg.tokens.Token_Class;
+         Value         : Integer;
+         Name          : kv.apg.tokens.Token_Class;
          Associativity : Token_Associativity_Type := Neither;
-         Precedence : Token_Precedence_Type := 0;
+         Precedence    : Token_Precedence_Type := 0;
       end record;
 
    package Value_List is new Ada.Containers.Doubly_Linked_Lists(Value_Type);

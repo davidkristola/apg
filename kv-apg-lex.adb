@@ -155,7 +155,7 @@ package body kv.apg.lex is
    function Tokens_Available
       (Self : in     Lexer_Class) return Natural is
    begin
-      return Natural(Self.List.Length);
+      return Natural(Self.Tokens.Length);
    end Tokens_Available;
 
    ----------------------------------------------------------------------------
@@ -163,8 +163,8 @@ package body kv.apg.lex is
       (Self : in out Lexer_Class) return kv.apg.tokens.Token_Class is
       Token : kv.apg.tokens.Token_Class;
    begin
-      Token := Self.List.First_Element;
-      Self.List.Delete_First;
+      Token := Self.Tokens.First_Element;
+      Self.Tokens.Delete_First;
       return Token;
    end Get_Next_Token;
 
@@ -219,7 +219,7 @@ package body kv.apg.lex is
    begin
       if Debug then Put_Line("Completing token " & kv.apg.tokens.Token_Type'IMAGE(Kind)); end if;
       Token.Initialize(Kind, Self.Start_Of_Token, Self.Accumulator);
-      Self.List.Append(Token);
+      Self.Tokens.Append(Token);
       Self.State := Between;
    end Complete_Token;
 

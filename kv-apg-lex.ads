@@ -46,7 +46,7 @@ private
          Start_Of_Token   : kv.apg.locations.File_Location_Type;
          Current_Position : kv.apg.locations.File_Location_Type;
          Accumulator      : String_Type;
-         List             : Token_List.List;
+         Tokens            : Token_List.List;
       end record;
 
    procedure Begin_Token
