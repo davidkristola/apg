@@ -60,8 +60,15 @@ package body kv.apg.tests.misc is
    type Write_Line_Buffer_Writer_Test is new Buffer_Writer_Test_Class with null record;
    procedure Run(T : in out Write_Line_Buffer_Writer_Test) is
    begin
+      T.BddGiven("A Buffer_Writer_Class object exists");
+
+      T.BddWhen("A line is written to the buffer object");
       T.Buff.Write_Line("This is a test");
+
+      T.BddThen("There is one line in the buffer");
       T.Assert(T.Buff.Line_Count = 1, "Should have 1 line");
+
+      T.BddThen("The line written to the buffer is the line in the buffer");
       T.Assert(T.Buff.Get_Line(1) = To_String_Type("This is a test"), "Line 1 does not match");
    end Run;
 

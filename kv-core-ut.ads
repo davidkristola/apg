@@ -9,6 +9,9 @@ package kv.core.ut is
 
    type Test_Class is abstract tagged private;
    procedure Log(T : in out Test_Class; message : in String);
+   procedure BddGiven(T : in out Test_Class; message : in String);
+   procedure BddWhen(T : in out Test_Class; message : in String);
+   procedure BddThen(T : in out Test_Class; message : in String);
    procedure Assert(T : in out Test_Class; condition : in Boolean; fail_message : in String);
    procedure Fail(T : in out Test_Class; fail_message : in String);
    procedure Set_Up(T : in out Test_Class) is null;
@@ -35,10 +38,12 @@ private
 
    type Test_Class is abstract tagged
       record
-         Suite   : Suite_Pointer_Type;
-         Name    : String_Type;
-         Asserts : Natural := 0;
-         Fails   : Natural := 0;
+         Suite     : Suite_Pointer_Type;
+         Name      : String_Type;
+         Asserts   : Natural := 0;
+         Fails     : Natural := 0;
+         Post_When : Boolean := False;
+         Post_Then : Boolean := False;
       end record;
 
    type Bundle_Type is

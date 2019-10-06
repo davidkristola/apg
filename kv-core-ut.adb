@@ -15,6 +15,35 @@ package body kv.core.ut is
       Put_Line(message);
    end Log;
 
+   Stand_Out : constant String := "============ ";
+   And_Space : constant String := "AND ";
+
+   function Mark(Seen : in     Boolean) return String is
+   begin
+      return (if Seen then And_Space else "");
+   end Mark;
+
+   ----------------------------------------------------------------------------
+   procedure BddGiven(T : in out Test_Class; message : in String) is
+   begin
+      Put_Line(Stand_Out & "GIVEN: " & message);
+   end BddGiven;
+
+   ----------------------------------------------------------------------------
+   procedure BddWhen(T : in out Test_Class; message : in String) is
+   begin
+      Put_Line(Stand_Out & Mark(T.Post_When) & "WHEN: " & message);
+      T.Post_When := True;
+      T.Post_Then := False;
+   end BddWhen;
+
+   ----------------------------------------------------------------------------
+   procedure BddThen(T : in out Test_Class; message : in String) is
+   begin
+      Put_Line(Stand_Out & Mark(T.Post_Then) & "THEN: " & message);
+      T.Post_Then := True;
+   end BddThen;
+
    ----------------------------------------------------------------------------
    procedure Assert(T : in out Test_Class; condition : in Boolean; fail_message : in String) is
    begin
